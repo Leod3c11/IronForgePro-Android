@@ -29,6 +29,7 @@ import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.SectionHeader
+import com.ironforge.pro.ui.components.WorkoutEditorDialog
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
 import com.ironforge.pro.viewmodel.IronForgeViewModel
@@ -49,6 +50,7 @@ fun CalendarScreen(
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf(today) }
     var showAssignDialog by remember { mutableStateOf(false) }
+    var editingWorkoutDay by remember { mutableStateOf<WorkoutDay?>(null) }
     var previewExercise by remember { mutableStateOf<Exercise?>(null) }
 
     val monthTitle = remember(currentMonth) {
@@ -56,10 +58,9 @@ fun CalendarScreen(
         currentMonth.format(formatter).replaceFirstChar { it.uppercase() }
     }
 
-    // Build calendar grid cells (Monday = 1 .. Sunday = 7)
     val calendarCells = remember(currentMonth) {
         val firstOfMonth = currentMonth.atDay(1)
-        val leadingEmpty = firstOfMonth.dayOfWeek.value - 1 // 0 for Mon, 6 for Sun
+        val leadingEmpty = firstOfMonth.dayOfWeek.value - 1
         val daysInMonth = currentMonth.lengthOfMonth()
         val cells = mutableListOf<LocalDate?>()
         repeat(leadingEmpty) { cells.add(null) }
@@ -76,10 +77,10 @@ fun CalendarScreen(
         state.sessionHistory.groupBy { it.isoDate }
     }
 
-    val selectedIso = selectedDate.toString() // yyyy-MM-dd
-    val selectedWeekdayIso = selectedDate.dayOfWeek.value // 1..7
+    val selectedIso = selectedDate.toString()
+    val selectedWeekdayIso = selectedDate.dayOfWeek.value
     val scheduledWorkoutId = state.weeklySchedule[selectedWeekdayIso]
-    val scheduledWorkout = remember(scheduledWorkoutId, state.customWorkouts) {
+    val scheduledWorkout = remember(scheduledWorkoutId, state.customWorkouts, state.editedWorkoutDays) {
         viewModel.resolveWorkoutDayById(scheduledWorkoutId)
     }
     val completedSessionsOnSelectedDate = completedByIsoDate[selectedIso].orEmpty()
@@ -111,7 +112,7 @@ fun CalendarScreen(
         item {
             SectionHeader(
                 title = "Agenda de Treinos",
-                subtitle = "Toque em qualquer dia para abrir o treino programado",
+                subtitle = "Toque em qualquer dia para ver ou editar o treino",
                 trailing = {
                     if (selectedDate != today) {
                         TextButton(onClick = {
@@ -125,10 +126,8 @@ fun CalendarScreen(
             )
         }
 
-        // Monthly Calendar Card
         item {
             HyperSquircleCard(accentGlow = true) {
-                // Month Switcher Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -157,7 +156,6 @@ fun CalendarScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Weekday Column Headers
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -175,7 +173,6 @@ fun CalendarScreen(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Calendar Weeks Grid
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     calendarCells.forEach { week ->
                         Row(
@@ -184,7 +181,7 @@ fun CalendarScreen(
                         ) {
                             week.forEach { date ->
                                 if (date == null) {
-                                    Box(modifier = Modifier.weight(1f).height(52.dp))
+                                    Box(modifier = Modifier.weight(1f).height(54.dp))
                                 } else {
                                     val isSelected = date == selectedDate
                                     val isToday = date == today
@@ -192,10 +189,11 @@ fun CalendarScreen(
                                     val dayWorkout = viewModel.resolveWorkoutDayById(dayWId)
                                     val isCompleted = completedByIsoDate.containsKey(date.toString())
 
+                                    // Adaptive contrast-safe cell surface for Light Mode, AMOLED & Dark Titanium!
                                     val cellBg = when {
                                         isSelected -> palette.primary
-                                        isToday -> palette.tileElevated
-                                        else -> Color(0xFF10141D)
+                                        isToday -> palette.primary.copy(alpha = if (palette.isLight) 0.16f else 0.22f)
+                                        else -> palette.tileElevated
                                     }
                                     val numColor = if (isSelected) palette.onPrimaryAccent else palette.textPrimary
 
@@ -218,7 +216,7 @@ fun CalendarScreen(
                                     val tagColor = when {
                                         isSelected -> palette.onPrimaryAccent
                                         isCompleted -> HyperEmerald
-                                        dayWorkout != null -> palette.primaryGlow
+                                        dayWorkout != null -> palette.primary
                                         else -> palette.textMuted
                                     }
 
@@ -230,9 +228,11 @@ fun CalendarScreen(
                                             .clickable { selectedDate = date },
                                         shape = RoundedCornerShape(14.dp),
                                         color = cellBg,
-                                        border = if (isToday && !isSelected) {
-                                            BorderStroke(1.3.dp, palette.primary)
-                                        } else null
+                                        border = when {
+                                            isToday && !isSelected -> BorderStroke(1.5.dp, palette.primary)
+                                            !isSelected -> BorderStroke(0.8.dp, palette.hairline.copy(alpha = 0.65f))
+                                            else -> null
+                                        }
                                     ) {
                                         Column(
                                             modifier = Modifier
@@ -243,7 +243,7 @@ fun CalendarScreen(
                                         ) {
                                             Text(
                                                 text = date.dayOfMonth.toString(),
-                                                style = MaterialTheme.typography.labelLarge,
+                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
                                                 color = numColor,
                                                 fontSize = 13.sp
                                             )
@@ -268,7 +268,7 @@ fun CalendarScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    LegendDot("Treino Programado", palette.primaryGlow)
+                    LegendDot("Treino Programado", palette.primary)
                     LegendDot("Concluído", HyperEmerald)
                     LegendDot("Descanso (OFF)", palette.textMuted)
                 }
@@ -302,11 +302,10 @@ fun CalendarScreen(
                     TextButton(onClick = { showAssignDialog = true }) {
                         Icon(Icons.Default.EditCalendar, contentDescription = null, tint = palette.secondary, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Alterar", color = palette.secondary, fontWeight = FontWeight.Bold)
+                        Text("Trocar Dia", color = palette.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
 
-                // Completed Workout Banner if trained on this date
                 if (completedSessionsOnSelectedDate.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     completedSessionsOnSelectedDate.forEach { rec ->
@@ -343,13 +342,26 @@ fun CalendarScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (scheduledWorkout != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HyperPillTag(scheduledWorkout.dayLabel, palette.primaryGlow)
-                        HyperPillTag("~${scheduledWorkout.estimatedMinutes} min", palette.secondary)
-                        HyperPillTag("${scheduledWorkout.exercises.size} exercícios", HyperEmerald)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            HyperPillTag(scheduledWorkout.dayLabel, palette.primaryGlow)
+                            HyperPillTag("~${scheduledWorkout.estimatedMinutes} min", palette.secondary)
+                        }
+                        TextButton(
+                            onClick = { editingWorkoutDay = scheduledWorkout },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Editar Exercícios", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = scheduledWorkout.title,
                         style = MaterialTheme.typography.titleLarge,
@@ -363,7 +375,6 @@ fun CalendarScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // List all exercises for this calendar day with 1-tap mini-video preview
                     scheduledWorkout.exercises.forEachIndexed { idx, planned ->
                         val ex = ExerciseRepository.getExerciseById(planned.exerciseId)
                         if (ex != null) {
@@ -430,7 +441,6 @@ fun CalendarScreen(
                         )
                     }
                 } else {
-                    // Rest & Recovery Day View
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -471,9 +481,27 @@ fun CalendarScreen(
         }
     }
 
-    // Dialog to Reassign Weekday Workout
+    if (editingWorkoutDay != null) {
+        val target = editingWorkoutDay!!
+        WorkoutEditorDialog(
+            day = target,
+            isBuiltInEdited = state.editedWorkoutDays.containsKey(target.id),
+            onDismiss = { editingWorkoutDay = null },
+            onSave = { updated ->
+                viewModel.saveEditedWorkoutDay(updated)
+                editingWorkoutDay = null
+            },
+            onResetDefault = {
+                viewModel.resetEditedWorkoutDay(target.id)
+                editingWorkoutDay = null
+            }
+        )
+    }
+
     if (showAssignDialog) {
-        val availableDays = remember(state.customWorkouts) { viewModel.allAvailableWorkoutDays() }
+        val availableDays = remember(state.customWorkouts, state.editedWorkoutDays) {
+            viewModel.allAvailableWorkoutDays()
+        }
         AlertDialog(
             onDismissRequest = { showAssignDialog = false },
             containerColor = palette.card,
@@ -548,7 +576,6 @@ fun CalendarScreen(
         )
     }
 
-    // Mini Video Preview Modal on Exercise Tap
     if (previewExercise != null) {
         val ex = previewExercise!!
         AlertDialog(
@@ -567,7 +594,7 @@ fun CalendarScreen(
                     ExerciseMiniVideoPlayer(
                         exercise = ex,
                         customVideoUri = state.customVideoUris[ex.id],
-                        height = 190.dp
+                        height = 195.dp
                     )
                     Text(
                         text = ex.executionSteps.joinToString("\n• ", prefix = "• "),

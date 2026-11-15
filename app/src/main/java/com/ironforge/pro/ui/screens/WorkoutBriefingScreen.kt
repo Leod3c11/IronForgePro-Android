@@ -31,6 +31,7 @@ import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
+import com.ironforge.pro.ui.components.WorkoutEditorDialog
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
 import com.ironforge.pro.viewmodel.IronForgeViewModel
@@ -47,6 +48,7 @@ fun WorkoutBriefingScreen(
     val palette = LocalIronPalette.current
     var previewExercise by remember { mutableStateOf<Exercise?>(null) }
     var showSwitchWorkoutDialog by remember { mutableStateOf(false) }
+    var showEditWorkoutDialog by remember { mutableStateOf(false) }
 
     val totalSets = remember(day) { day.exercises.sumOf { it.targetSets } }
     val estimatedTonnage = remember(day, state.exercisePrs, state.userProfile) {
@@ -103,8 +105,15 @@ fun WorkoutBriefingScreen(
                 style = MaterialTheme.typography.labelLarge,
                 color = palette.primaryGlow
             )
-            TextButton(onClick = { showSwitchWorkoutDialog = true }) {
-                Text("Trocar Ficha", color = palette.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Row {
+                TextButton(onClick = { showEditWorkoutDialog = true }) {
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Editar", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+                TextButton(onClick = { showSwitchWorkoutDialog = true }) {
+                    Text("Trocar", color = palette.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
             }
         }
 
@@ -341,6 +350,22 @@ fun WorkoutBriefingScreen(
                 ) {
                     Text("Fechar", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
                 }
+            }
+        )
+    }
+
+    if (showEditWorkoutDialog) {
+        WorkoutEditorDialog(
+            day = day,
+            isBuiltInEdited = state.editedWorkoutDays.containsKey(day.id),
+            onDismiss = { showEditWorkoutDialog = false },
+            onSave = { updated ->
+                viewModel.saveEditedWorkoutDay(updated)
+                showEditWorkoutDialog = false
+            },
+            onResetDefault = {
+                viewModel.resetEditedWorkoutDay(day.id)
+                showEditWorkoutDialog = false
             }
         )
     }

@@ -11,7 +11,7 @@ import com.ironforge.pro.ui.theme.AppThemePreset
 
 class LocalStorageManager(context: Context) {
 
-    private val prefs = context.getSharedPreferences("ironforge_amoled_v6", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("ironforge_pro_v7", Context.MODE_PRIVATE)
     private val gson = Gson()
 
     fun isOnboardingCompleted(): Boolean =
@@ -56,6 +56,20 @@ class LocalStorageManager(context: Context) {
 
     fun saveWeeklySchedule(schedule: Map<Int, String?>) {
         prefs.edit().putString("weekly_schedule", gson.toJson(schedule)).apply()
+    }
+
+    fun loadEditedWorkoutDays(): Map<String, WorkoutDay> {
+        val json = prefs.getString("edited_workout_days", null) ?: return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<String, WorkoutDay>>() {}.type
+            gson.fromJson(json, type) ?: emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun saveEditedWorkoutDays(edited: Map<String, WorkoutDay>) {
+        prefs.edit().putString("edited_workout_days", gson.toJson(edited)).apply()
     }
 
     fun loadSessionHistory(): List<WorkoutSessionRecord> {

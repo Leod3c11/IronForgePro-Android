@@ -74,6 +74,7 @@ fun DashboardScreen(
 
     fun findWorkoutById(id: String?): WorkoutDay? {
         if (id.isNullOrBlank()) return null
+        state.editedWorkoutDays[id]?.let { return it }
         state.customWorkouts.find { it.id == id }?.let { return it }
         ExerciseRepository.defaultSplits.forEach { split ->
             split.days.find { it.id == id }?.let { return it }
@@ -81,11 +82,12 @@ fun DashboardScreen(
         return null
     }
 
-    val todayScheduledWorkout = remember(state.weeklySchedule, state.customWorkouts, todayIsoWeekday) {
+    val todayScheduledWorkout = remember(state.weeklySchedule, state.customWorkouts, state.editedWorkoutDays, todayIsoWeekday) {
         findWorkoutById(state.weeklySchedule[todayIsoWeekday])
     }
+    val fallbackDefaultDay = ExerciseRepository.defaultSplits.first().days.first()
     val fallbackWorkout = state.customWorkouts.firstOrNull()
-        ?: ExerciseRepository.defaultSplits.first().days.first()
+        ?: (state.editedWorkoutDays[fallbackDefaultDay.id] ?: fallbackDefaultDay)
     val heroWorkout = todayScheduledWorkout ?: fallbackWorkout
 
     LazyColumn(

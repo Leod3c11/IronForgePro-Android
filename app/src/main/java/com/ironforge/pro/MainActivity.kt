@@ -139,7 +139,9 @@ fun IronForgeAppRoot(
                             onSaveCustomWorkout = { title, focus, ids ->
                                 viewModel.saveCustomWorkoutDay(title, focus, ids)
                             },
-                            onDeleteCustomWorkout = { viewModel.deleteCustomWorkout(it) }
+                            onDeleteCustomWorkout = { viewModel.deleteCustomWorkout(it) },
+                            onSaveEditedWorkoutDay = { viewModel.saveEditedWorkoutDay(it) },
+                            onResetEditedWorkoutDay = { viewModel.resetEditedWorkoutDay(it) }
                         )
                         MainNavTab.ENCYCLOPEDIA -> EncyclopediaScreen(
                             state = state,

@@ -24,6 +24,7 @@ import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.SectionHeader
+import com.ironforge.pro.ui.components.WorkoutEditorDialog
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
 
@@ -32,7 +33,9 @@ fun WorkoutsScreen(
     state: IronForgeUiState,
     onStartWorkoutDay: (WorkoutDay) -> Unit,
     onSaveCustomWorkout: (String, String, List<String>) -> Unit,
-    onDeleteCustomWorkout: (String) -> Unit
+    onDeleteCustomWorkout: (String) -> Unit,
+    onSaveEditedWorkoutDay: (WorkoutDay) -> Unit,
+    onResetEditedWorkoutDay: (String) -> Unit
 ) {
     val palette = LocalIronPalette.current
     val allSplits = ExerciseRepository.defaultSplits
@@ -40,6 +43,7 @@ fun WorkoutsScreen(
         mutableIntStateOf(if (state.customWorkouts.isNotEmpty()) allSplits.size else 0)
     }
     var showBuilderDialog by remember { mutableStateOf(false) }
+    var editingDay by remember { mutableStateOf<WorkoutDay?>(null) }
     var previewExercise by remember { mutableStateOf<Exercise?>(null) }
 
     LazyColumn(
@@ -52,7 +56,7 @@ fun WorkoutsScreen(
         item {
             SectionHeader(
                 title = "Programas & Divisões",
-                subtitle = "Toque no ícone de vídeo para ver a execução",
+                subtitle = "Edite exercícios de qualquer treino ou crie sua ficha",
                 trailing = {
                     Button(
                         onClick = { showBuilderDialog = true },
@@ -103,7 +107,7 @@ fun WorkoutsScreen(
                         },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.secondary,
-                            selectedLabelColor = palette.bg,
+                            selectedLabelColor = palette.onPrimaryAccent,
                             containerColor = palette.card,
                             labelColor = palette.textSecondary
                         )
@@ -114,6 +118,7 @@ fun WorkoutsScreen(
 
         if (selectedTabIndex < allSplits.size) {
             val activeSplit = allSplits[selectedTabIndex]
+            val resolvedDays = activeSplit.days.map { day -> state.editedWorkoutDays[day.id] ?: day }
 
             item {
                 HyperSquircleCard(accentGlow = true) {
@@ -140,10 +145,13 @@ fun WorkoutsScreen(
                 }
             }
 
-            items(activeSplit.days) { day ->
+            items(resolvedDays, key = { it.id }) { day ->
+                val isCustomized = state.editedWorkoutDays.containsKey(day.id)
                 WorkoutDayCard(
                     day = day,
+                    isCustomized = isCustomized,
                     onStart = { onStartWorkoutDay(day) },
+                    onEdit = { editingDay = day },
                     onPreviewExercise = { previewExercise = it }
                 )
             }
@@ -179,16 +187,35 @@ fun WorkoutsScreen(
                     }
                 }
             } else {
-                items(state.customWorkouts) { customDay ->
+                items(state.customWorkouts, key = { it.id }) { customDay ->
                     WorkoutDayCard(
                         day = customDay,
+                        isCustomized = false,
                         onStart = { onStartWorkoutDay(customDay) },
+                        onEdit = { editingDay = customDay },
                         onDelete = { onDeleteCustomWorkout(customDay.id) },
                         onPreviewExercise = { previewExercise = it }
                     )
                 }
             }
         }
+    }
+
+    if (editingDay != null) {
+        val target = editingDay!!
+        WorkoutEditorDialog(
+            day = target,
+            isBuiltInEdited = state.editedWorkoutDays.containsKey(target.id),
+            onDismiss = { editingDay = null },
+            onSave = { updated ->
+                onSaveEditedWorkoutDay(updated)
+                editingDay = null
+            },
+            onResetDefault = {
+                onResetEditedWorkoutDay(target.id)
+                editingDay = null
+            }
+        )
     }
 
     if (showBuilderDialog) {
@@ -220,7 +247,7 @@ fun WorkoutsScreen(
                     ExerciseMiniVideoPlayer(
                         exercise = ex,
                         customVideoUri = state.customVideoUris[ex.id],
-                        height = 190.dp
+                        height = 195.dp
                     )
                     Text(
                         text = ex.executionSteps.joinToString("\n• ", prefix = "• "),
@@ -245,7 +272,9 @@ fun WorkoutsScreen(
 @Composable
 private fun WorkoutDayCard(
     day: WorkoutDay,
+    isCustomized: Boolean,
     onStart: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onPreviewExercise: (Exercise) -> Unit
 ) {
@@ -256,18 +285,31 @@ private fun WorkoutDayCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 HyperPillTag(day.dayLabel, palette.primaryGlow)
                 HyperPillTag("~${day.estimatedMinutes} min", palette.secondary)
+                if (isCustomized) {
+                    HyperPillTag("EDITADO", HyperEmerald)
+                }
             }
-            if (onDelete != null) {
-                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "Remover", tint = HyperCrimson)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(
+                    onClick = onEdit,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar Exercícios", tint = palette.primary, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+                if (onDelete != null) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.DeleteOutline, contentDescription = "Remover", tint = HyperCrimson)
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = day.title,
             style = MaterialTheme.typography.titleLarge,
