@@ -220,8 +220,7 @@ fun WorkoutsScreen(
                         height = 190.dp
                     )
                     Text(
-                        text = ex.executionSteps.joinToString("
-• ", prefix = "• "),
+                        text = ex.executionSteps.joinToString("\n• ", prefix = "• "),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )
