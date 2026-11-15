@@ -24,19 +24,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.BodyMeasurementRecord
-import com.ironforge.pro.model.MuscleGroup
+import com.ironforge.pro.model.MuscleReadinessInfo
 import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.*
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
+import com.ironforge.pro.viewmodel.IronForgeViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
 @Composable
 fun DashboardScreen(
     state: IronForgeUiState,
-    onStartWorkoutDay: (WorkoutDay) -> Unit,
-    onStartEmptyWorkout: () -> Unit,
+    onOpenWorkoutBriefing: (WorkoutDay) -> Unit,
     onDismissSummary: () -> Unit,
     onSelectTheme: (AppThemePreset) -> Unit,
     onReopenOnboarding: () -> Unit,
@@ -46,9 +46,10 @@ fun DashboardScreen(
     val palette = LocalIronPalette.current
     var showMeasureDialog by remember { mutableStateOf(false) }
     var showThemeStudioDialog by remember { mutableStateOf(false) }
+    var inspectedReadiness by remember { mutableStateOf<MuscleReadinessInfo?>(null) }
 
     val today = remember { LocalDate.now() }
-    val todayIsoWeekday = today.dayOfWeek.value // 1=Mon .. 7=Sun
+    val todayIsoWeekday = today.dayOfWeek.value
 
     val totalTonnage = state.sessionHistory.sumOf { it.totalVolumeKg }
     val totalPrs = state.sessionHistory.sumOf { it.prCount }
@@ -63,23 +64,12 @@ fun DashboardScreen(
         map
     }
 
+    // Multi-muscle recovery accounting for BOTH primary target AND synergists
     val muscleReadinessList = remember(state.sessionHistory) {
-        val now = System.currentTimeMillis()
-        MuscleGroup.entries.map { muscle ->
-            val lastTrainedSession = state.sessionHistory.firstOrNull { rec ->
-                (rec.muscleSetsBreakdown[muscle.displayName] ?: 0) > 0
-            }
-            val readinessPct = if (lastTrainedSession == null) {
-                100
-            } else {
-                val hoursElapsed = ((now - lastTrainedSession.timestamp) / 3_600_000.0).coerceAtLeast(1.0)
-                ((hoursElapsed / muscle.recoveryHours.toDouble()) * 100.0).roundToInt().coerceIn(32, 100)
-            }
-            muscle to readinessPct
-        }
+        IronForgeViewModel.computeMultiMuscleReadiness(state.sessionHistory)
     }
     val avgReadiness = remember(muscleReadinessList) {
-        muscleReadinessList.map { it.second }.average().roundToInt()
+        muscleReadinessList.map { it.readinessPct }.average().roundToInt()
     }
 
     fun findWorkoutById(id: String?): WorkoutDay? {
@@ -101,11 +91,11 @@ fun DashboardScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark),
+            .background(palette.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Personalized HyperOS Top App Bar + Android 17 Theme Studio Button
+        // Personalized HyperOS Top App Bar + Theme Studio + Pre-Workout Briefing Trigger
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -117,7 +107,7 @@ fun DashboardScreen(
                         Text(
                             text = "Olá, ${state.userProfile.name}",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = TextPrimary,
+                            color = palette.textPrimary,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -140,7 +130,7 @@ fun DashboardScreen(
                     Text(
                         text = "${state.userProfile.goal.label} • ${state.userProfile.weightKg} kg",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
                 }
 
@@ -148,17 +138,18 @@ fun DashboardScreen(
                     FilledIconButton(
                         onClick = { showThemeStudioDialog = true },
                         modifier = Modifier.size(42.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = HyperTileElevated)
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.tileElevated)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Palette,
-                            contentDescription = "Temas Android 17",
+                            contentDescription = "Estúdio de Temas",
                             tint = palette.primary
                         )
                     }
 
+                    // Opens Today's Pre-Workout Briefing Screen with Centered Start Button!
                     Button(
-                        onClick = onStartEmptyWorkout,
+                        onClick = { onOpenWorkoutBriefing(heroWorkout) },
                         colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                         shape = CircleShape,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
@@ -185,7 +176,7 @@ fun DashboardScreen(
         if (state.lastFinishedSession != null) {
             item {
                 val summary = state.lastFinishedSession
-                HyperSquircleCard(accentGlow = true, containerColor = HyperTileElevated) {
+                HyperSquircleCard(accentGlow = true, containerColor = palette.tileElevated) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -208,12 +199,12 @@ fun DashboardScreen(
                                 Text(
                                     text = summary.workoutTitle,
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = TextPrimary
+                                    color = palette.textPrimary
                                 )
                             }
                         }
                         IconButton(onClick = onDismissSummary) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = TextSecondary)
+                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = palette.textSecondary)
                         }
                     }
                     Spacer(modifier = Modifier.height(10.dp))
@@ -229,7 +220,7 @@ fun DashboardScreen(
             }
         }
 
-        // Weekly Calendar Strip Widget (Linked directly to CalendarScreen)
+        // Weekly Calendar Strip Widget
         item {
             HyperSquircleCard(onClick = onOpenCalendar) {
                 Row(
@@ -240,7 +231,7 @@ fun DashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = palette.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sua Semana de Treinos", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                        Text("Sua Semana de Treinos", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Abrir Agenda", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
@@ -273,7 +264,7 @@ fun DashboardScreen(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(
-                                    if (isTodayCell) palette.primary else HyperTileElevated
+                                    if (isTodayCell) palette.primary else palette.tileElevated
                                 )
                                 .padding(vertical = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -281,7 +272,7 @@ fun DashboardScreen(
                             Text(
                                 text = weekLabels[isoDay - 1],
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (isTodayCell) palette.onPrimaryAccent else TextMuted,
+                                color = if (isTodayCell) palette.onPrimaryAccent else palette.textMuted,
                                 fontSize = 9.sp
                             )
                             Spacer(modifier = Modifier.height(3.dp))
@@ -291,7 +282,7 @@ fun DashboardScreen(
                                 color = when {
                                     isTodayCell -> palette.onPrimaryAccent
                                     wDay != null -> palette.primaryGlow
-                                    else -> TextSecondary
+                                    else -> palette.textSecondary
                                 },
                                 fontSize = 10.sp
                             )
@@ -301,7 +292,7 @@ fun DashboardScreen(
             }
         }
 
-        // Today's Scheduled Workout Hero Card
+        // Today's Scheduled Workout Hero Card (Opens Pre-Workout Briefing Screen)
         item {
             val leadExercise = ExerciseRepository.getExerciseById(heroWorkout.exercises.first().exerciseId)
             val badgeText = if (todayScheduledWorkout != null) {
@@ -310,7 +301,10 @@ fun DashboardScreen(
                 "HOJE É DESCANSO • PRÓXIMO TREINO"
             }
 
-            HyperSquircleCard(accentGlow = true) {
+            HyperSquircleCard(
+                accentGlow = true,
+                onClick = { onOpenWorkoutBriefing(heroWorkout) }
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -322,23 +316,23 @@ fun DashboardScreen(
                         Text(
                             text = heroWorkout.title,
                             style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     FilledIconButton(
-                        onClick = { onStartWorkoutDay(heroWorkout) },
+                        onClick = { onOpenWorkoutBriefing(heroWorkout) },
                         modifier = Modifier.size(52.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Iniciar",
+                            contentDescription = "Ver Treino de Hoje",
                             tint = palette.onPrimaryAccent,
                             modifier = Modifier.size(30.dp)
                         )
@@ -356,7 +350,7 @@ fun DashboardScreen(
             }
         }
 
-        // 2x2 Bento Grid (100% Real User Metrics)
+        // 2x2 Bento Grid
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -369,14 +363,14 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                             Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "${(totalTonnage / 1000.0 * 10).roundToInt() / 10.0} t",
                             style = MaterialTheme.typography.displayLarge,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = if (totalTonnage == 0.0) "Pronto para iniciar" else "${totalTonnage.roundToInt()} kg acumulados",
@@ -391,7 +385,7 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("PRONTIDÃO", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Text("PRONTIDÃO", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                             Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = HyperEmerald, modifier = Modifier.size(16.dp))
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -401,9 +395,9 @@ fun DashboardScreen(
                             color = HyperEmerald
                         )
                         Text(
-                            text = "Energia Muscular",
+                            text = "Global + Sinergias",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -417,7 +411,7 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("TREINOS", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Text("TREINOS", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                             Icon(Icons.Default.CalendarToday, contentDescription = null, tint = palette.secondary, modifier = Modifier.size(15.dp))
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -433,7 +427,7 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("RECORDES (PR)", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Text("RECORDES (PR)", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                             Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = palette.tertiary, modifier = Modifier.size(15.dp))
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -442,6 +436,52 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.titleLarge,
                             color = palette.tertiary
                         )
+                    }
+                }
+            }
+        }
+
+        // Multi-Muscle Recovery Readiness Strip (Includes Primary + Secondary Synergists!)
+        item {
+            HyperSquircleCard {
+                SectionHeader(
+                    title = "Descanso Muscular & Sinergistas",
+                    subtitle = "Considera músculos principais e sinergistas • Toque para detalhes"
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(muscleReadinessList) { info ->
+                        val color = when {
+                            info.readinessPct >= 90 -> HyperEmerald
+                            info.readinessPct >= 65 -> palette.secondary
+                            else -> HyperAmber
+                        }
+                        Column(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(palette.tileElevated)
+                                .clickable { inspectedReadiness = info }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "${info.readinessPct}%",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                color = color
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = info.muscle.shortName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = palette.textPrimary
+                            )
+                            Text(
+                                text = if (info.readinessPct >= 98) "Pronto" else info.roleSummary.substringBefore(" "),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = palette.textMuted,
+                                fontSize = 9.sp
+                            )
+                        }
                     }
                 }
             }
@@ -489,45 +529,6 @@ fun DashboardScreen(
             }
         }
 
-        // Muscle Recovery Readiness Strip
-        item {
-            HyperSquircleCard {
-                SectionHeader(
-                    title = "Status de Recuperação Muscular",
-                    subtitle = "100% recuperado até você registrar suas séries"
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(muscleReadinessList) { (muscle, pct) ->
-                        val color = when {
-                            pct >= 90 -> HyperEmerald
-                            pct >= 65 -> palette.secondary
-                            else -> HyperAmber
-                        }
-                        Column(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(HyperTileElevated)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "$pct%",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                color = color
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = muscle.shortName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TextPrimary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         // Volume Bar Chart
         item {
             HyperSquircleCard {
@@ -564,7 +565,7 @@ fun DashboardScreen(
                     Text(
                         text = "Nenhum recorde registrado ainda. Ao marcar suas séries como concluídas durante o treino, seu 1RM estimado aparecerá aqui!",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
                 } else {
                     val topPrs = state.exercisePrs.entries.sortedByDescending { it.value }.take(5)
@@ -590,7 +591,7 @@ fun DashboardScreen(
                                 Text(
                                     text = exName,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = TextPrimary
+                                    color = palette.textPrimary
                                 )
                             }
                             HyperPillTag("${entry.value.roundToInt()} kg", HyperEmerald)
@@ -630,13 +631,13 @@ fun DashboardScreen(
                         Text(
                             text = "Você ainda não concluiu nenhum treino",
                             style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Inicie sua rotina acima ou toque na Agenda para visualizar os treinos da semana.",
+                            text = "Toque em 'Treinar' acima para revisar o treino de hoje e iniciar.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -654,12 +655,12 @@ fun DashboardScreen(
                             Text(
                                 text = session.workoutTitle,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
+                                color = palette.textPrimary
                             )
                             Text(
                                 text = "${session.dateFormatted} • ${session.durationMinutes} min • ${session.totalWorkingSets} séries válidas",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = palette.textSecondary
                             )
                         }
                         HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", palette.secondary)
@@ -669,7 +670,7 @@ fun DashboardScreen(
                         Text(
                             text = "Destaques: ${session.highlightExercises.joinToString("  •  ")}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted
+                            color = palette.textMuted
                         )
                     }
                 }
@@ -677,32 +678,104 @@ fun DashboardScreen(
         }
     }
 
+    // Muscle Readiness & Synergist Detail Modal
+    if (inspectedReadiness != null) {
+        val info = inspectedReadiness!!
+        AlertDialog(
+            onDismissRequest = { inspectedReadiness = null },
+            containerColor = palette.card,
+            shape = RoundedCornerShape(26.dp),
+            title = {
+                Column {
+                    HyperPillTag(info.roleSummary, palette.primaryGlow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("${info.muscle.displayName} • ${info.readinessPct}%", color = palette.textPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = if (info.readinessPct >= 98) {
+                            "Este grupamento está 100% recuperado e pronto para sobrecarga máxima."
+                        } else {
+                            "Fadiga residual ativa (inclui estímulo direto e como músculo sinergista). Tempo estimado para 100%: ~${info.remainingHours}h."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.textSecondary
+                    )
+                    if (info.contributingExercises.isNotEmpty()) {
+                        Text("EXERCÍCIOS QUE ATIVARAM ESTE MÚSCULO:", style = MaterialTheme.typography.labelSmall, color = palette.secondary)
+                        info.contributingExercises.forEach { src ->
+                            Text("• $src", style = MaterialTheme.typography.bodyMedium, color = palette.textPrimary)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { inspectedReadiness = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                    shape = CircleShape
+                ) {
+                    Text("Entendido", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    // Theme Studio Modal (AMOLED Pure Black, Light Mode & Dark Titanium)
     if (showThemeStudioDialog) {
+        var filterStyle by remember { mutableStateOf<ThemeSurfaceStyle?>(null) }
+        val presets = remember(filterStyle) {
+            AppThemePreset.entries.filter { filterStyle == null || it.style == filterStyle }
+        }
+
         AlertDialog(
             onDismissRequest = { showThemeStudioDialog = false },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(28.dp),
             title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Palette, contentDescription = null, tint = palette.primary)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Temas Android 17 & Perfil", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Palette, contentDescription = null, tint = palette.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Estúdio de Temas", color = palette.textPrimary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        item {
+                            FilterChip(
+                                selected = filterStyle == null,
+                                onClick = { filterStyle = null },
+                                shape = CircleShape,
+                                label = { Text("Todos", fontSize = 11.sp) }
+                            )
+                        }
+                        items(ThemeSurfaceStyle.entries) { st ->
+                            FilterChip(
+                                selected = filterStyle == st,
+                                onClick = { filterStyle = if (filterStyle == st) null else st },
+                                shape = CircleShape,
+                                label = { Text(st.label, fontSize = 11.sp) }
+                            )
+                        }
+                    }
                 }
             },
             text = {
                 LazyColumn(
-                    modifier = Modifier.heightIn(max = 420.dp),
+                    modifier = Modifier.heightIn(max = 390.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(AppThemePreset.entries) { preset ->
+                    items(presets) { preset ->
                         val selected = state.themePreset == preset
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onSelectTheme(preset) },
                             shape = RoundedCornerShape(18.dp),
-                            color = if (selected) HyperTileElevated else HyperBgDark,
-                            border = BorderStroke(if (selected) 1.6.dp else 1.dp, if (selected) palette.primary else HyperHairline)
+                            color = if (selected) palette.tileElevated else palette.bg,
+                            border = BorderStroke(if (selected) 1.8.dp else 1.dp, if (selected) palette.primary else palette.hairline)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -712,12 +785,31 @@ fun DashboardScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(preset.title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text(preset.subtitle, color = TextSecondary, fontSize = 11.sp)
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(preset.title, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    }
+                                    Text(preset.subtitle, color = palette.textSecondary, fontSize = 11.sp)
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(preset.primaryHex)))
-                                    Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(preset.secondaryHex)))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    // Background swatch + Primary + Secondary swatches
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(preset.bgHex))
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(preset.primaryHex))
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(preset.secondaryHex))
+                                    )
                                 }
                             }
                         }
@@ -768,16 +860,17 @@ fun DashboardScreen(
 
 @Composable
 private fun MeasureStatBox(label: String, value: String) {
+    val palette = LocalIronPalette.current
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(HyperTileElevated)
+            .background(palette.tileElevated)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = TextMuted)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
         Spacer(modifier = Modifier.height(2.dp))
-        Text(text = value, style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+        Text(text = value, style = MaterialTheme.typography.labelLarge, color = palette.textPrimary)
     }
 }
 
@@ -800,9 +893,9 @@ private fun BodyMeasurementDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HyperCardDark,
+        containerColor = palette.card,
         shape = RoundedCornerShape(26.dp),
-        title = { Text("Atualizar Suas Medidas", color = TextPrimary, fontWeight = FontWeight.Bold) },
+        title = { Text("Atualizar Suas Medidas", color = palette.textPrimary, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -841,7 +934,7 @@ private fun BodyMeasurementDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = TextSecondary)
+                Text("Cancelar", color = palette.textSecondary)
             }
         }
     )

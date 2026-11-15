@@ -46,6 +46,15 @@ enum class MuscleGroup(
     CORE("Abdômen & Core", "Core", 6, 12, 18, 24)
 }
 
+data class MuscleReadinessInfo(
+    val muscle: MuscleGroup,
+    val readinessPct: Int,
+    val roleSummary: String,
+    val remainingHours: Int,
+    val recentFatigueUnits: Double,
+    val contributingExercises: List<String>
+)
+
 enum class EquipmentType(val label: String) {
     BARBELL("Barra Olímpica"),
     DUMBBELL("Halteres"),
@@ -114,7 +123,35 @@ data class Exercise(
     val executionSteps: List<String>,
     val biomechanicsTips: List<String>,
     val commonMistakes: List<String>
-)
+) {
+    /**
+     * Resolves all secondary MuscleGroups recruited by this exercise (synergists + biomechanical stabilizers)
+     * so recovery & fatigue tracking reflects multi-joint reality.
+     */
+    fun secondaryMuscleGroups(): List<MuscleGroup> {
+        val result = LinkedHashSet<MuscleGroup>()
+        synergists.forEach { raw ->
+            val s = raw.lowercase()
+            when {
+                s.contains("peitoral") -> result.add(MuscleGroup.CHEST)
+                s.contains("dors") || s.contains("latíssimo") || s.contains("romboide") ||
+                    s.contains("trapézio") || s.contains("eretor") -> result.add(MuscleGroup.BACK)
+                s.contains("deltoide") || s.contains("supraespinal") ||
+                    s.contains("infraespinal") || s.contains("redondo") -> result.add(MuscleGroup.SHOULDERS)
+                s.contains("bíceps") || s.contains("braquial") ||
+                    s.contains("braquiorradial") || s.contains("supinador") -> result.add(MuscleGroup.BICEPS)
+                s.contains("tríceps") || s.contains("ancôneo") -> result.add(MuscleGroup.TRICEPS)
+                s.contains("quadríceps") -> result.add(MuscleGroup.QUADS)
+                s.contains("isquiotibiais") || s.contains("posterior") -> result.add(MuscleGroup.HAMSTRINGS)
+                s.contains("glúteo") -> result.add(MuscleGroup.GLUTES)
+                s.contains("gastrocnêmio") || s.contains("sóleo") || s.contains("panturrilha") -> result.add(MuscleGroup.CALVES)
+                s.contains("core") || s.contains("abdominal") || s.contains("oblíquo") || s.contains("serrátil") -> result.add(MuscleGroup.CORE)
+            }
+        }
+        result.remove(muscleGroup)
+        return result.toList()
+    }
+}
 
 data class PlannedExercise(
     val exerciseId: String,
@@ -173,6 +210,8 @@ data class WorkoutSessionRecord(
     val totalWorkingSets: Int,
     val prCount: Int,
     val muscleSetsBreakdown: Map<String, Int>,
+    val muscleFatigueLoad: Map<String, Double> = emptyMap(),
+    val muscleStimulusSources: Map<String, List<String>> = emptyMap(),
     val highlightExercises: List<String>
 )
 

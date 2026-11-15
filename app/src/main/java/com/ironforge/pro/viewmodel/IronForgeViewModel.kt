@@ -23,12 +23,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 data class IronForgeUiState(
     val isOnboardingCompleted: Boolean = false,
     val userProfile: UserProfile = UserProfile(),
-    val themePreset: AppThemePreset = AppThemePreset.HYPER_ORANGE,
+    val themePreset: AppThemePreset = AppThemePreset.AMOLED_SOLAR_ORANGE,
 
     // Key: 1 (Mon) .. 7 (Sun) -> WorkoutDay.id or null (Rest Day)
     val weeklySchedule: Map<Int, String?> = emptyMap(),
@@ -39,6 +40,9 @@ data class IronForgeUiState(
     val customVideoUris: Map<String, String> = emptyMap(),
     val bodyMeasurements: List<BodyMeasurementRecord> = emptyList(),
 
+    // Pre-Workout Briefing Screen (shown when user taps "Treinar")
+    val briefingWorkoutDay: WorkoutDay? = null,
+
     // Active Guided Workout Session
     val isWorkoutActive: Boolean = false,
     val activeWorkoutTitle: String = "",
@@ -48,6 +52,10 @@ data class IronForgeUiState(
     val workoutElapsedSeconds: Int = 0,
     val lastFinishedSession: WorkoutSessionRecord? = null,
     val expandedVideoExerciseIds: Set<String> = emptySet(),
+
+    // Next-Exercise Transition Banner Notice
+    val transitionCompletedExerciseName: String? = null,
+    val transitionNextExercise: Exercise? = null,
 
     // Smart Rest Timer (HyperOS Dynamic Island)
     val restTotalSeconds: Int = 90,
@@ -143,14 +151,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(weeklySchedule = updated) }
     }
 
-    fun applySplitToWeeklyCalendar(splitId: String) {
-        val schedule = buildDefaultWeeklySchedule(splitId, null)
-        storage.saveWeeklySchedule(schedule)
-        val updatedProfile = _uiState.value.userProfile.copy(selectedSplitId = splitId)
-        storage.saveUserProfile(updatedProfile)
-        _uiState.update { it.copy(weeklySchedule = schedule, userProfile = updatedProfile) }
-    }
-
     fun setThemePreset(preset: AppThemePreset) {
         storage.saveThemePreset(preset)
         _uiState.update { it.copy(themePreset = preset) }
@@ -175,12 +175,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             id = "onboard_${UUID.randomUUID()}",
             dateFormatted = dateFmt,
             weightKg = profile.weightKg,
-            bodyFatPct = profile.bodyFatPct,
-            chestCm = 0.0,
-            armCm = 0.0,
-            waistCm = 0.0,
-            thighCm = 0.0,
-            calfCm = 0.0
+            bodyFatPct = profile.bodyFatPct
         )
         val updatedMeasures = listOf(initialMeasure)
         storage.saveBodyMeasurements(updatedMeasures)
@@ -211,7 +206,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             storage.saveCustomWorkouts(updatedCustomWorkouts)
         }
 
-        // Auto-populate the entire weekly calendar based on user's chosen split or custom workout!
         val autoSchedule = buildDefaultWeeklySchedule(profile.selectedSplitId, createdCustomDay)
         storage.saveWeeklySchedule(autoSchedule)
 
@@ -239,6 +233,30 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // ==================== PRE-WORKOUT BRIEFING SCREEN ====================
+    fun openWorkoutBriefing(day: WorkoutDay) {
+        _uiState.update { it.copy(briefingWorkoutDay = day) }
+    }
+
+    fun closeWorkoutBriefing() {
+        _uiState.update { it.copy(briefingWorkoutDay = null) }
+    }
+
+    fun confirmStartFromBriefing() {
+        val day = _uiState.value.briefingWorkoutDay ?: return
+        _uiState.update { it.copy(briefingWorkoutDay = null) }
+        startWorkoutFromDay(day)
+    }
+
+    fun estimatePlannedWorkoutTonnage(day: WorkoutDay): Double {
+        return day.exercises.sumOf { planned ->
+            val ex = ExerciseRepository.getExerciseById(planned.exerciseId)
+            val w = if (ex != null) estimateStartingWeightForUser(ex) else 20.0
+            w * 10 * planned.targetSets
+        }
+    }
+
+    // ==================== VIDEOS & WORKOUTS ====================
     fun attachCustomVideoUri(exerciseId: String, uriString: String) {
         val updated = _uiState.value.customVideoUris.toMutableMap()
         updated[exerciseId] = uriString
@@ -246,21 +264,17 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(customVideoUris = updated) }
     }
 
-    fun toggleInlineVideoInWorkout(exerciseId: String) {
-        _uiState.update { s ->
-            val current = s.expandedVideoExerciseIds
-            val next = if (current.contains(exerciseId)) current - exerciseId else current + exerciseId
-            s.copy(expandedVideoExerciseIds = next)
-        }
-    }
-
-    // ==================== GUIDED WORKOUT NAVIGATION ====================
     fun selectActiveExercise(index: Int) {
         _uiState.update { s ->
             val safeIdx = index.coerceIn(0, (s.activeExercises.size - 1).coerceAtLeast(0))
             val ex = s.activeExercises.getOrNull(safeIdx)
             val firstIncomplete = ex?.sets?.indexOfFirst { !it.completed }?.takeIf { it >= 0 } ?: 0
-            s.copy(activeExerciseIndex = safeIdx, focusedSetIndex = firstIncomplete)
+            s.copy(
+                activeExerciseIndex = safeIdx,
+                focusedSetIndex = firstIncomplete,
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null
+            )
         }
     }
 
@@ -273,7 +287,16 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun estimateStartingWeightForUser(exercise: Exercise): Double {
+    fun dismissTransitionBanner() {
+        _uiState.update {
+            it.copy(
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null
+            )
+        }
+    }
+
+    fun estimateStartingWeightForUser(exercise: Exercise): Double {
         val state = _uiState.value
         val existingPr = state.exercisePrs[exercise.id]
         if (existingPr != null && existingPr > 0.0) {
@@ -322,6 +345,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
         _uiState.update {
             it.copy(
+                briefingWorkoutDay = null,
                 isWorkoutActive = true,
                 activeWorkoutTitle = day.title,
                 activeExercises = activeList,
@@ -329,35 +353,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 focusedSetIndex = 0,
                 workoutElapsedSeconds = 0,
                 lastFinishedSession = null,
-                expandedVideoExerciseIds = emptySet()
-            )
-        }
-        startWorkoutClock()
-    }
-
-    fun startEmptyWorkout(title: String = "Treino Livre Personalizado") {
-        val defaultEx = ExerciseRepository.allExercises.take(3).map { ex ->
-            val startW = estimateStartingWeightForUser(ex)
-            ActiveExerciseSession(
-                exercise = ex,
-                targetReps = ex.recommendedReps,
-                restSeconds = ex.restSeconds,
-                sets = listOf(
-                    ActiveSetLog(1, SetType.WARMUP, (startW * 0.6).roundToInt().toDouble(), 12, 6.0, false),
-                    ActiveSetLog(2, SetType.WORKING, startW, 10, 8.5, false),
-                    ActiveSetLog(3, SetType.WORKING, startW, 10, 9.0, false)
-                )
-            )
-        }
-        _uiState.update {
-            it.copy(
-                isWorkoutActive = true,
-                activeWorkoutTitle = title,
-                activeExercises = defaultEx,
-                activeExerciseIndex = 0,
-                focusedSetIndex = 0,
-                workoutElapsedSeconds = 0,
-                lastFinishedSession = null,
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null,
                 expandedVideoExerciseIds = emptySet()
             )
         }
@@ -389,7 +386,9 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             it.copy(
                 activeExercises = newList,
                 activeExerciseIndex = newList.lastIndex,
-                focusedSetIndex = 0
+                focusedSetIndex = 0,
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null
             )
         }
     }
@@ -470,6 +469,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             val currentPrs = state.exercisePrs
             var nextExIdx = state.activeExerciseIndex
             var nextSetIdx = state.focusedSetIndex
+            var completedExName: String? = state.transitionCompletedExerciseName
+            var upcomingEx: Exercise? = state.transitionNextExercise
 
             val updated = state.activeExercises.mapIndexed { idx, item ->
                 if (idx != exerciseIndex) item
@@ -488,13 +489,20 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                             set.copy(completed = nowCompleted, isPr = isNewPr)
                         }
                     }
+
                     if (idx == exerciseIndex) {
                         val nextIncompleteInEx = newSets.indexOfFirst { !it.completed }
                         if (nextIncompleteInEx >= 0) {
                             nextSetIdx = nextIncompleteInEx
+                            completedExName = null
+                            upcomingEx = null
                         } else if (exerciseIndex + 1 < state.activeExercises.size) {
+                            // All sets of current exercise completed! Trigger transition notice and focus next exercise!
+                            val nextSessionEx = state.activeExercises[exerciseIndex + 1]
+                            completedExName = item.exercise.name
+                            upcomingEx = nextSessionEx.exercise
                             nextExIdx = exerciseIndex + 1
-                            nextSetIdx = 0
+                            nextSetIdx = nextSessionEx.sets.indexOfFirst { !it.completed }.takeIf { it >= 0 } ?: 0
                         }
                     }
                     item.copy(sets = newSets)
@@ -503,7 +511,9 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             state.copy(
                 activeExercises = updated,
                 activeExerciseIndex = nextExIdx,
-                focusedSetIndex = nextSetIdx
+                focusedSetIndex = nextSetIdx,
+                transitionCompletedExerciseName = completedExName,
+                transitionNextExercise = upcomingEx
             )
         }
 
@@ -522,15 +532,20 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         var totalWorkingSets = 0
         var prCount = 0
         val muscleBreakdown = mutableMapOf<String, Int>()
+        val fatigueLoadMap = mutableMapOf<String, Double>()
+        val stimulusSourcesMap = mutableMapOf<String, MutableList<String>>()
         val highlights = mutableListOf<String>()
 
         state.activeExercises.forEach { sessionEx ->
             var bestSetText: String? = null
             var bestSetScore = 0.0
+            var workingSetsInExercise = 0
+
             sessionEx.sets.filter { it.completed }.forEach { set ->
                 totalVolume += set.weightKg * set.reps
                 if (set.setType != SetType.WARMUP) {
                     totalWorkingSets += 1
+                    workingSetsInExercise += 1
                     val mName = sessionEx.exercise.muscleGroup.displayName
                     muscleBreakdown[mName] = (muscleBreakdown[mName] ?: 0) + 1
 
@@ -546,6 +561,23 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
             }
+
+            if (workingSetsInExercise > 0) {
+                // 1. Primary Muscle Fatigue (1.0x per working set)
+                val primaryName = sessionEx.exercise.muscleGroup.displayName
+                fatigueLoadMap[primaryName] = (fatigueLoadMap[primaryName] ?: 0.0) + (workingSetsInExercise * 1.0)
+                stimulusSourcesMap.getOrPut(primaryName) { mutableListOf() }
+                    .add("Alvo principal: ${sessionEx.exercise.name} (${workingSetsInExercise}s)")
+
+                // 2. Secondary / Synergist Muscles Fatigue (0.55x per working set)
+                sessionEx.exercise.secondaryMuscleGroups().forEach { secMuscle ->
+                    val secName = secMuscle.displayName
+                    fatigueLoadMap[secName] = (fatigueLoadMap[secName] ?: 0.0) + (workingSetsInExercise * 0.55)
+                    stimulusSourcesMap.getOrPut(secName) { mutableListOf() }
+                        .add("Sinergista: ${sessionEx.exercise.name} (${workingSetsInExercise}s)")
+                }
+            }
+
             if (bestSetText != null && highlights.size < 3) {
                 highlights.add(bestSetText!!)
             }
@@ -567,6 +599,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             totalWorkingSets = totalWorkingSets,
             prCount = prCount,
             muscleSetsBreakdown = muscleBreakdown,
+            muscleFatigueLoad = fatigueLoadMap,
+            muscleStimulusSources = stimulusSourcesMap.mapValues { it.value.toList() },
             highlightExercises = if (highlights.isEmpty()) listOf("Sessão registrada") else highlights
         )
 
@@ -580,6 +614,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 activeExercises = emptyList(),
                 isRestTimerRunning = false,
                 restRemainingSeconds = 0,
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null,
                 sessionHistory = newHistory,
                 exercisePrs = updatedPrs,
                 lastFinishedSession = record
@@ -595,7 +631,9 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 isWorkoutActive = false,
                 activeExercises = emptyList(),
                 isRestTimerRunning = false,
-                restRemainingSeconds = 0
+                restRemainingSeconds = 0,
+                transitionCompletedExerciseName = null,
+                transitionNextExercise = null
             )
         }
     }
@@ -779,16 +817,79 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        /**
+         * Physiological Multi-Muscle Recovery Engine:
+         * Considers BOTH direct primary sets (1.0x fatigue) AND synergist/secondary activation (0.55x fatigue)
+         * across all workouts within the last 96 hours!
+         */
+        fun computeMultiMuscleReadiness(sessions: List<WorkoutSessionRecord>): List<MuscleReadinessInfo> {
+            val now = System.currentTimeMillis()
+            val windowMs = 96 * 3_600_000L
+            val recentSessions = sessions.filter { (now - it.timestamp) <= windowMs }
+
+            return MuscleGroup.entries.map { muscle ->
+                var maxResidualFatigue = 0.0
+                var totalRecentLoad = 0.0
+                var maxRemainingHours = 0
+                val sources = LinkedHashSet<String>()
+                var wasPrimary = false
+                var wasSynergist = false
+
+                recentSessions.forEach { rec ->
+                    val primarySets = rec.muscleSetsBreakdown[muscle.displayName] ?: 0
+                    val fatigueUnits = rec.muscleFatigueLoad[muscle.displayName]
+                        ?: primarySets.toDouble()
+
+                    if (fatigueUnits > 0.0) {
+                        totalRecentLoad += fatigueUnits
+                        if (primarySets > 0) wasPrimary = true
+                        if (fatigueUnits > primarySets.toDouble()) wasSynergist = true
+
+                        rec.muscleStimulusSources[muscle.displayName]?.forEach { sources.add(it) }
+
+                        val hoursElapsed = ((now - rec.timestamp) / 3_600_000.0).coerceAtLeast(0.1)
+                        // Scale recovery window by fatigue load (light synergist ~0.70x window, heavy direct ~1.25x window)
+                        val loadScale = (0.65 + 0.08 * fatigueUnits).coerceIn(0.65, 1.35)
+                        val requiredHours = muscle.recoveryHours * loadScale
+                        val residual = (1.0 - (hoursElapsed / requiredHours)).coerceIn(0.0, 1.0)
+
+                        if (residual > maxResidualFatigue) {
+                            maxResidualFatigue = residual
+                            maxRemainingHours = ceil((requiredHours - hoursElapsed).coerceAtLeast(0.0)).toInt()
+                        }
+                    }
+                }
+
+                val readinessPct = ((1.0 - maxResidualFatigue) * 100.0).roundToInt().coerceIn(25, 100)
+                val roleLabel = when {
+                    readinessPct >= 98 -> "Pronto (100%)"
+                    wasPrimary && wasSynergist -> "Alvo + Sinergista"
+                    wasPrimary -> "Alvo Direto"
+                    wasSynergist -> "Sinergista Ativo"
+                    else -> "Pronto (100%)"
+                }
+
+                MuscleReadinessInfo(
+                    muscle = muscle,
+                    readinessPct = readinessPct,
+                    roleSummary = roleLabel,
+                    remainingHours = maxRemainingHours,
+                    recentFatigueUnits = (totalRecentLoad * 10).roundToInt() / 10.0,
+                    contributingExercises = sources.toList()
+                )
+            }
+        }
+
         fun buildDefaultWeeklySchedule(splitId: String, customDay: WorkoutDay?): Map<Int, String?> {
             if (customDay != null) {
                 return mapOf(
-                    1 to customDay.id, // Segunda
-                    2 to null,         // Terça (Descanso)
-                    3 to customDay.id, // Quarta
-                    4 to null,         // Quinta (Descanso)
-                    5 to customDay.id, // Sexta
-                    6 to null,         // Sábado
-                    7 to null          // Domingo
+                    1 to customDay.id,
+                    2 to null,
+                    3 to customDay.id,
+                    4 to null,
+                    5 to customDay.id,
+                    6 to null,
+                    7 to null
                 )
             }
             val split = ExerciseRepository.defaultSplits.find { it.id == splitId }
@@ -796,49 +897,49 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             val d = split.days
             return when (split.id) {
                 "split_ppl_pro" -> mapOf(
-                    1 to d.getOrNull(0)?.id, // Seg: Push A
-                    2 to d.getOrNull(1)?.id, // Ter: Pull A
-                    3 to d.getOrNull(2)?.id, // Qua: Legs A
-                    4 to d.getOrNull(0)?.id, // Qui: Push
-                    5 to d.getOrNull(1)?.id, // Sex: Pull
-                    6 to d.getOrNull(3)?.id, // Sáb: Legs B
-                    7 to null                // Dom: Descanso
+                    1 to d.getOrNull(0)?.id,
+                    2 to d.getOrNull(1)?.id,
+                    3 to d.getOrNull(2)?.id,
+                    4 to d.getOrNull(0)?.id,
+                    5 to d.getOrNull(1)?.id,
+                    6 to d.getOrNull(3)?.id,
+                    7 to null
                 )
                 "split_upper_lower" -> mapOf(
-                    1 to d.getOrNull(0)?.id, // Seg: Upper 1
-                    2 to d.getOrNull(1)?.id, // Ter: Lower 1
-                    3 to null,               // Qua: Descanso
-                    4 to d.getOrNull(2)?.id, // Qui: Upper 2
-                    5 to d.getOrNull(3)?.id, // Sex: Lower 2
-                    6 to null,               // Sáb: Descanso
-                    7 to null                // Dom: Descanso
+                    1 to d.getOrNull(0)?.id,
+                    2 to d.getOrNull(1)?.id,
+                    3 to null,
+                    4 to d.getOrNull(2)?.id,
+                    5 to d.getOrNull(3)?.id,
+                    6 to null,
+                    7 to null
                 )
                 "split_abcde_classic" -> mapOf(
-                    1 to d.getOrNull(0)?.id, // Seg: Treino A
-                    2 to d.getOrNull(1)?.id, // Ter: Treino B
-                    3 to d.getOrNull(2)?.id, // Qua: Treino C
-                    4 to d.getOrNull(3)?.id, // Qui: Treino D
-                    5 to d.getOrNull(4)?.id, // Sex: Treino E
-                    6 to null,               // Sáb: Descanso
-                    7 to null                // Dom: Descanso
+                    1 to d.getOrNull(0)?.id,
+                    2 to d.getOrNull(1)?.id,
+                    3 to d.getOrNull(2)?.id,
+                    4 to d.getOrNull(3)?.id,
+                    5 to d.getOrNull(4)?.id,
+                    6 to null,
+                    7 to null
                 )
                 "split_arnold" -> mapOf(
-                    1 to d.getOrNull(0)?.id, // Seg: Peito & Costas
-                    2 to d.getOrNull(1)?.id, // Ter: Ombros & Braços
-                    3 to d.getOrNull(2)?.id, // Qua: Pernas & Core
-                    4 to d.getOrNull(0)?.id, // Qui: Peito & Costas
-                    5 to d.getOrNull(1)?.id, // Sex: Ombros & Braços
-                    6 to d.getOrNull(2)?.id, // Sáb: Pernas & Core
-                    7 to null                // Dom: Descanso
+                    1 to d.getOrNull(0)?.id,
+                    2 to d.getOrNull(1)?.id,
+                    3 to d.getOrNull(2)?.id,
+                    4 to d.getOrNull(0)?.id,
+                    5 to d.getOrNull(1)?.id,
+                    6 to d.getOrNull(2)?.id,
+                    7 to null
                 )
                 else -> mapOf(
-                    1 to d.getOrNull(0)?.id, // Seg: Full Body A
-                    2 to null,               // Ter: Descanso
-                    3 to d.getOrNull(1)?.id, // Qua: Full Body B
-                    4 to null,               // Qui: Descanso
-                    5 to d.getOrNull(0)?.id, // Sex: Full Body A
-                    6 to null,               // Sáb: Descanso
-                    7 to null                // Dom: Descanso
+                    1 to d.getOrNull(0)?.id,
+                    2 to null,
+                    3 to d.getOrNull(1)?.id,
+                    4 to null,
+                    5 to d.getOrNull(0)?.id,
+                    6 to null,
+                    7 to null
                 )
             }
         }

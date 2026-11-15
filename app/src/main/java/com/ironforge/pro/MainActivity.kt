@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,17 +36,35 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(HyperBgDark.toArgb()),
-            navigationBarStyle = SystemBarStyle.dark(HyperBgDark.toArgb())
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK)
         )
         setContent {
-            IronForgeAppRoot()
+            IronForgeAppRoot(
+                onUpdateSystemBars = { isLight, bgColor ->
+                    val argb = bgColor.toArgb()
+                    if (isLight) {
+                        enableEdgeToEdge(
+                            statusBarStyle = SystemBarStyle.light(argb, argb),
+                            navigationBarStyle = SystemBarStyle.light(argb, argb)
+                        )
+                    } else {
+                        enableEdgeToEdge(
+                            statusBarStyle = SystemBarStyle.dark(argb),
+                            navigationBarStyle = SystemBarStyle.dark(argb)
+                        )
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
-fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
+fun IronForgeAppRoot(
+    viewModel: IronForgeViewModel = viewModel(),
+    onUpdateSystemBars: (Boolean, Color) -> Unit = { _, _ -> }
+) {
     val state by viewModel.uiState.collectAsState()
     var currentTabIndex by remember { mutableIntStateOf(0) }
 
@@ -54,6 +73,11 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
     }
 
     IronForgeTheme(preset = state.themePreset) {
+        val palette = LocalIronPalette.current
+        LaunchedEffect(palette.isLight, palette.bg) {
+            onUpdateSystemBars(palette.isLight, palette.bg)
+        }
+
         if (!state.isOnboardingCompleted) {
             OnboardingScreen(
                 initialProfile = state.userProfile,
@@ -65,7 +89,7 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
             )
         } else if (state.isWorkoutActive) {
             Scaffold(
-                containerColor = HyperBgDark
+                containerColor = palette.bg
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -75,9 +99,17 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
                     ActiveWorkoutScreen(state = state, viewModel = viewModel)
                 }
             }
+        } else if (state.briefingWorkoutDay != null) {
+            WorkoutBriefingScreen(
+                day = state.briefingWorkoutDay!!,
+                state = state,
+                viewModel = viewModel,
+                onBack = { viewModel.closeWorkoutBriefing() },
+                onStartFocusedWorkout = { viewModel.confirmStartFromBriefing() }
+            )
         } else {
             Scaffold(
-                containerColor = HyperBgDark
+                containerColor = palette.bg
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -87,8 +119,7 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
                     when (MainNavTab.entries[currentTabIndex]) {
                         MainNavTab.DASHBOARD -> DashboardScreen(
                             state = state,
-                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
-                            onStartEmptyWorkout = { viewModel.startEmptyWorkout() },
+                            onOpenWorkoutBriefing = { viewModel.openWorkoutBriefing(it) },
                             onDismissSummary = { viewModel.dismissSummaryBanner() },
                             onSelectTheme = { viewModel.setThemePreset(it) },
                             onReopenOnboarding = { viewModel.reopenOnboarding() },
@@ -100,11 +131,11 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
                         MainNavTab.CALENDAR -> CalendarScreen(
                             state = state,
                             viewModel = viewModel,
-                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) }
+                            onStartWorkoutDay = { viewModel.openWorkoutBriefing(it) }
                         )
                         MainNavTab.WORKOUTS -> WorkoutsScreen(
                             state = state,
-                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
+                            onStartWorkoutDay = { viewModel.openWorkoutBriefing(it) },
                             onSaveCustomWorkout = { title, focus, ids ->
                                 viewModel.saveCustomWorkoutDay(title, focus, ids)
                             },

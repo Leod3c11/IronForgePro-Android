@@ -51,6 +51,8 @@ fun OnboardingScreen(
     var selectedExp by remember { mutableStateOf(initialProfile.experience) }
     var selectedGoal by remember { mutableStateOf(initialProfile.goal) }
 
+    var themeStyleFilter by remember { mutableStateOf<ThemeSurfaceStyle?>(null) }
+
     var workoutMode by remember { mutableIntStateOf(0) }
     var selectedSplitId by remember { mutableStateOf(ExerciseRepository.defaultSplits.first().id) }
     var customWorkoutName by remember { mutableStateOf("Meu Treino A — Personalizado") }
@@ -69,7 +71,7 @@ fun OnboardingScreen(
 
     val stepTitles = listOf(
         "1. Cadastro & Biometria",
-        "2. Temas Android 17",
+        "2. Temas AMOLED & Claros",
         "3. Monte seu Treino",
         "4. Calibração Final"
     )
@@ -77,7 +79,7 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark)
+            .background(palette.bg)
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(16.dp)
@@ -107,7 +109,7 @@ fun OnboardingScreen(
                     Text(
                         text = stepTitles[step],
                         style = MaterialTheme.typography.titleLarge,
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
                 }
             }
@@ -128,7 +130,7 @@ fun OnboardingScreen(
                         .height(5.dp)
                         .clip(CircleShape)
                         .background(
-                            if (i <= step) palette.primary else HyperTileElevated
+                            if (i <= step) palette.primary else palette.tileElevated
                         )
                 )
             }
@@ -150,8 +152,8 @@ fun OnboardingScreen(
                         ) {
                             item {
                                 HyperSquircleCard(accentGlow = true) {
-                                    Text("Identificação do Atleta", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                                    Text("Esses dados calibram suas calorias, macros e cargas iniciais.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                                    Text("Identificação do Atleta", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
+                                    Text("Esses dados calibram suas calorias, macros e cargas iniciais.", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                                     Spacer(modifier = Modifier.height(10.dp))
 
                                     OutlinedTextField(
@@ -164,7 +166,7 @@ fun OnboardingScreen(
                                     )
 
                                     Spacer(modifier = Modifier.height(10.dp))
-                                    Text("Sexo Biológico:", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                    Text("Sexo Biológico:", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         FilterChip(
                                             selected = isMale,
@@ -184,7 +186,7 @@ fun OnboardingScreen(
 
                             item {
                                 HyperSquircleCard {
-                                    Text("Medidas Corporais Atuais", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                    Text("Medidas Corporais Atuais", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                     Spacer(modifier = Modifier.height(10.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         OutlinedTextField(
@@ -224,7 +226,7 @@ fun OnboardingScreen(
 
                             item {
                                 HyperSquircleCard {
-                                    Text("Nível de Experiência", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                    Text("Nível de Experiência", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     ExperienceLevel.entries.forEach { lvl ->
                                         val selected = selectedExp == lvl
@@ -233,7 +235,7 @@ fun OnboardingScreen(
                                                 .fillMaxWidth()
                                                 .padding(vertical = 4.dp)
                                                 .clip(RoundedCornerShape(14.dp))
-                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else HyperTileElevated)
+                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else palette.tileElevated)
                                                 .clickable { selectedExp = lvl }
                                                 .padding(12.dp),
                                             verticalAlignment = Alignment.CenterVertically
@@ -241,8 +243,8 @@ fun OnboardingScreen(
                                             RadioButton(selected = selected, onClick = { selectedExp = lvl })
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Column {
-                                                Text(lvl.label, color = TextPrimary, fontWeight = FontWeight.Bold)
-                                                Text(lvl.subtitle, color = TextSecondary, fontSize = 12.sp)
+                                                Text(lvl.label, color = palette.textPrimary, fontWeight = FontWeight.Bold)
+                                                Text(lvl.subtitle, color = palette.textSecondary, fontSize = 12.sp)
                                             }
                                         }
                                     }
@@ -251,7 +253,7 @@ fun OnboardingScreen(
 
                             item {
                                 HyperSquircleCard {
-                                    Text("Objetivo Principal", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                    Text("Objetivo Principal", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     FitnessGoal.entries.forEach { goal ->
                                         val selected = selectedGoal == goal
@@ -260,14 +262,14 @@ fun OnboardingScreen(
                                                 .fillMaxWidth()
                                                 .padding(vertical = 4.dp)
                                                 .clip(RoundedCornerShape(14.dp))
-                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else HyperTileElevated)
+                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else palette.tileElevated)
                                                 .clickable { selectedGoal = goal }
                                                 .padding(12.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             RadioButton(selected = selected, onClick = { selectedGoal = goal })
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text(goal.label, color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                                            Text(goal.label, color = palette.textPrimary, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                 }
@@ -276,8 +278,12 @@ fun OnboardingScreen(
                     }
 
                     1 -> {
+                        val filteredThemes = remember(themeStyleFilter) {
+                            AppThemePreset.entries.filter { themeStyleFilter == null || it.style == themeStyleFilter }
+                        }
+
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
                             item {
@@ -285,32 +291,47 @@ fun OnboardingScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Palette, contentDescription = null, tint = palette.primary)
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Motor de Temas Android 17", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+                                        Text("Temas AMOLED, Claros & Android 17", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Toque em qualquer paleta abaixo para aplicar as cores em tempo real em todo o aplicativo.",
+                                        text = "Escolha entre Preto Puro AMOLED (#000000), Tons Claros suaves ou Dark Titanium com pré-visualização instantânea.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        item {
+                                            FilterChip(
+                                                selected = themeStyleFilter == null,
+                                                onClick = { themeStyleFilter = null },
+                                                shape = CircleShape,
+                                                label = { Text("Todos (10)") }
+                                            )
+                                        }
+                                        items(ThemeSurfaceStyle.entries) { st ->
+                                            FilterChip(
+                                                selected = themeStyleFilter == st,
+                                                onClick = { themeStyleFilter = if (themeStyleFilter == st) null else st },
+                                                shape = CircleShape,
+                                                label = { Text(st.label) }
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
-                            items(AppThemePreset.entries) { preset ->
+                            items(filteredThemes) { preset ->
                                 val isSelected = currentTheme == preset
-                                val swatchPrimary = Color(preset.primaryHex)
-                                val swatchSecondary = Color(preset.secondaryHex)
-                                val swatchTertiary = Color(preset.tertiaryHex)
-
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { onPreviewTheme(preset) },
                                     shape = RoundedCornerShape(22.dp),
-                                    color = if (isSelected) HyperTileElevated else HyperCardDark,
+                                    color = if (isSelected) palette.tileElevated else palette.card,
                                     border = BorderStroke(
                                         width = if (isSelected) 2.dp else 1.dp,
-                                        color = if (isSelected) palette.primary else HyperHairline
+                                        color = if (isSelected) palette.primary else palette.hairline
                                     )
                                 ) {
                                     Row(
@@ -325,24 +346,22 @@ fun OnboardingScreen(
                                                 Text(
                                                     text = preset.title,
                                                     style = MaterialTheme.typography.titleMedium,
-                                                    color = TextPrimary
+                                                    color = palette.textPrimary
                                                 )
-                                                if (preset.isDynamicWallpaper) {
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    HyperPillTag("WALLPAPER", palette.secondary)
-                                                }
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                HyperPillTag(preset.style.label, palette.secondary)
                                             }
                                             Text(
                                                 text = preset.subtitle,
                                                 style = MaterialTheme.typography.bodyMedium,
-                                                color = TextSecondary
+                                                color = palette.textSecondary
                                             )
                                         }
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(swatchPrimary))
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(swatchSecondary))
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(swatchTertiary))
+                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.bgHex)))
+                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.primaryHex)))
+                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.secondaryHex)))
                                             if (isSelected) {
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
@@ -369,8 +388,8 @@ fun OnboardingScreen(
                         ) {
                             item {
                                 HyperSquircleCard(accentGlow = true) {
-                                    Text("Escolha ou Monte seu Treino", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
-                                    Text("Catálogo completo com ${ExerciseRepository.allExercises.size} exercícios disponíveis", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                                    Text("Escolha ou Monte seu Treino", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
+                                    Text("Catálogo completo com ${ExerciseRepository.allExercises.size} exercícios disponíveis", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         FilterChip(
@@ -394,7 +413,7 @@ fun OnboardingScreen(
                                     val isSel = selectedSplitId == split.id
                                     HyperSquircleCard(
                                         accentGlow = isSel,
-                                        containerColor = if (isSel) HyperTileElevated else HyperCardDark,
+                                        containerColor = if (isSel) palette.tileElevated else palette.card,
                                         onClick = { selectedSplitId = split.id }
                                     ) {
                                         Row(
@@ -408,8 +427,8 @@ fun OnboardingScreen(
                                             }
                                         }
                                         Spacer(modifier = Modifier.height(6.dp))
-                                        Text(split.name, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                                        Text(split.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                                        Text(split.name, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
+                                        Text(split.description, style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                                     }
                                 }
                             } else {
@@ -458,7 +477,7 @@ fun OnboardingScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(16.dp))
-                                            .background(if (checked) palette.primary.copy(alpha = 0.14f) else HyperCardDark)
+                                            .background(if (checked) palette.primary.copy(alpha = 0.14f) else palette.card)
                                             .clickable {
                                                 if (checked) customExerciseIds.remove(ex.id) else customExerciseIds.add(ex.id)
                                             }
@@ -472,8 +491,8 @@ fun OnboardingScreen(
                                             }
                                         )
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(ex.name, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                            Text("${ex.muscleGroup.displayName} • ${ex.recommendedReps}", color = TextSecondary, fontSize = 12.sp)
+                                            Text(ex.name, color = palette.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                            Text("${ex.muscleGroup.displayName} • ${ex.recommendedReps}", color = palette.textSecondary, fontSize = 12.sp)
                                         }
                                     }
                                 }
@@ -507,12 +526,12 @@ fun OnboardingScreen(
                                     Text(
                                         text = "Tudo Pronto, ${name.ifBlank { "Atleta" }}!",
                                         style = MaterialTheme.typography.headlineMedium,
-                                        color = TextPrimary
+                                        color = palette.textPrimary
                                     )
                                     Text(
-                                        text = "Seu dashboard iniciará 100% limpo para registrar apenas seus treinos, cargas e recordes reais.",
+                                        text = "Seu dashboard iniciará 100% limpo e seu calendário semanal já foi preenchido automaticamente.",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -525,10 +544,10 @@ fun OnboardingScreen(
 
                             item {
                                 HyperSquircleCard {
-                                    Text("Metas Nutricionais Calculadas", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                    Text("Metas Nutricionais Calculadas", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("$targetKcal kcal / dia", style = MaterialTheme.typography.displayLarge, color = palette.primary)
-                                    Text("TMB: ${bmr.roundToInt()} kcal • GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                                    Text("TMB: ${bmr.roundToInt()} kcal • GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
                                     Spacer(modifier = Modifier.height(10.dp))
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -543,7 +562,7 @@ fun OnboardingScreen(
 
                             item {
                                 HyperSquircleCard {
-                                    Text("Treino & Visual Aplicados", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                    Text("Treino & Visual Aplicados", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = if (workoutMode == 1) "Ficha Personalizada: $customWorkoutName (${customExerciseIds.size} exercícios)"
@@ -553,7 +572,7 @@ fun OnboardingScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Tema Ativo: ${currentTheme.title}",
+                                        text = "Tema Ativo: ${currentTheme.title} (${currentTheme.style.label})",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = palette.secondary
                                     )

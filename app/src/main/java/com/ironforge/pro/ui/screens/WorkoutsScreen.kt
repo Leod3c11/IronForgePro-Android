@@ -45,7 +45,7 @@ fun WorkoutsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark),
+            .background(palette.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -85,8 +85,8 @@ fun WorkoutsScreen(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -103,9 +103,9 @@ fun WorkoutsScreen(
                         },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.secondary,
-                            selectedLabelColor = HyperBgDark,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            selectedLabelColor = palette.bg,
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -129,13 +129,13 @@ fun WorkoutsScreen(
                     Text(
                         text = activeSplit.name,
                         style = MaterialTheme.typography.titleLarge,
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = activeSplit.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
                 }
             }
@@ -160,20 +160,20 @@ fun WorkoutsScreen(
                             Icon(
                                 imageVector = Icons.Default.FitnessCenter,
                                 contentDescription = null,
-                                tint = TextMuted,
+                                tint = palette.textMuted,
                                 modifier = Modifier.size(42.dp)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = "Nenhuma ficha personalizada criada ainda",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
+                                color = palette.textPrimary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Toque em '+ Criar Ficha' para montar seu treino sob medida.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = palette.textSecondary
                             )
                         }
                     }
@@ -206,13 +206,13 @@ fun WorkoutsScreen(
         val ex = previewExercise!!
         AlertDialog(
             onDismissRequest = { previewExercise = null },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(26.dp),
             title = {
                 Column {
                     HyperPillTag(ex.muscleGroup.displayName, palette.primaryGlow)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(ex.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(ex.name, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             },
             text = {
@@ -225,7 +225,7 @@ fun WorkoutsScreen(
                     Text(
                         text = ex.executionSteps.joinToString("\n• ", prefix = "• "),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
                 }
             },
@@ -271,12 +271,12 @@ private fun WorkoutDayCard(
         Text(
             text = day.title,
             style = MaterialTheme.typography.titleLarge,
-            color = TextPrimary
+            color = palette.textPrimary
         )
         Text(
             text = day.focusSummary,
             style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary
+            color = palette.textSecondary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -309,12 +309,12 @@ private fun WorkoutDayCard(
                             Text(
                                 text = "${idx + 1}. ${ex.name}",
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = TextPrimary
+                                color = palette.textPrimary
                             )
                             Text(
                                 text = "${ex.muscleGroup.displayName} • RIR ${planned.targetRir} • ${planned.restSeconds}s",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextMuted
+                                color = palette.textMuted
                             )
                         }
                     }
@@ -368,10 +368,10 @@ private fun CustomWorkoutBuilderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HyperCardDark,
+        containerColor = palette.card,
         shape = RoundedCornerShape(26.dp),
         title = {
-            Text("Criar Ficha Personalizada", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Text("Criar Ficha Personalizada", color = palette.textPrimary, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
@@ -425,8 +425,8 @@ private fun CustomWorkoutBuilderDialog(
                                 colors = CheckboxDefaults.colors(checkedColor = palette.primary, checkmarkColor = palette.onPrimaryAccent)
                             )
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(ex.name, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                Text(ex.muscleGroup.displayName, color = TextMuted, fontSize = 11.sp)
+                                Text(ex.name, color = palette.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                Text(ex.muscleGroup.displayName, color = palette.textMuted, fontSize = 11.sp)
                             }
                         }
                     }
@@ -445,7 +445,7 @@ private fun CustomWorkoutBuilderDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = TextSecondary)
+                Text("Cancelar", color = palette.textSecondary)
             }
         }
     )

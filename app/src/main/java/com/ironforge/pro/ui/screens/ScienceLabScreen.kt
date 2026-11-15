@@ -41,7 +41,7 @@ fun ScienceLabScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark),
+            .background(palette.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -63,8 +63,8 @@ fun ScienceLabScreen(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -103,13 +103,13 @@ fun ScienceLabScreen(
                         Text(
                             text = "Planejador de Volume Semanal (Séries Válidas)",
                             style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Compare suas séries semanais por grupo muscular com os marcos científicos MEV, MAV e MRV.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -136,12 +136,13 @@ private fun PlateCalculatorSection(
     targetWeightInput: String,
     onUpdateWeight: (String) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     val weight = (targetWeightInput.toDoubleOrNull() ?: 60.0).coerceIn(20.0, 400.0)
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         HyperSquircleCard(accentGlow = true) {
-            Text("Calculadora Visual de Anilhas Olímpicas", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
-            Text("Considera barra olímpica oficial de 20 kg", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            Text("Calculadora Visual de Anilhas Olímpicas", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
+            Text("Considera barra olímpica oficial de 20 kg", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
@@ -188,7 +189,7 @@ private fun OneRmCalculatorSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         HyperSquircleCard(accentGlow = true) {
-            Text("Calculadora de Força Máxima (1RM)", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+            Text("Calculadora de Força Máxima (1RM)", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
@@ -212,18 +213,18 @@ private fun OneRmCalculatorSection(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("1RM EPLEY", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                    Text("1RM EPLEY", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                     Text("${epley1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = palette.primary)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("1RM BRZYCKI", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                    Text("1RM BRZYCKI", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                     Text("${brzycki1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = palette.secondary)
                 }
             }
         }
 
         HyperSquircleCard {
-            Text("Tabela de Zonas de Intensidade", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+            Text("Tabela de Zonas de Intensidade", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
             Spacer(modifier = Modifier.height(8.dp))
             val zones = listOf(
                 Triple("95% (1–2 reps)", "Força Máxima Neural", 0.95),
@@ -244,8 +245,8 @@ private fun OneRmCalculatorSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(pctLabel, style = MaterialTheme.typography.labelLarge, color = TextPrimary)
-                        Text(desc, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                        Text(pctLabel, style = MaterialTheme.typography.labelLarge, color = palette.textPrimary)
+                        Text(desc, style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                     }
                     HyperPillTag("$loadKg kg", palette.primaryGlow)
                 }
@@ -290,7 +291,7 @@ private fun NutritionMacroCalculatorSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         HyperSquircleCard(accentGlow = true) {
-            Text("Calculadora Metabólica & Macronutrientes", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+            Text("Calculadora Metabólica & Macronutrientes", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -334,7 +335,7 @@ private fun NutritionMacroCalculatorSection(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Text("Nível de Atividade Semanal:", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Text("Nível de Atividade Semanal:", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(activityLabels.size) { idx ->
                     FilterChip(
@@ -347,7 +348,7 @@ private fun NutritionMacroCalculatorSection(
             }
 
             Spacer(modifier = Modifier.height(6.dp))
-            Text("Objetivo Físico:", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Text("Objetivo Físico:", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(goalLabels.size) { idx ->
                     FilterChip(
@@ -371,11 +372,11 @@ private fun NutritionMacroCalculatorSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("META CALÓRICA DIÁRIA", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                    Text("META CALÓRICA DIÁRIA", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                     Text("$targetKcal kcal", style = MaterialTheme.typography.displayLarge, color = palette.primary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("TMB: ${bmr.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    Text("TMB: ${bmr.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
                     Text("GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.secondary)
                     Text("Água: ${waterLiters}L / dia", style = MaterialTheme.typography.labelSmall, color = HyperEmerald)
                 }
@@ -420,17 +421,18 @@ private fun MacroBox(
     accent: Color,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalIronPalette.current
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(HyperTileElevated)
+            .background(palette.tileElevated)
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(title, style = MaterialTheme.typography.labelSmall, color = accent)
         Spacer(modifier = Modifier.height(4.dp))
-        Text(grams, style = MaterialTheme.typography.titleLarge, color = TextPrimary)
-        Text(sub, style = MaterialTheme.typography.labelSmall, color = TextMuted, fontSize = 10.sp)
+        Text(grams, style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
+        Text(sub, style = MaterialTheme.typography.labelSmall, color = palette.textMuted, fontSize = 10.sp)
     }
 }
 
@@ -455,11 +457,11 @@ private fun VolumeLandmarkCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(muscle.displayName, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                Text(muscle.displayName, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                 Text(
                     text = "MEV: ${muscle.mevSets}  •  MAV: ${muscle.mavSets}  •  MRV: ${muscle.mrvSets}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextMuted
+                    color = palette.textMuted
                 )
             }
 
@@ -468,11 +470,11 @@ private fun VolumeLandmarkCard(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(HyperTileElevated)
+                        .background(palette.tileElevated)
                         .clickable { onChangeSets(currentSets - 1) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("-", color = TextPrimary, fontWeight = FontWeight.Black)
+                    Text("-", color = palette.textPrimary, fontWeight = FontWeight.Black)
                 }
                 Text(
                     text = "$currentSets séries",
@@ -483,7 +485,7 @@ private fun VolumeLandmarkCard(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(HyperTileElevated)
+                        .background(palette.tileElevated)
                         .clickable { onChangeSets(currentSets + 1) },
                     contentAlignment = Alignment.Center
                 ) {
@@ -511,12 +513,12 @@ private fun ScienceArticleCard(article: ScienceArticle) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             HyperPillTag(article.category, palette.secondary)
-            Text("${article.readTimeMinutes} min leitura", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+            Text("${article.readTimeMinutes} min leitura", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(article.title, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+        Text(article.title, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
         Spacer(modifier = Modifier.height(4.dp))
-        Text(article.summary, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+        Text(article.summary, style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
 
         if (expanded) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -528,14 +530,14 @@ private fun ScienceArticleCard(article: ScienceArticle) {
             article.keyTakeaways.forEach { point ->
                 Row(modifier = Modifier.padding(vertical = 2.dp)) {
                     Text("• ", color = palette.primary, fontWeight = FontWeight.Bold)
-                    Text(point, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                    Text(point, style = MaterialTheme.typography.bodyMedium, color = palette.textPrimary)
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
             Text("PROTOCOLO DETALHADO", style = MaterialTheme.typography.labelSmall, color = HyperEmerald)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(article.detailedProtocol, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            Text(article.detailedProtocol, style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
         } else {
             Spacer(modifier = Modifier.height(8.dp))
             Text(

@@ -1,8 +1,12 @@
 package com.ironforge.pro.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,7 +25,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +51,7 @@ fun ActiveWorkoutScreen(
     var swapTargetIndex by remember { mutableStateOf<Int?>(null) }
     var plateInspectWeight by remember { mutableStateOf<Double?>(null) }
     var showCancelConfirm by remember { mutableStateOf(false) }
-    var coachTabIndex by remember { mutableIntStateOf(0) } // 0=Execução, 1=Biomecânica, 2=Erros, 3=RIR/Esforço
+    var coachTabIndex by remember { mutableIntStateOf(0) }
 
     val totalSetsAll = remember(state.activeExercises) {
         state.activeExercises.sumOf { it.sets.size }.coerceAtLeast(1)
@@ -72,7 +75,7 @@ fun ActiveWorkoutScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark)
+            .background(palette.bg)
     ) {
         // Top Session Bar + Overall Progress + HyperOS Dynamic Island
         Column(
@@ -96,7 +99,7 @@ fun ActiveWorkoutScreen(
                     Text(
                         text = state.activeWorkoutTitle,
                         style = MaterialTheme.typography.titleMedium,
-                        color = TextPrimary,
+                        color = palette.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -112,17 +115,16 @@ fun ActiveWorkoutScreen(
                     shape = CircleShape,
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
-                    Text("Finalizar", color = HyperBgDark, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                    Text("Finalizar", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
                 }
             }
 
-            // Overall Session Progress Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(5.dp)
                     .clip(CircleShape)
-                    .background(HyperTileElevated)
+                    .background(palette.tileElevated)
             ) {
                 Box(
                     modifier = Modifier
@@ -132,7 +134,6 @@ fun ActiveWorkoutScreen(
                 )
             }
 
-            // Xiaomi HyperOS Dynamic Island Rest Timer
             HyperDynamicIsland(
                 isTimerRunning = state.isRestTimerRunning,
                 remainingSeconds = state.restRemainingSeconds,
@@ -162,6 +163,69 @@ fun ActiveWorkoutScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Next-Exercise Transition Banner Notice!
+                if (state.transitionCompletedExerciseName != null && state.transitionNextExercise != null) {
+                    item {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = slideInVertically() + fadeIn(),
+                            exit = slideOutVertically() + fadeOut()
+                        ) {
+                            HyperSquircleCard(
+                                accentGlow = true,
+                                containerColor = palette.tileElevated
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(CircleShape)
+                                                .background(HyperEmerald.copy(alpha = 0.2f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = HyperEmerald)
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text(
+                                                text = "SÉRIES CONCLUÍDAS! VAMOS SEGUIR PARA O PRÓXIMO",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                                color = HyperEmerald
+                                            )
+                                            Text(
+                                                text = "Concluído: ${state.transitionCompletedExerciseName}",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = palette.textSecondary
+                                            )
+                                            Text(
+                                                text = "Próximo: ${state.transitionNextExercise.name}",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = palette.textPrimary
+                                            )
+                                        }
+                                    }
+                                    Button(
+                                        onClick = { viewModel.dismissTransitionBanner() },
+                                        colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                                        shape = CircleShape,
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("OK", color = palette.onPrimaryAccent, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // 1. Horizontal Exercise Stage Carousel
                 item {
                     LazyRow(
@@ -175,12 +239,12 @@ fun ActiveWorkoutScreen(
                             val bg = when {
                                 isCurrent -> palette.primary
                                 allDone -> HyperEmerald.copy(alpha = 0.18f)
-                                else -> HyperCardDark
+                                else -> palette.card
                             }
                             val fg = when {
                                 isCurrent -> palette.onPrimaryAccent
                                 allDone -> HyperEmerald
-                                else -> TextSecondary
+                                else -> palette.textSecondary
                             }
                             Row(
                                 modifier = Modifier
@@ -236,12 +300,12 @@ fun ActiveWorkoutScreen(
                                 Text(
                                     text = exercise.name,
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = TextPrimary
+                                    color = palette.textPrimary
                                 )
                                 Text(
                                     text = "Alvo: ${exercise.primaryTarget}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary
+                                    color = palette.textSecondary
                                 )
                             }
 
@@ -249,7 +313,7 @@ fun ActiveWorkoutScreen(
                                 onClick = { swapTargetIndex = safeExIndex },
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(HyperTileElevated)
+                                    .background(palette.tileElevated)
                                     .size(38.dp)
                             ) {
                                 Icon(
@@ -262,7 +326,6 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Live 60fps Biomechanical Execution Video
                         ExerciseMiniVideoPlayer(
                             exercise = exercise,
                             customVideoUri = state.customVideoUris[exercise.id],
@@ -272,7 +335,6 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Interactive 4-Tab Educational Coach
                         val coachTabs = listOf("Execução", "Biomecânica", "Evitar Erros", "Guia RIR")
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -284,7 +346,7 @@ fun ActiveWorkoutScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(CircleShape)
-                                        .background(if (selected) palette.primary else HyperTileElevated)
+                                        .background(if (selected) palette.primary else palette.tileElevated)
                                         .clickable { coachTabIndex = idx }
                                         .padding(vertical = 7.dp),
                                     contentAlignment = Alignment.Center
@@ -292,7 +354,7 @@ fun ActiveWorkoutScreen(
                                     Text(
                                         text = label,
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = if (selected) palette.onPrimaryAccent else TextSecondary,
+                                        color = if (selected) palette.onPrimaryAccent else palette.textSecondary,
                                         fontSize = 10.sp,
                                         maxLines = 1
                                     )
@@ -302,12 +364,11 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Educational Coach Content Box
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(HyperTileElevated)
+                                .background(palette.tileElevated)
                                 .padding(12.dp)
                         ) {
                             when (coachTabIndex) {
@@ -317,7 +378,7 @@ fun ActiveWorkoutScreen(
                                         exercise.executionSteps.forEachIndexed { i, step ->
                                             Row(verticalAlignment = Alignment.Top) {
                                                 Text("${i + 1}. ", color = palette.primary, fontWeight = FontWeight.Black, fontSize = 12.sp)
-                                                Text(step, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                                                Text(step, color = palette.textPrimary, style = MaterialTheme.typography.bodyMedium)
                                             }
                                         }
                                     }
@@ -331,10 +392,10 @@ fun ActiveWorkoutScreen(
                                             color = palette.secondary
                                         )
                                         if (exercise.synergists.isNotEmpty()) {
-                                            Text("Sinergistas: ${exercise.synergists.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                                            Text("Sinergistas: ${exercise.synergists.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                                         }
                                         exercise.biomechanicsTips.forEach { tip ->
-                                            Text("• $tip", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                                            Text("• $tip", style = MaterialTheme.typography.bodyMedium, color = palette.textPrimary)
                                         }
                                     }
                                 }
@@ -342,7 +403,7 @@ fun ActiveWorkoutScreen(
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Text("ERROS COMUNS A EVITAR:", style = MaterialTheme.typography.labelSmall, color = HyperCrimson)
                                         exercise.commonMistakes.forEach { err ->
-                                            Text("✕ $err", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                                            Text("✕ $err", style = MaterialTheme.typography.bodyMedium, color = palette.textPrimary)
                                         }
                                     }
                                 }
@@ -352,12 +413,12 @@ fun ActiveWorkoutScreen(
                                         Text(
                                             text = "• RIR 2 (RPE 8): Encerre a série quando sentir que faria no máximo mais 2 repetições limpas. Ideal para compostos.",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = TextPrimary
+                                            color = palette.textPrimary
                                         )
                                         Text(
                                             text = "• RIR 0–1 (RPE 9–10): Próximo ou até a falha concêntrica. Recomendado na última série de isoladores.",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = TextSecondary
+                                            color = palette.textSecondary
                                         )
                                     }
                                 }
@@ -366,11 +427,11 @@ fun ActiveWorkoutScreen(
                     }
                 }
 
-                // 3. Dynamic Interactive Set Focus Card (Current Active Set Controller)
+                // 3. Dynamic Interactive Set Focus Card
                 item {
                     HyperSquircleCard(
                         modifier = Modifier.animateContentSize(),
-                        containerColor = HyperCardDark,
+                        containerColor = palette.card,
                         accentGlow = willBeatPr
                     ) {
                         Row(
@@ -387,7 +448,7 @@ fun ActiveWorkoutScreen(
                                 Text(
                                     text = focusedSet.setType.label,
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = TextPrimary
+                                    color = palette.textPrimary
                                 )
                             }
 
@@ -400,7 +461,6 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Interactive Set Type Selector Pills + Live Physiological Explanation
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -408,7 +468,7 @@ fun ActiveWorkoutScreen(
                             SetType.entries.forEach { sType ->
                                 val isSel = focusedSet.setType == sType
                                 val badgeColor = when (sType) {
-                                    SetType.WARMUP -> TextSecondary
+                                    SetType.WARMUP -> palette.textSecondary
                                     SetType.FEEDER -> palette.secondary
                                     SetType.WORKING -> palette.primary
                                     SetType.TOP_SET -> HyperAmber
@@ -418,7 +478,7 @@ fun ActiveWorkoutScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSel) badgeColor else HyperTileElevated)
+                                        .background(if (isSel) badgeColor else palette.tileElevated)
                                         .clickable {
                                             viewModel.updateSetData(safeExIndex, safeSetIndex, setType = sType)
                                         }
@@ -428,7 +488,7 @@ fun ActiveWorkoutScreen(
                                     Text(
                                         text = sType.code,
                                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black),
-                                        color = if (isSel) HyperBgDark else badgeColor,
+                                        color = if (isSel) palette.onPrimaryAccent else badgeColor,
                                         fontSize = 12.sp
                                     )
                                 }
@@ -437,38 +497,35 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Educational Hint Banner for Selected Set Type
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(HyperTileElevated)
+                                .background(palette.tileElevated)
                                 .padding(10.dp)
                         ) {
                             Text(
                                 text = "💡 ${focusedSet.setType.educationalHint}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = TextSecondary
+                                color = palette.textSecondary
                             )
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Ergonomic Load & Reps Stepper Controllers
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            // Load Control Box
                             Column(
                                 modifier = Modifier
                                     .weight(1.1f)
                                     .clip(RoundedCornerShape(18.dp))
-                                    .background(HyperTileElevated)
+                                    .background(palette.tileElevated)
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("CARGA (KG)", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Text("CARGA (KG)", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -480,7 +537,7 @@ fun ActiveWorkoutScreen(
                                     Text(
                                         text = if (focusedSet.weightKg % 1.0 == 0.0) "${focusedSet.weightKg.toInt()}" else "${focusedSet.weightKg}",
                                         style = MaterialTheme.typography.headlineMedium,
-                                        color = TextPrimary,
+                                        color = palette.textPrimary,
                                         modifier = Modifier.clickable { plateInspectWeight = focusedSet.weightKg }
                                     )
                                     BigRoundControl("+") {
@@ -501,16 +558,15 @@ fun ActiveWorkoutScreen(
                                 }
                             }
 
-                            // Reps Control Box
                             Column(
                                 modifier = Modifier
                                     .weight(0.9f)
                                     .clip(RoundedCornerShape(18.dp))
-                                    .background(HyperTileElevated)
+                                    .background(palette.tileElevated)
                                     .padding(12.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("REPETIÇÕES", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Text("REPETIÇÕES", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -539,8 +595,7 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Interactive Effort / RIR Selector
-                        Text("PERCEPÇÃO DE ESFORÇO (REPS NA RESERVA):", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        Text("PERCEPÇÃO DE ESFORÇO (REPS NA RESERVA):", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                         Spacer(modifier = Modifier.height(6.dp))
                         val rirOptions = listOf(
                             Triple(7.0, "RIR 3 • Leve", palette.secondary),
@@ -558,7 +613,7 @@ fun ActiveWorkoutScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(CircleShape)
-                                        .background(if (selected) accent else HyperTileElevated)
+                                        .background(if (selected) accent else palette.tileElevated)
                                         .clickable {
                                             viewModel.updateSetData(safeExIndex, safeSetIndex, rpe = rpeVal)
                                         }
@@ -568,7 +623,7 @@ fun ActiveWorkoutScreen(
                                     Text(
                                         text = label,
                                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = if (selected) HyperBgDark else TextSecondary,
+                                        color = if (selected) palette.onPrimaryAccent else palette.textSecondary,
                                         fontSize = 10.sp,
                                         maxLines = 1
                                     )
@@ -578,7 +633,9 @@ fun ActiveWorkoutScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Giant Primary Action CTA Button
+                        val isLastSetOfExercise = focusedSet.setNumber == currentSessionEx.sets.size
+                        val hasNextExercise = safeExIndex + 1 < state.activeExercises.size
+
                         Button(
                             onClick = { viewModel.toggleSetCompleted(safeExIndex, safeSetIndex) },
                             modifier = Modifier
@@ -592,18 +649,18 @@ fun ActiveWorkoutScreen(
                             Icon(
                                 imageVector = if (focusedSet.completed) Icons.Default.CheckCircle else Icons.Default.Bolt,
                                 contentDescription = null,
-                                tint = if (focusedSet.completed) HyperBgDark else palette.onPrimaryAccent
+                                tint = if (focusedSet.completed) Color.White else palette.onPrimaryAccent
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (focusedSet.completed) {
-                                    "SÉRIE ${focusedSet.setNumber} CONCLUÍDA ✓"
-                                } else {
-                                    "CONCLUIR SÉRIE ${focusedSet.setNumber} • DESCANSAR ${currentSessionEx.restSeconds}s"
+                                text = when {
+                                    focusedSet.completed -> "SÉRIE ${focusedSet.setNumber} CONCLUÍDA ✓"
+                                    isLastSetOfExercise && hasNextExercise -> "CONCLUIR ÚLTIMA SÉRIE • PRÓXIMO EXERCÍCIO"
+                                    else -> "CONCLUIR SÉRIE ${focusedSet.setNumber} • DESCANSAR ${currentSessionEx.restSeconds}s"
                                 },
-                                color = if (focusedSet.completed) HyperBgDark else palette.onPrimaryAccent,
+                                color = if (focusedSet.completed) Color.White else palette.onPrimaryAccent,
                                 fontWeight = FontWeight.Black,
-                                fontSize = 13.sp
+                                fontSize = 12.sp
                             )
                         }
                     }
@@ -620,7 +677,7 @@ fun ActiveWorkoutScreen(
                             Text(
                                 text = "Séries deste Exercício (${currentSessionEx.sets.count { it.completed }}/${currentSessionEx.sets.size})",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
+                                color = palette.textPrimary
                             )
                             TextButton(onClick = { viewModel.addSetToExercise(safeExIndex) }) {
                                 Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
@@ -641,7 +698,7 @@ fun ActiveWorkoutScreen(
                                         when {
                                             isFocused -> palette.primary.copy(alpha = 0.16f)
                                             sLog.completed -> HyperEmerald.copy(alpha = 0.12f)
-                                            else -> HyperTileElevated
+                                            else -> palette.tileElevated
                                         }
                                     )
                                     .clickable { viewModel.focusSet(safeExIndex, sIdx) }
@@ -654,14 +711,14 @@ fun ActiveWorkoutScreen(
                                     Text(
                                         text = "Série ${sLog.setNumber}: ${sLog.weightKg.toInt()} kg × ${sLog.reps} reps",
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                        color = TextPrimary
+                                        color = palette.textPrimary
                                     )
                                 }
 
                                 Icon(
                                     imageVector = if (sLog.completed) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                                     contentDescription = null,
-                                    tint = if (sLog.completed) HyperEmerald else TextMuted,
+                                    tint = if (sLog.completed) HyperEmerald else palette.textMuted,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -697,12 +754,12 @@ fun ActiveWorkoutScreen(
     if (plateInspectWeight != null) {
         AlertDialog(
             onDismissRequest = { plateInspectWeight = null },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(26.dp),
             title = {
                 Text(
                     text = "Anilhas para ${plateInspectWeight!!.toInt()} kg",
-                    color = TextPrimary,
+                    color = palette.textPrimary,
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -724,10 +781,10 @@ fun ActiveWorkoutScreen(
     if (showCancelConfirm) {
         AlertDialog(
             onDismissRequest = { showCancelConfirm = false },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(26.dp),
-            title = { Text("Descartar Sessão?", color = TextPrimary, fontWeight = FontWeight.Bold) },
-            text = { Text("Os dados deste treino em andamento não serão salvos no histórico.", color = TextSecondary) },
+            title = { Text("Descartar Sessão?", color = palette.textPrimary, fontWeight = FontWeight.Bold) },
+            text = { Text("Os dados deste treino em andamento não serão salvos no histórico.", color = palette.textSecondary) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -756,7 +813,7 @@ private fun BigRoundControl(label: String, onClick: () -> Unit) {
         modifier = Modifier
             .size(34.dp)
             .clip(CircleShape)
-            .background(HyperCardDark)
+            .background(palette.card)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -775,7 +832,7 @@ private fun MiniMicroButton(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .background(HyperCardDark)
+            .background(palette.card)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
@@ -806,9 +863,9 @@ private fun ExercisePickerModal(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HyperCardDark,
+        containerColor = palette.card,
         shape = RoundedCornerShape(26.dp),
-        title = { Text(title, color = TextPrimary, fontWeight = FontWeight.Bold) },
+        title = { Text(title, color = palette.textPrimary, fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.heightIn(max = 380.dp)) {
                 OutlinedTextField(
@@ -830,7 +887,7 @@ private fun ExercisePickerModal(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(ex.name, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                Text(ex.name, color = palette.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                 Text(ex.muscleGroup.displayName, color = palette.secondary, fontSize = 11.sp)
                             }
                             Icon(Icons.Default.AddCircle, contentDescription = null, tint = palette.primary)
@@ -842,7 +899,7 @@ private fun ExercisePickerModal(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Fechar", color = TextSecondary)
+                Text("Fechar", color = palette.textSecondary)
             }
         }
     )

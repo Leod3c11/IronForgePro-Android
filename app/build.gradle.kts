@@ -11,8 +11,8 @@ android {
         applicationId = "com.ironforge.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 5
-        versionName = "5.0.0-CoachCalendar"
+        versionCode = 6
+        versionName = "6.0.0-AMOLED-Coach"
 
         vectorDrawables {
             useSupportLibrary = true

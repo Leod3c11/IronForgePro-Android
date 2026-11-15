@@ -42,7 +42,7 @@ import kotlin.math.sin
 fun HyperSquircleCard(
     modifier: Modifier = Modifier,
     accentGlow: Boolean = false,
-    containerColor: Color = HyperCardDark,
+    containerColor: Color = LocalIronPalette.current.card,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -56,9 +56,11 @@ fun HyperSquircleCard(
     )
 
     val borderBrush = if (accentGlow) {
-        Brush.verticalGradient(listOf(palette.primary, palette.secondary.copy(alpha = 0.55f)))
+        Brush.verticalGradient(listOf(palette.primary, palette.secondary.copy(alpha = 0.6f)))
+    } else if (palette.isLight) {
+        Brush.verticalGradient(listOf(palette.hairline, palette.hairline))
     } else {
-        Brush.verticalGradient(listOf(HyperSpecularTop, palette.hairline))
+        Brush.verticalGradient(listOf(palette.specularTop, palette.hairline))
     }
 
     Surface(
@@ -79,7 +81,8 @@ fun HyperSquircleCard(
             ),
         shape = RoundedCornerShape(24.dp),
         color = containerColor,
-        border = BorderStroke(if (accentGlow) 1.4.dp else 1.dp, borderBrush)
+        shadowElevation = if (palette.isLight) 2.dp else 0.dp,
+        border = BorderStroke(if (accentGlow) 1.5.dp else 1.dp, borderBrush)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -115,10 +118,10 @@ fun HyperDynamicIsland(
             .fillMaxWidth()
             .animateContentSize(spring(dampingRatio = 0.78f, stiffness = 360f)),
         shape = RoundedCornerShape(28.dp),
-        color = Color(0xFF06080C),
+        color = Color(0xFF07090E),
         border = BorderStroke(
-            width = 1.2.dp,
-            color = if (showExpandedTimer) palette.primary else palette.hairline
+            width = 1.3.dp,
+            color = if (showExpandedTimer) palette.primary else Color(0xFF252D3D)
         )
     ) {
         if (showExpandedTimer) {
@@ -138,7 +141,7 @@ fun HyperDynamicIsland(
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val sw = 4.5.dp.toPx()
                             drawArc(
-                                color = palette.tileElevated,
+                                color = Color(0xFF1D2433),
                                 startAngle = -90f,
                                 sweepAngle = 360f,
                                 useCenter = false,
@@ -155,7 +158,7 @@ fun HyperDynamicIsland(
                         Text(
                             text = restStr,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                            color = palette.primaryGlow,
+                            color = Color(0xFFF5F8FF),
                             fontSize = 11.sp
                         )
                     }
@@ -170,13 +173,13 @@ fun HyperDynamicIsland(
                         Text(
                             text = "Sessão: $workoutClockText",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = Color(0xFFA2B0C8)
                         )
                     }
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    IslandChipButton("-15s", TextPrimary, palette.onPrimaryAccent) { onAdjustTimer(-15) }
+                    IslandChipButton("-15s", Color(0xFFF5F8FF), palette.onPrimaryAccent) { onAdjustTimer(-15) }
                     IslandChipButton("+15s", palette.secondary, palette.onPrimaryAccent) { onAdjustTimer(15) }
                     IslandChipButton("OK", palette.primary, palette.onPrimaryAccent, filled = true) { onSkipTimer() }
                 }
@@ -200,7 +203,7 @@ fun HyperDynamicIsland(
                     Text(
                         text = "SESSÃO ATIVA • $workoutClockText",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
+                        color = Color(0xFFF5F8FF)
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -224,7 +227,7 @@ private fun IslandChipButton(
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .background(if (filled) accent else HyperTileElevated)
+            .background(if (filled) accent else Color(0xFF1A202E))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
@@ -254,8 +257,8 @@ fun HyperFloatingDock(
     ) {
         Surface(
             shape = CircleShape,
-            color = HyperGlassOverlay,
-            border = BorderStroke(1.dp, Brush.verticalGradient(listOf(HyperSpecularTop, palette.hairline))),
+            color = palette.glassOverlay,
+            border = BorderStroke(1.dp, palette.hairline),
             shadowElevation = 12.dp
         ) {
             Row(
@@ -266,7 +269,7 @@ fun HyperFloatingDock(
                 items.forEachIndexed { index, (label, icon) ->
                     val selected = index == selectedIndex
                     val bgColor = if (selected) palette.primary else Color.Transparent
-                    val contentColor = if (selected) palette.onPrimaryAccent else TextSecondary
+                    val contentColor = if (selected) palette.onPrimaryAccent else palette.textSecondary
 
                     Row(
                         modifier = Modifier
@@ -274,7 +277,7 @@ fun HyperFloatingDock(
                             .background(bgColor)
                             .clickable { onSelect(index) }
                             .padding(
-                                horizontal = if (selected) 16.dp else 14.dp,
+                                horizontal = if (selected) 15.dp else 13.dp,
                                 vertical = 10.dp
                             ),
                         verticalAlignment = Alignment.CenterVertically,
@@ -307,6 +310,7 @@ fun SectionHeader(
     subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null
 ) {
+    val palette = LocalIronPalette.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -318,13 +322,13 @@ fun SectionHeader(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary
+                color = palette.textPrimary
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
+                    color = palette.textSecondary
                 )
             }
         }
@@ -337,10 +341,11 @@ fun HyperPillTag(
     text: String,
     accent: Color = LocalIronPalette.current.secondary
 ) {
+    val palette = LocalIronPalette.current
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .background(accent.copy(alpha = 0.16f))
+            .background(accent.copy(alpha = if (palette.isLight) 0.14f else 0.18f))
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(
@@ -376,7 +381,7 @@ fun OlympicPlateVisualizer(totalWeightKg: Double) {
             )
             val sleeveStart = size.width * 0.28f
             drawRoundRect(
-                color = Color(0xFFD5E0F2),
+                color = Color(0xFF64748B),
                 topLeft = Offset(sleeveStart - 8.dp.toPx(), cy - 10.dp.toPx()),
                 size = Size(8.dp.toPx(), 20.dp.toPx()),
                 cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx())
@@ -389,7 +394,7 @@ fun OlympicPlateVisualizer(totalWeightKg: Double) {
                     20.0 -> palette.secondary to 64f
                     15.0 -> HyperAmber to 56f
                     10.0 -> HyperEmerald to 48f
-                    5.0 -> TextPrimary to 38f
+                    5.0 -> Color(0xFF94A3B8) to 38f
                     2.5 -> palette.primary to 30f
                     else -> HyperViolet to 24f
                 }
@@ -433,7 +438,7 @@ fun VolumeBarChart(
             modifier = modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(HyperTileElevated)
+                .background(palette.tileElevated)
                 .padding(vertical = 22.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -447,12 +452,12 @@ fun VolumeBarChart(
             Text(
                 text = "Nenhum volume registrado ainda",
                 style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary
+                color = palette.textPrimary
             )
             Text(
                 text = "Conclua seu primeiro treino para acompanhar o gráfico real da sua tonelagem.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
+                color = palette.textSecondary,
                 textAlign = TextAlign.Center
             )
         }
@@ -476,7 +481,7 @@ fun VolumeBarChart(
             for (i in 1..3) {
                 val y = size.height * (i / 4f)
                 drawLine(
-                    color = palette.hairline.copy(alpha = 0.55f),
+                    color = palette.hairline.copy(alpha = 0.65f),
                     start = Offset(0f, y),
                     end = Offset(size.width, y),
                     strokeWidth = 1.dp.toPx()
@@ -491,7 +496,7 @@ fun VolumeBarChart(
 
                 drawRoundRect(
                     brush = Brush.verticalGradient(
-                        colors = listOf(palette.primary, palette.secondary.copy(alpha = 0.8f)),
+                        colors = listOf(palette.primary, palette.secondary.copy(alpha = 0.85f)),
                         startY = top,
                         endY = size.height
                     ),
@@ -519,7 +524,7 @@ fun VolumeBarChart(
                     Text(
                         text = session.dateFormatted,
                         style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted
+                        color = palette.textMuted
                     )
                 }
             }
@@ -573,7 +578,7 @@ fun MuscleBalanceRadarChart(
                     path.close()
                     drawPath(
                         path = path,
-                        color = palette.hairline.copy(alpha = 0.7f),
+                        color = palette.hairline.copy(alpha = 0.8f),
                         style = Stroke(width = 1.dp.toPx())
                     )
                 }
@@ -583,7 +588,7 @@ fun MuscleBalanceRadarChart(
                     val x = center.x + (radius * cos(angle)).toFloat()
                     val y = center.y + (radius * sin(angle)).toFloat()
                     drawLine(
-                        color = palette.hairline.copy(alpha = 0.6f),
+                        color = palette.hairline.copy(alpha = 0.7f),
                         start = center,
                         end = Offset(x, y),
                         strokeWidth = 1.dp.toPx()
@@ -631,7 +636,7 @@ fun MuscleBalanceRadarChart(
                 Text(
                     text = "Aguardando 1º treino",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextMuted
+                    color = palette.textMuted
                 )
             }
         }

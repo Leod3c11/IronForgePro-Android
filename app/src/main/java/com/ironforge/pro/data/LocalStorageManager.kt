@@ -11,7 +11,7 @@ import com.ironforge.pro.ui.theme.AppThemePreset
 
 class LocalStorageManager(context: Context) {
 
-    private val prefs = context.getSharedPreferences("ironforge_coach_v5", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("ironforge_amoled_v6", Context.MODE_PRIVATE)
     private val gson = Gson()
 
     fun isOnboardingCompleted(): Boolean =
@@ -35,7 +35,8 @@ class LocalStorageManager(context: Context) {
     }
 
     fun loadThemePreset(): AppThemePreset {
-        val id = prefs.getString("theme_preset_id", AppThemePreset.HYPER_ORANGE.id) ?: AppThemePreset.HYPER_ORANGE.id
+        val id = prefs.getString("theme_preset_id", AppThemePreset.AMOLED_SOLAR_ORANGE.id)
+            ?: AppThemePreset.AMOLED_SOLAR_ORANGE.id
         return AppThemePreset.fromId(id)
     }
 
@@ -43,7 +44,6 @@ class LocalStorageManager(context: Context) {
         prefs.edit().putString("theme_preset_id", preset.id).apply()
     }
 
-    // Key: ISO DayOfWeek (1=Monday .. 7=Sunday), Value: WorkoutDay.id (null = Rest Day)
     fun loadWeeklySchedule(): Map<Int, String?> {
         val json = prefs.getString("weekly_schedule", null) ?: return emptyMap()
         return try {

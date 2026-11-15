@@ -169,7 +169,7 @@ fun ExerciseMiniVideoPlayer(
                             Text(
                                 text = "TUT ${exercise.tempoTUT}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary,
+                                color = Color(0xFFA2B0C8),
                                 fontSize = 10.sp
                             )
                         }
@@ -197,7 +197,7 @@ fun ExerciseMiniVideoPlayer(
                     if (!useCustomMp4) {
                         SmallHudPill(
                             text = if (slowMotion) "0.5x" else "1.0x",
-                            accent = if (slowMotion) palette.tertiary else TextPrimary,
+                            accent = if (slowMotion) palette.tertiary else Color(0xFFF5F8FF),
                             onClick = { slowMotion = !slowMotion }
                         )
 
@@ -234,7 +234,7 @@ fun ExerciseMiniVideoPlayer(
                         Text(
                             text = exercise.motionPattern.biomechLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
+                            color = Color(0xFFA2B0C8),
                             fontSize = 10.sp
                         )
                         Text(
@@ -306,7 +306,7 @@ private fun DrawScope.drawStudioBackdrop(primary: Color, secondary: Color) {
 
     val floorY = size.height * 0.80f
     drawLine(
-        color = HyperHairline.copy(alpha = 0.7f),
+        color = Color(0xFF2B3447).copy(alpha = 0.7f),
         start = Offset(size.width * 0.12f, floorY),
         end = Offset(size.width * 0.88f, floorY),
         strokeWidth = 1.5.dp.toPx()

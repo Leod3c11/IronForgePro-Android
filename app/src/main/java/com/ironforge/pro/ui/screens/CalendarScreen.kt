@@ -104,7 +104,7 @@ fun CalendarScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark),
+            .background(palette.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -138,20 +138,20 @@ fun CalendarScreen(
                         onClick = { currentMonth = currentMonth.minusMonths(1) },
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mês Anterior", tint = TextPrimary)
+                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mês Anterior", tint = palette.textPrimary)
                     }
 
                     Text(
                         text = monthTitle,
                         style = MaterialTheme.typography.titleLarge,
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
 
                     IconButton(
                         onClick = { currentMonth = currentMonth.plusMonths(1) },
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(Icons.Default.ChevronRight, contentDescription = "Próximo Mês", tint = TextPrimary)
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Próximo Mês", tint = palette.textPrimary)
                     }
                 }
 
@@ -166,7 +166,7 @@ fun CalendarScreen(
                         Text(
                             text = dayName,
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted,
+                            color = palette.textMuted,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f)
                         )
@@ -194,10 +194,10 @@ fun CalendarScreen(
 
                                     val cellBg = when {
                                         isSelected -> palette.primary
-                                        isToday -> HyperTileElevated
+                                        isToday -> palette.tileElevated
                                         else -> Color(0xFF10141D)
                                     }
-                                    val numColor = if (isSelected) palette.onPrimaryAccent else TextPrimary
+                                    val numColor = if (isSelected) palette.onPrimaryAccent else palette.textPrimary
 
                                     val shortTag = when {
                                         isCompleted -> "FEITO"
@@ -219,7 +219,7 @@ fun CalendarScreen(
                                         isSelected -> palette.onPrimaryAccent
                                         isCompleted -> HyperEmerald
                                         dayWorkout != null -> palette.primaryGlow
-                                        else -> TextMuted
+                                        else -> palette.textMuted
                                     }
 
                                     Surface(
@@ -270,7 +270,7 @@ fun CalendarScreen(
                 ) {
                     LegendDot("Treino Programado", palette.primaryGlow)
                     LegendDot("Concluído", HyperEmerald)
-                    LegendDot("Descanso (OFF)", TextMuted)
+                    LegendDot("Descanso (OFF)", palette.textMuted)
                 }
             }
         }
@@ -290,12 +290,12 @@ fun CalendarScreen(
                         Text(
                             text = selectedDateFormatted,
                             style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Programação recorrente de $weekdayFullName",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
 
@@ -327,11 +327,11 @@ fun CalendarScreen(
                                         color = HyperEmerald
                                     )
                                 }
-                                Text(rec.workoutTitle, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                Text(rec.workoutTitle, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                 Text(
                                     text = "Volume: ${rec.totalVolumeKg.roundToInt()} kg • ${rec.totalWorkingSets} séries válidas • ${rec.durationMinutes} min",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary
+                                    color = palette.textSecondary
                                 )
                             }
                         }
@@ -353,12 +353,12 @@ fun CalendarScreen(
                     Text(
                         text = scheduledWorkout.title,
                         style = MaterialTheme.typography.titleLarge,
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
                     Text(
                         text = scheduledWorkout.focusSummary,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -372,7 +372,7 @@ fun CalendarScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(HyperTileElevated)
+                                    .background(palette.tileElevated)
                                     .clickable { previewExercise = ex }
                                     .padding(horizontal = 12.dp, vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -393,12 +393,12 @@ fun CalendarScreen(
                                         Text(
                                             text = "${idx + 1}. ${ex.name}",
                                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                            color = TextPrimary
+                                            color = palette.textPrimary
                                         )
                                         Text(
                                             text = "${ex.muscleGroup.displayName} • RIR ${planned.targetRir} • Descanso ${planned.restSeconds}s",
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = TextMuted
+                                            color = palette.textMuted
                                         )
                                     }
                                 }
@@ -435,7 +435,7 @@ fun CalendarScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .background(HyperTileElevated)
+                            .background(palette.tileElevated)
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -449,13 +449,13 @@ fun CalendarScreen(
                         Text(
                             text = "Dia de Descanso & Supercompensação",
                             style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "A síntese proteica miofibrilar e a restauração do sistema nervoso central atingem o pico nas 24h–48h pós-treino. Hidrate-se e bata sua meta de proteínas.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -476,10 +476,10 @@ fun CalendarScreen(
         val availableDays = remember(state.customWorkouts) { viewModel.allAvailableWorkoutDays() }
         AlertDialog(
             onDismissRequest = { showAssignDialog = false },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(26.dp),
             title = {
-                Text("Treino de $weekdayFullName", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text("Treino de $weekdayFullName", color = palette.textPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 LazyColumn(
@@ -495,7 +495,7 @@ fun CalendarScreen(
                                     showAssignDialog = false
                                 },
                             shape = RoundedCornerShape(16.dp),
-                            color = if (scheduledWorkoutId == null) palette.primary.copy(alpha = 0.18f) else HyperTileElevated
+                            color = if (scheduledWorkoutId == null) palette.primary.copy(alpha = 0.18f) else palette.tileElevated
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -504,8 +504,8 @@ fun CalendarScreen(
                                 Icon(Icons.Default.Hotel, contentDescription = null, tint = palette.secondary)
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
-                                    Text("Dia de Descanso (OFF)", color = TextPrimary, fontWeight = FontWeight.Bold)
-                                    Text("Recuperação muscular e SNC", color = TextSecondary, fontSize = 12.sp)
+                                    Text("Dia de Descanso (OFF)", color = palette.textPrimary, fontWeight = FontWeight.Bold)
+                                    Text("Recuperação muscular e SNC", color = palette.textSecondary, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -521,7 +521,7 @@ fun CalendarScreen(
                                     showAssignDialog = false
                                 },
                             shape = RoundedCornerShape(16.dp),
-                            color = if (isSel) palette.primary.copy(alpha = 0.22f) else HyperTileElevated
+                            color = if (isSel) palette.primary.copy(alpha = 0.22f) else palette.tileElevated
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -529,8 +529,8 @@ fun CalendarScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(wDay.title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text("${wDay.exercises.size} exercícios • ${wDay.focusSummary}", color = TextSecondary, fontSize = 11.sp)
+                                    Text(wDay.title, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("${wDay.exercises.size} exercícios • ${wDay.focusSummary}", color = palette.textSecondary, fontSize = 11.sp)
                                 }
                                 if (isSel) {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
@@ -542,7 +542,7 @@ fun CalendarScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showAssignDialog = false }) {
-                    Text("Fechar", color = TextSecondary)
+                    Text("Fechar", color = palette.textSecondary)
                 }
             }
         )
@@ -553,13 +553,13 @@ fun CalendarScreen(
         val ex = previewExercise!!
         AlertDialog(
             onDismissRequest = { previewExercise = null },
-            containerColor = HyperCardDark,
+            containerColor = palette.card,
             shape = RoundedCornerShape(26.dp),
             title = {
                 Column {
                     HyperPillTag(ex.muscleGroup.displayName, palette.primaryGlow)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(ex.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(ex.name, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
             },
             text = {
@@ -572,7 +572,7 @@ fun CalendarScreen(
                     Text(
                         text = ex.executionSteps.joinToString("\n• ", prefix = "• "),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
                 }
             },
@@ -591,6 +591,7 @@ fun CalendarScreen(
 
 @Composable
 private fun LegendDot(label: String, color: Color) {
+    val palette = LocalIronPalette.current
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
@@ -599,6 +600,6 @@ private fun LegendDot(label: String, color: Color) {
                 .background(color)
         )
         Spacer(modifier = Modifier.width(5.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary, fontSize = 10.sp)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = palette.textSecondary, fontSize = 10.sp)
     }
 }

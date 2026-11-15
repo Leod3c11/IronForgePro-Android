@@ -1,3 +1,3 @@
-# 🏋️ IronForge Pro 4.0 — Dados 100% Reais + 88 Exercícios Biomecânicos
+# 🏋️ IronForge Pro 6.0 — AMOLED, Tons Claros & Coach Multi-Muscular
 
-Aplicativo nativo Android (**Kotlin + Jetpack Compose**) com **Cadastro Inicial**, **Temas Dinâmicos estilo Android 17**, **Interface Xiaomi HyperOS 2.0**, **88 Exercícios com Mini Vídeos 60fps** e **Dashboard 100% limpo alimentado apenas pelos seus próprios treinos**.
+Aplicativo nativo Android (**Kotlin + Jetpack Compose**) com **Fisiologia de Descanso Multi-Muscular (Alvos + Sinergistas)**, **Tela de Preparação do Treino com Botão Centralizado**, **Aviso Automático de Transição Entre Exercícios** e **10 Temas (Preto AMOLED #000000, Tons Claros e Dark Titanium)**.

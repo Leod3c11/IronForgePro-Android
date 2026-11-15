@@ -83,7 +83,7 @@ fun EncyclopediaScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(HyperBgDark),
+            .background(palette.bg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -99,12 +99,12 @@ fun EncyclopediaScreen(
                 value = state.searchQuery,
                 onValueChange = onSearchChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Buscar exercício, músculo alvo ou equipamento...", color = TextMuted) },
+                placeholder = { Text("Buscar exercício, músculo alvo ou equipamento...", color = palette.textMuted) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = palette.primary) },
                 trailingIcon = {
                     if (state.searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Limpar", tint = TextSecondary)
+                            Icon(Icons.Default.Close, contentDescription = "Limpar", tint = palette.textSecondary)
                         }
                     }
                 },
@@ -124,8 +124,8 @@ fun EncyclopediaScreen(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -141,8 +141,8 @@ fun EncyclopediaScreen(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -161,9 +161,9 @@ fun EncyclopediaScreen(
                         label = { Text(eq.label, fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.secondary,
-                            selectedLabelColor = HyperBgDark,
-                            containerColor = HyperCardDark,
-                            labelColor = TextSecondary
+                            selectedLabelColor = palette.bg,
+                            containerColor = palette.card,
+                            labelColor = palette.textSecondary
                         )
                     )
                 }
@@ -193,12 +193,12 @@ fun EncyclopediaScreen(
                 Text(
                     text = exercise.name,
                     style = MaterialTheme.typography.titleMedium,
-                    color = TextPrimary
+                    color = palette.textPrimary
                 )
                 Text(
                     text = "Alvo: ${exercise.primaryTarget}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
+                    color = palette.textSecondary
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -219,9 +219,9 @@ fun EncyclopediaScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Reps: ${exercise.recommendedReps}", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Text("TUT: ${exercise.tempoTUT}", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Text("Descanso: ${exercise.restSeconds}s", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                    Text("Reps: ${exercise.recommendedReps}", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
+                    Text("TUT: ${exercise.tempoTUT}", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
+                    Text("Descanso: ${exercise.restSeconds}s", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                 }
             }
         }
@@ -251,7 +251,7 @@ private fun ExerciseDetailDialog(
     val palette = LocalIronPalette.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = HyperCardDark,
+        containerColor = palette.card,
         shape = RoundedCornerShape(28.dp),
         title = {
             Column {
@@ -263,7 +263,7 @@ private fun ExerciseDetailDialog(
                 Text(
                     text = exercise.name,
                     style = MaterialTheme.typography.titleLarge,
-                    color = TextPrimary
+                    color = palette.textPrimary
                 )
             }
         },
@@ -287,15 +287,15 @@ private fun ExerciseDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(HyperTileElevated)
+                        .background(palette.tileElevated)
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("MÚSCULO ALVO PRINCIPAL", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
-                        Text(exercise.primaryTarget, style = MaterialTheme.typography.bodyLarge, color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                        Text(exercise.primaryTarget, style = MaterialTheme.typography.bodyLarge, color = palette.textPrimary, fontWeight = FontWeight.SemiBold)
                         if (exercise.synergists.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("SINERGISTAS: ${exercise.synergists.joinToString(", ")}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                            Text("SINERGISTAS: ${exercise.synergists.joinToString(", ")}", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
                         }
                     }
                 }
@@ -313,7 +313,7 @@ private fun ExerciseDetailDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(HyperTileElevated)
+                        .background(palette.tileElevated)
                         .padding(10.dp)
                 ) {
                     val m = exercise.muscleGroup
@@ -328,7 +328,7 @@ private fun ExerciseDetailDialog(
                 exercise.executionSteps.forEachIndexed { idx, step ->
                     Row(verticalAlignment = Alignment.Top) {
                         Text("${idx + 1}. ", color = palette.primary, fontWeight = FontWeight.Black, fontSize = 13.sp)
-                        Text(step, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                        Text(step, color = palette.textPrimary, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -336,7 +336,7 @@ private fun ExerciseDetailDialog(
                 exercise.biomechanicsTips.forEach { tip ->
                     Row(verticalAlignment = Alignment.Top) {
                         Text("• ", color = HyperEmerald, fontWeight = FontWeight.Black)
-                        Text(tip, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                        Text(tip, color = palette.textSecondary, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -344,7 +344,7 @@ private fun ExerciseDetailDialog(
                 exercise.commonMistakes.forEach { err ->
                     Row(verticalAlignment = Alignment.Top) {
                         Text("✕ ", color = HyperCrimson, fontWeight = FontWeight.Bold)
-                        Text(err, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                        Text(err, color = palette.textSecondary, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -367,11 +367,11 @@ private fun ParamChip(label: String, value: String) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(HyperTileElevated)
+            .background(palette.tileElevated)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = TextMuted)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
         Text(value, style = MaterialTheme.typography.labelLarge, color = palette.primaryGlow)
     }
 }
