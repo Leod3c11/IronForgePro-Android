@@ -313,7 +313,7 @@ fun DashboardScreen(
 
         // Today's Scheduled Workout Hero Card with OrbitingGlow Shader + 3D Kettlebell Render
         item {
-            val leadExercise = ExerciseRepository.getExerciseById(heroWorkout.exercises.first().exerciseId)
+            val leadExercise = heroWorkout.exercises.firstOrNull()?.exerciseId?.let { ExerciseRepository.getExerciseById(it) }
             val badgeText = if (todayScheduledWorkout != null) {
                 "TREINO DE HOJE • ${heroWorkout.estimatedMinutes} MIN"
             } else {

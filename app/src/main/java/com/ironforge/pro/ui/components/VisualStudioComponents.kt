@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeOff
@@ -58,19 +59,33 @@ fun LottieStudioAnimation(
     assetPath: String,
     modifier: Modifier = Modifier,
     iterations: Int = LottieConstants.IterateForever,
-    speed: Float = 1f
+    speed: Float = 1f,
+    fallbackTint: Color = LocalIronPalette.current.primary
 ) {
-    val composition by rememberLottieComposition(LottieCompositionSpec.Asset(assetPath))
+    val compositionResult = rememberLottieComposition(LottieCompositionSpec.Asset(assetPath))
+    val composition = compositionResult.value
     val progress by animateLottieCompositionAsState(
         composition = composition,
+        isPlaying = composition != null,
         iterations = iterations,
         speed = speed
     )
-    LottieAnimation(
-        composition = composition,
-        progress = { progress },
-        modifier = modifier
-    )
+    if (composition != null) {
+        LottieAnimation(
+            composition = composition,
+            progress = { progress },
+            modifier = modifier
+        )
+    } else {
+        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.Default.Bolt,
+                contentDescription = null,
+                tint = fallbackTint,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
 }
 
 @DrawableRes
@@ -147,22 +162,28 @@ fun OrbitingGlowBanner(
             .drawWithCache {
                 val strokePx = 2.dp.toPx()
                 val rPx = cornerRadius.toPx()
-                val orbX = size.width * 0.5f + cos(angle) * (size.width * 0.45f)
-                val orbY = size.height * 0.5f + sin(angle) * (size.height * 0.45f)
+                val w = size.width.coerceAtLeast(1f)
+                val h = size.height.coerceAtLeast(1f)
+                val orbX = w * 0.5f + cos(angle) * (w * 0.45f)
+                val orbY = h * 0.5f + sin(angle) * (h * 0.45f)
 
-                val glowBrush = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val agsl = RuntimeShader("uniform float2 uRes; uniform float uTime; uniform half4 uColA; uniform half4 uColB; half4 main(float2 fragCoord) { float2 uv = fragCoord / max(uRes, float2(1.0)); float2 p = uv - 0.5; float a = atan(p.y, p.x) + uTime; float wave = 0.5 + 0.5 * cos(a * 2.0); return mix(uColA, uColB, half(wave)); }")
-                    agsl.setFloatUniform("uRes", size.width, size.height)
-                    agsl.setFloatUniform("uTime", angle)
-                    agsl.setColorUniform("uColA", palette.primary.toArgb())
-                    agsl.setColorUniform("uColB", palette.secondary.toArgb())
-                    ShaderBrush(agsl)
+                val fallbackBrush = Brush.radialGradient(
+                    colors = listOf(palette.primary, palette.secondary, palette.hairline),
+                    center = Offset(orbX, orbY),
+                    radius = maxOf(w, h) * 0.65f
+                )
+
+                val glowBrush = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && size.width > 1f && size.height > 1f) {
+                    runCatching {
+                        val agsl = RuntimeShader("uniform float2 uRes; uniform float uTime; layout(color) uniform half4 uColA; layout(color) uniform half4 uColB; half4 main(float2 fragCoord) { float2 uv = fragCoord / max(uRes, float2(1.0)); float2 p = uv - 0.5; float a = atan(p.y, p.x) + uTime; float wave = 0.5 + 0.5 * cos(a * 2.0); return mix(uColA, uColB, half(wave)); }")
+                        agsl.setFloatUniform("uRes", w, h)
+                        agsl.setFloatUniform("uTime", angle)
+                        agsl.setColorUniform("uColA", palette.primary.toArgb())
+                        agsl.setColorUniform("uColB", palette.secondary.toArgb())
+                        ShaderBrush(agsl)
+                    }.getOrElse { fallbackBrush }
                 } else {
-                    Brush.radialGradient(
-                        colors = listOf(palette.primary, palette.secondary, palette.hairline),
-                        center = Offset(orbX, orbY),
-                        radius = size.maxDimension * 0.65f
-                    )
+                    fallbackBrush
                 }
 
                 onDrawWithContent {
@@ -170,7 +191,7 @@ fun OrbitingGlowBanner(
                     drawRoundRect(
                         brush = glowBrush,
                         topLeft = Offset(strokePx / 2f, strokePx / 2f),
-                        size = Size(size.width - strokePx, size.height - strokePx),
+                        size = Size((size.width - strokePx).coerceAtLeast(0f), (size.height - strokePx).coerceAtLeast(0f)),
                         cornerRadius = CornerRadius(rPx, rPx),
                         style = Stroke(width = strokePx)
                     )
@@ -189,6 +210,7 @@ fun WelcomeCoachVideoCard(
     val palette = LocalIronPalette.current
     var isPlaying by remember { mutableStateOf(true) }
     var isMuted by remember { mutableStateOf(true) }
+    var isPrepared by remember { mutableStateOf(false) }
     var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
 
     Surface(
@@ -207,20 +229,31 @@ fun WelcomeCoachVideoCard(
                         setVideoURI(videoUri)
                         setOnPreparedListener { mp ->
                             mediaPlayerRef = mp
+                            isPrepared = true
                             mp.isLooping = true
-                            mp.setVolume(0f, 0f)
-                            start()
+                            mp.setVolume(if (isMuted) 0f else 1f, if (isMuted) 0f else 1f)
+                            if (isPlaying) start()
+                        }
+                        setOnErrorListener { _, _, _ ->
+                            isPrepared = false
+                            true
                         }
                     }
                 },
                 update = { vv ->
-                    if (isPlaying && !vv.isPlaying) vv.start()
-                    else if (!isPlaying && vv.isPlaying) vv.pause()
-                    val vol = if (isMuted) 0f else 1f
-                    try {
-                        mediaPlayerRef?.setVolume(vol, vol)
-                    } catch (_: Exception) {
+                    if (isPrepared) {
+                        runCatching {
+                            if (isPlaying && !vv.isPlaying) vv.start()
+                            else if (!isPlaying && vv.isPlaying) vv.pause()
+                            val vol = if (isMuted) 0f else 1f
+                            mediaPlayerRef?.setVolume(vol, vol)
+                        }
                     }
+                },
+                onRelease = { vv ->
+                    isPrepared = false
+                    mediaPlayerRef = null
+                    runCatching { vv.stopPlayback() }
                 },
                 modifier = Modifier.fillMaxSize()
             )

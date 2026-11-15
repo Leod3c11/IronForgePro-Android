@@ -543,11 +543,10 @@ fun OnboardingScreen(
                         val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == selectedSplitId }
                             ?: ExerciseRepository.defaultSplits.first()
 
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            LazyColumn(
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                contentPadding = PaddingValues(bottom = 16.dp)
-                            ) {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
                                 item {
                                     OrbitingGlowBanner {
                                         Column(modifier = Modifier.padding(16.dp)) {
@@ -622,15 +621,7 @@ fun OnboardingScreen(
                                 }
                             }
 
-                            LottieStudioAnimation(
-                                assetPath = "lotties/confetti.json",
-                                iterations = 1,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp)
-                                    .align(Alignment.TopCenter)
-                            )
-                        }
+
                     }
                 }
             }
