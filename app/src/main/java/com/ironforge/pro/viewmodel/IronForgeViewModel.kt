@@ -56,26 +56,26 @@ data class IronForgeUiState(
     val inspectedExercise: Exercise? = null,
 
     // Science Lab Calculators
-    val oneRmWeightInput: String = "100",
-    val oneRmRepsInput: String = "6",
-    val plateTargetWeight: String = "100",
-    val userWeightKg: String = "80",
-    val userHeightCm: String = "178",
-    val userAge: String = "26",
+    val oneRmWeightInput: String = "60",
+    val oneRmRepsInput: String = "8",
+    val plateTargetWeight: String = "60",
+    val userWeightKg: String = "75",
+    val userHeightCm: String = "175",
+    val userAge: String = "25",
     val isMale: Boolean = true,
     val activityLevelIndex: Int = 2,
     val nutritionGoalIndex: Int = 0,
     val weeklySetsEstimator: Map<MuscleGroup, Int> = mapOf(
-        MuscleGroup.CHEST to 14,
-        MuscleGroup.BACK to 16,
-        MuscleGroup.SHOULDERS to 15,
-        MuscleGroup.BICEPS to 12,
-        MuscleGroup.TRICEPS to 12,
-        MuscleGroup.QUADS to 14,
+        MuscleGroup.CHEST to 12,
+        MuscleGroup.BACK to 14,
+        MuscleGroup.SHOULDERS to 12,
+        MuscleGroup.BICEPS to 10,
+        MuscleGroup.TRICEPS to 10,
+        MuscleGroup.QUADS to 12,
         MuscleGroup.HAMSTRINGS to 10,
         MuscleGroup.GLUTES to 8,
-        MuscleGroup.CALVES to 12,
-        MuscleGroup.CORE to 9
+        MuscleGroup.CALVES to 10,
+        MuscleGroup.CORE to 8
     )
 )
 
@@ -126,19 +126,20 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         storage.saveThemePreset(chosenTheme)
         storage.setOnboardingCompleted(true)
 
+        // Save ONLY the user's real biometric data entered in Onboarding (no invented circumferences)
         val dateFmt = SimpleDateFormat("dd/MM", Locale("pt", "BR")).format(Date())
         val initialMeasure = BodyMeasurementRecord(
             id = "onboard_${UUID.randomUUID()}",
             dateFormatted = dateFmt,
             weightKg = profile.weightKg,
             bodyFatPct = profile.bodyFatPct,
-            chestCm = 104.0,
-            armCm = 39.5,
-            waistCm = 80.0,
-            thighCm = 60.0,
-            calfCm = 39.0
+            chestCm = 0.0,
+            armCm = 0.0,
+            waistCm = 0.0,
+            thighCm = 0.0,
+            calfCm = 0.0
         )
-        val updatedMeasures = _uiState.value.bodyMeasurements + initialMeasure
+        val updatedMeasures = listOf(initialMeasure)
         storage.saveBodyMeasurements(updatedMeasures)
 
         var updatedCustomWorkouts = _uiState.value.customWorkouts
@@ -157,7 +158,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 id = "custom_${UUID.randomUUID()}",
                 dayLabel = "MEU TREINO",
                 title = customWorkoutTitle.trim(),
-                focusSummary = "Criado na configuração inicial • ${profile.goal.label}",
+                focusSummary = "Montado no cadastro inicial • ${profile.goal.label}",
                 estimatedMinutes = planned.size * 11,
                 exercises = planned
             )
@@ -203,16 +204,39 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    private fun estimateStartingWeightForUser(exercise: Exercise): Double {
+        val state = _uiState.value
+        val existingPr = state.exercisePrs[exercise.id]
+        if (existingPr != null && existingPr > 0.0) {
+            return ((existingPr * 0.78) / 2.5).roundToInt() * 2.5
+        }
+        if (exercise.equipment == EquipmentType.BODYWEIGHT) return 0.0
+
+        val bw = state.userProfile.weightKg
+        val mult = state.userProfile.experience.loadMultiplier
+        val rawKg = when (exercise.muscleGroup) {
+            MuscleGroup.QUADS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES ->
+                if (exercise.mechanics == MechanicsType.COMPOUND) bw * 0.55 * mult else bw * 0.30 * mult
+            MuscleGroup.CHEST, MuscleGroup.BACK ->
+                if (exercise.mechanics == MechanicsType.COMPOUND) bw * 0.45 * mult else bw * 0.22 * mult
+            MuscleGroup.SHOULDERS ->
+                if (exercise.mechanics == MechanicsType.COMPOUND) bw * 0.25 * mult else 8.0 * mult
+            MuscleGroup.BICEPS, MuscleGroup.TRICEPS -> 12.0 * mult
+            MuscleGroup.CALVES -> bw * 0.45 * mult
+            MuscleGroup.CORE -> 15.0 * mult
+        }
+        return (((rawKg / 2.5).roundToInt()) * 2.5).coerceAtLeast(5.0)
+    }
+
     fun startWorkoutFromDay(day: WorkoutDay) {
-        val prs = _uiState.value.exercisePrs
         val activeList = day.exercises.mapNotNull { planned ->
             val ex = ExerciseRepository.getExerciseById(planned.exerciseId) ?: return@mapNotNull null
-            val baseWeight = ((prs[ex.id] ?: 40.0) * 0.78).roundToInt().toDouble().coerceAtLeast(10.0)
+            val startWeight = estimateStartingWeightForUser(ex)
             val sets = (1..planned.targetSets).map { idx ->
                 ActiveSetLog(
                     setNumber = idx,
                     setType = if (idx == 1 && ex.mechanics == MechanicsType.COMPOUND) SetType.TOP_SET else SetType.WORKING,
-                    weightKg = baseWeight,
+                    weightKg = startWeight,
                     reps = 10,
                     rpe = (10 - planned.targetRir).toDouble().coerceIn(6.0, 10.0),
                     completed = false,
@@ -242,14 +266,15 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun startEmptyWorkout(title: String = "Treino Livre Personalizado") {
         val defaultEx = ExerciseRepository.allExercises.take(3).map { ex ->
+            val startW = estimateStartingWeightForUser(ex)
             ActiveExerciseSession(
                 exercise = ex,
                 targetReps = ex.recommendedReps,
                 restSeconds = ex.restSeconds,
                 sets = listOf(
-                    ActiveSetLog(1, SetType.WARMUP, 20.0, 12, 6.0, false),
-                    ActiveSetLog(2, SetType.WORKING, 40.0, 10, 8.5, false),
-                    ActiveSetLog(3, SetType.WORKING, 40.0, 10, 9.0, false)
+                    ActiveSetLog(1, SetType.WARMUP, (startW * 0.6).roundToInt().toDouble(), 12, 6.0, false),
+                    ActiveSetLog(2, SetType.WORKING, startW, 10, 8.5, false),
+                    ActiveSetLog(3, SetType.WORKING, startW, 10, 9.0, false)
                 )
             )
         }
@@ -277,8 +302,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun addExerciseToActiveWorkout(exercise: Exercise) {
-        val currentPr = _uiState.value.exercisePrs[exercise.id] ?: 30.0
-        val suggestedWeight = (currentPr * 0.75).roundToInt().toDouble().coerceAtLeast(10.0)
+        val suggestedWeight = estimateStartingWeightForUser(exercise)
         val newSessionEx = ActiveExerciseSession(
             exercise = exercise,
             targetReps = exercise.recommendedReps,
@@ -293,8 +317,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun swapExerciseInActiveWorkout(exerciseIndex: Int, newExercise: Exercise) {
-        val currentPr = _uiState.value.exercisePrs[newExercise.id] ?: 30.0
-        val suggestedWeight = (currentPr * 0.75).roundToInt().toDouble().coerceAtLeast(10.0)
+        val suggestedWeight = estimateStartingWeightForUser(newExercise)
         _uiState.update { state ->
             val updated = state.activeExercises.mapIndexed { idx, old ->
                 if (idx != exerciseIndex) old
@@ -378,7 +401,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                             }
                             val est1Rm = estimate1RM(set.weightKg, set.reps)
                             val prevBest = currentPrs[item.exercise.id] ?: 0.0
-                            val isNewPr = nowCompleted && set.setType != SetType.WARMUP && est1Rm > prevBest && prevBest > 0.0
+                            val isNewPr = nowCompleted && set.setType != SetType.WARMUP && est1Rm > prevBest && est1Rm > 0.0
                             set.copy(completed = nowCompleted, isPr = isNewPr)
                         }
                     }
@@ -417,11 +440,11 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
                     val est1Rm = estimate1RM(set.weightKg, set.reps)
                     val prev = updatedPrs[sessionEx.exercise.id] ?: 0.0
-                    if (est1Rm > prev) {
+                    if (est1Rm > prev && est1Rm > 0.0) {
                         updatedPrs[sessionEx.exercise.id] = est1Rm
-                        if (prev > 0.0) prCount += 1
+                        prCount += 1
                     }
-                    if (est1Rm > bestSetScore) {
+                    if (est1Rm >= bestSetScore) {
                         bestSetScore = est1Rm
                         bestSetText = "${sessionEx.exercise.name.take(20)} ${set.weightKg.toInt()}kg × ${set.reps}"
                     }
@@ -445,7 +468,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             totalWorkingSets = totalWorkingSets,
             prCount = prCount,
             muscleSetsBreakdown = muscleBreakdown,
-            highlightExercises = if (highlights.isEmpty()) listOf("Sessão concluída") else highlights
+            highlightExercises = if (highlights.isEmpty()) listOf("Sessão registrada") else highlights
         )
 
         val newHistory = listOf(record) + state.sessionHistory
@@ -658,6 +681,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
     companion object {
         fun estimate1RM(weightKg: Double, reps: Int): Double {
+            if (weightKg <= 0.0) return 0.0
             if (reps <= 1) return weightKg
             return ((weightKg * (1.0 + reps / 30.0)) * 10.0).roundToInt() / 10.0
         }

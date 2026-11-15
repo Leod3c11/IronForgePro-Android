@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
@@ -76,6 +77,10 @@ fun DashboardScreen(
         muscleReadinessList.map { it.second }.average().roundToInt()
     }
 
+    val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == state.userProfile.selectedSplitId }
+        ?: ExerciseRepository.defaultSplits.first()
+    val nextWorkout = state.customWorkouts.firstOrNull() ?: chosenSplit.days.first()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -123,7 +128,6 @@ fun DashboardScreen(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    // Android 17 Theme Studio Button
                     FilledIconButton(
                         onClick = { showThemeStudioDialog = true },
                         modifier = Modifier.size(42.dp),
@@ -208,17 +212,64 @@ fun DashboardScreen(
             }
         }
 
-        // 2x2 Bento Grid
+        // Next Recommended Session (Always ready for the user's first workout!)
+        item {
+            val leadExercise = ExerciseRepository.getExerciseById(nextWorkout.exercises.first().exerciseId)
+
+            HyperSquircleCard(accentGlow = true) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        HyperPillTag("SUA ROTINA ATIVA • ${nextWorkout.estimatedMinutes} MIN", palette.primaryGlow)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = nextWorkout.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${nextWorkout.exercises.size} exercícios • ${nextWorkout.focusSummary}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    FilledIconButton(
+                        onClick = { onStartWorkoutDay(nextWorkout) },
+                        modifier = Modifier.size(52.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Iniciar",
+                            tint = palette.onPrimaryAccent,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
+                if (leadExercise != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ExerciseMiniVideoPlayer(
+                        exercise = leadExercise,
+                        customVideoUri = state.customVideoUris[leadExercise.id],
+                        height = 135.dp,
+                        compact = true
+                    )
+                }
+            }
+        }
+
+        // 2x2 Bento Grid (100% Real User Metrics — starts at 0 until user trains!)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    HyperSquircleCard(
-                        modifier = Modifier.weight(1.15f),
-                        accentGlow = true
-                    ) {
+                    HyperSquircleCard(modifier = Modifier.weight(1.15f)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,7 +285,7 @@ fun DashboardScreen(
                             color = TextPrimary
                         )
                         Text(
-                            text = "${totalTonnage.roundToInt()} kg acumulados",
+                            text = if (totalTonnage == 0.0) "Pronto para iniciar" else "${totalTonnage.roundToInt()} kg acumulados",
                             style = MaterialTheme.typography.labelSmall,
                             color = palette.primaryGlow
                         )
@@ -256,7 +307,7 @@ fun DashboardScreen(
                             color = HyperEmerald
                         )
                         Text(
-                            text = "Recuperação SNC",
+                            text = "Energia Muscular",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary
                         )
@@ -302,12 +353,54 @@ fun DashboardScreen(
             }
         }
 
+        // Anthropometry & Body Measurements (Shows user's exact onboarding weight & BF, "—" until circumferences are added)
+        item {
+            val latest = state.bodyMeasurements.lastOrNull()
+            HyperSquircleCard {
+                SectionHeader(
+                    title = "Suas Medidas Corporais",
+                    subtitle = if (latest != null) "Atualizado em ${latest.dateFormatted}" else "Registre suas medidas",
+                    trailing = {
+                        TextButton(onClick = { showMeasureDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Atualizar", color = palette.primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                val curWeight = latest?.weightKg ?: state.userProfile.weightKg
+                val curBf = latest?.bodyFatPct ?: state.userProfile.bodyFatPct
+                val leanMass = (curWeight * (1.0 - curBf / 100.0) * 10).roundToInt() / 10.0
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    MeasureStatBox("Peso", "${curWeight} kg")
+                    MeasureStatBox("Gordura", "${curBf}%")
+                    MeasureStatBox("Massa Magra", "$leanMass kg")
+                    MeasureStatBox("Altura", "${state.userProfile.heightCm.toInt()} cm")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    MeasureStatBox("Peitoral", if ((latest?.chestCm ?: 0.0) > 0.0) "${latest!!.chestCm} cm" else "—")
+                    MeasureStatBox("Braço", if ((latest?.armCm ?: 0.0) > 0.0) "${latest!!.armCm} cm" else "—")
+                    MeasureStatBox("Cintura", if ((latest?.waistCm ?: 0.0) > 0.0) "${latest!!.waistCm} cm" else "—")
+                    MeasureStatBox("Coxa", if ((latest?.thighCm ?: 0.0) > 0.0) "${latest!!.thighCm} cm" else "—")
+                }
+            }
+        }
+
         // Muscle Recovery Readiness Strip
         item {
             HyperSquircleCard {
                 SectionHeader(
                     title = "Status de Recuperação Muscular",
-                    subtitle = "Baseado na janela fisiológica de 24h a 72h"
+                    subtitle = "100% recuperado até você registrar suas séries"
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -341,65 +434,12 @@ fun DashboardScreen(
             }
         }
 
-        // Next Recommended Session (Prioritizes User's Custom Workout if created during Onboarding!)
-        item {
-            val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == state.userProfile.selectedSplitId }
-                ?: ExerciseRepository.defaultSplits.first()
-            val nextWorkout = state.customWorkouts.firstOrNull() ?: chosenSplit.days.first()
-            val leadExercise = ExerciseRepository.getExerciseById(nextWorkout.exercises.first().exerciseId)
-
-            HyperSquircleCard(accentGlow = true) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        HyperPillTag("SUA ROTINA • ${nextWorkout.estimatedMinutes} MIN", palette.primaryGlow)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = nextWorkout.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "${nextWorkout.exercises.size} exercícios • ${nextWorkout.focusSummary}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    FilledIconButton(
-                        onClick = { onStartWorkoutDay(nextWorkout) },
-                        modifier = Modifier.size(52.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Iniciar",
-                            tint = palette.onPrimaryAccent,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
-                if (leadExercise != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ExerciseMiniVideoPlayer(
-                        exercise = leadExercise,
-                        customVideoUri = state.customVideoUris[leadExercise.id],
-                        height = 135.dp,
-                        compact = true
-                    )
-                }
-            }
-        }
-
         // Volume Bar Chart
         item {
             HyperSquircleCard {
                 SectionHeader(
                     title = "Evolução de Tonelagem",
-                    subtitle = "Volume total levantado nas últimas sessões"
+                    subtitle = "Volume total levantado nas suas sessões"
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 VolumeBarChart(sessions = state.sessionHistory)
@@ -411,92 +451,59 @@ fun DashboardScreen(
             HyperSquircleCard {
                 SectionHeader(
                     title = "Equilíbrio Muscular",
-                    subtitle = "Distribuição de séries válidas por grupamento"
+                    subtitle = "Distribuição real das suas séries válidas"
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 MuscleBalanceRadarChart(muscleSets = aggregatedMuscleSets)
             }
         }
 
-        // Top Personal Records
+        // Personal Records (Clean empty state until user logs sets)
         item {
             HyperSquircleCard {
                 SectionHeader(
-                    title = "Recordes Pessoais (1RM Est.)",
-                    subtitle = "Melhores marcas estimadas pela fórmula de Epley"
+                    title = "Seus Recordes Pessoais (1RM Est.)",
+                    subtitle = "Calculados automaticamente ao concluir suas séries"
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                val topPrs = state.exercisePrs.entries.sortedByDescending { it.value }.take(5)
-                topPrs.forEachIndexed { idx, entry ->
-                    val exName = ExerciseRepository.getExerciseById(entry.key)?.name ?: entry.key
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                if (state.exercisePrs.isEmpty()) {
+                    Text(
+                        text = "Nenhum recorde registrado ainda. Ao marcar suas séries como concluídas durante o treino, seu 1RM estimado aparecerá aqui!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                } else {
+                    val topPrs = state.exercisePrs.entries.sortedByDescending { it.value }.take(5)
+                    topPrs.forEachIndexed { idx, entry ->
+                        val exName = ExerciseRepository.getExerciseById(entry.key)?.name ?: entry.key
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "#${idx + 1}",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = palette.primary
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = exName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = TextPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "#${idx + 1}",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = palette.primary
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = exName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = TextPrimary
+                                )
+                            }
+                            HyperPillTag("${entry.value.roundToInt()} kg", HyperEmerald)
                         }
-                        HyperPillTag("${entry.value.roundToInt()} kg", HyperEmerald)
-                    }
-                    if (idx < topPrs.lastIndex) {
-                        HorizontalDivider(color = palette.hairline.copy(alpha = 0.5f))
-                    }
-                }
-            }
-        }
-
-        // Anthropometry & Body Measurements
-        item {
-            val latest = state.bodyMeasurements.lastOrNull()
-            HyperSquircleCard {
-                SectionHeader(
-                    title = "Antropometria & Medidas",
-                    subtitle = if (latest != null) "Última aferição em ${latest.dateFormatted}" else "Acompanhe sua evolução física",
-                    trailing = {
-                        TextButton(onClick = { showMeasureDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Registrar", color = palette.primary, fontWeight = FontWeight.Bold)
+                        if (idx < topPrs.lastIndex) {
+                            HorizontalDivider(color = palette.hairline.copy(alpha = 0.5f))
                         }
-                    }
-                )
-                if (latest != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        MeasureStatBox("Peso", "${latest.weightKg} kg")
-                        MeasureStatBox("Gordura", "${latest.bodyFatPct}%")
-                        MeasureStatBox("Braço", "${latest.armCm} cm")
-                        MeasureStatBox("Cintura", "${latest.waistCm} cm")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        MeasureStatBox("Peitoral", "${latest.chestCm} cm")
-                        MeasureStatBox("Coxa", "${latest.thighCm} cm")
-                        MeasureStatBox("Panturrilha", "${latest.calfCm} cm")
-                        val leanMass = (latest.weightKg * (1.0 - latest.bodyFatPct / 100.0) * 10).roundToInt() / 10.0
-                        MeasureStatBox("Massa Magra", "$leanMass kg")
                     }
                 }
             }
@@ -505,39 +512,72 @@ fun DashboardScreen(
         // Recent Sessions
         item {
             SectionHeader(
-                title = "Histórico Recente",
-                subtitle = "Suas últimas sessões concluídas"
+                title = "Seu Histórico de Treinos",
+                subtitle = "Sessões concluídas por você"
             )
         }
 
-        items(state.sessionHistory.take(5)) { session ->
-            HyperSquircleCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
+        if (state.sessionHistory.isEmpty()) {
+            item {
+                HyperSquircleCard {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 18.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FitnessCenter,
+                            contentDescription = null,
+                            tint = palette.secondary,
+                            modifier = Modifier.size(34.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = session.workoutTitle,
+                            text = "Você ainda não concluiu nenhum treino",
                             style = MaterialTheme.typography.titleMedium,
                             color = TextPrimary
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${session.dateFormatted} • ${session.durationMinutes} min • ${session.totalWorkingSets} séries válidas",
+                            text = "Inicie sua rotina acima ou crie uma ficha na aba Treinos para começar a registrar sua evolução.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
                         )
                     }
-                    HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", palette.secondary)
                 }
-                if (session.highlightExercises.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Destaques: ${session.highlightExercises.joinToString("  •  ")}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted
-                    )
+            }
+        } else {
+            items(state.sessionHistory.take(5)) { session ->
+                HyperSquircleCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = session.workoutTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "${session.dateFormatted} • ${session.durationMinutes} min • ${session.totalWorkingSets} séries válidas",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary
+                            )
+                        }
+                        HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", palette.secondary)
+                    }
+                    if (session.highlightExercises.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Destaques: ${session.highlightExercises.joinToString("  •  ")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextMuted
+                        )
+                    }
                 }
             }
         }
@@ -602,7 +642,7 @@ fun DashboardScreen(
                         ) {
                             Icon(Icons.Default.PersonOutline, contentDescription = null, tint = palette.secondary)
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Refazer Cadastro & Treino Inicial", color = palette.secondary, fontWeight = FontWeight.Bold)
+                            Text("Editar Cadastro & Treino Inicial", color = palette.secondary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -622,6 +662,8 @@ fun DashboardScreen(
     if (showMeasureDialog) {
         BodyMeasurementDialog(
             initial = state.bodyMeasurements.lastOrNull(),
+            fallbackWeight = state.userProfile.weightKg,
+            fallbackBf = state.userProfile.bodyFatPct,
             onDismiss = { showMeasureDialog = false },
             onSave = { w, bf, ch, arm, waist, thigh, calf ->
                 onAddMeasurement(w, bf, ch, arm, waist, thigh, calf)
@@ -649,23 +691,25 @@ private fun MeasureStatBox(label: String, value: String) {
 @Composable
 private fun BodyMeasurementDialog(
     initial: BodyMeasurementRecord?,
+    fallbackWeight: Double,
+    fallbackBf: Double,
     onDismiss: () -> Unit,
     onSave: (Double, Double, Double, Double, Double, Double, Double) -> Unit
 ) {
     val palette = LocalIronPalette.current
-    var weight by remember { mutableStateOf((initial?.weightKg ?: 80.0).toString()) }
-    var bf by remember { mutableStateOf((initial?.bodyFatPct ?: 13.5).toString()) }
-    var chest by remember { mutableStateOf((initial?.chestCm ?: 105.0).toString()) }
-    var arm by remember { mutableStateOf((initial?.armCm ?: 40.0).toString()) }
-    var waist by remember { mutableStateOf((initial?.waistCm ?: 80.0).toString()) }
-    var thigh by remember { mutableStateOf((initial?.thighCm ?: 60.0).toString()) }
-    var calf by remember { mutableStateOf((initial?.calfCm ?: 39.0).toString()) }
+    var weight by remember { mutableStateOf((initial?.weightKg ?: fallbackWeight).toString()) }
+    var bf by remember { mutableStateOf((initial?.bodyFatPct ?: fallbackBf).toString()) }
+    var chest by remember { mutableStateOf(if ((initial?.chestCm ?: 0.0) > 0.0) initial!!.chestCm.toString() else "") }
+    var arm by remember { mutableStateOf(if ((initial?.armCm ?: 0.0) > 0.0) initial!!.armCm.toString() else "") }
+    var waist by remember { mutableStateOf(if ((initial?.waistCm ?: 0.0) > 0.0) initial!!.waistCm.toString() else "") }
+    var thigh by remember { mutableStateOf(if ((initial?.thighCm ?: 0.0) > 0.0) initial!!.thighCm.toString() else "") }
+    var calf by remember { mutableStateOf(if ((initial?.calfCm ?: 0.0) > 0.0) initial!!.calfCm.toString() else "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = HyperCardDark,
         shape = RoundedCornerShape(26.dp),
-        title = { Text("Nova Aferição Corporal", color = TextPrimary, fontWeight = FontWeight.Bold) },
+        title = { Text("Atualizar Suas Medidas", color = TextPrimary, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -673,27 +717,27 @@ private fun BodyMeasurementDialog(
                     OutlinedTextField(value = bf, onValueChange = { bf = it }, label = { Text("BF (%)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = chest, onValueChange = { chest = it }, label = { Text("Peitoral (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = arm, onValueChange = { arm = it }, label = { Text("Braço (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = chest, onValueChange = { chest = it }, label = { Text("Peitoral (cm)") }, placeholder = { Text("Opcional") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = arm, onValueChange = { arm = it }, label = { Text("Braço (cm)") }, placeholder = { Text("Opcional") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = waist, onValueChange = { waist = it }, label = { Text("Cintura (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(value = thigh, onValueChange = { thigh = it }, label = { Text("Coxa (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = waist, onValueChange = { waist = it }, label = { Text("Cintura (cm)") }, placeholder = { Text("Opcional") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = thigh, onValueChange = { thigh = it }, label = { Text("Coxa (cm)") }, placeholder = { Text("Opcional") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
-                OutlinedTextField(value = calf, onValueChange = { calf = it }, label = { Text("Panturrilha (cm)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = calf, onValueChange = { calf = it }, label = { Text("Panturrilha (cm)") }, placeholder = { Text("Opcional") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     onSave(
-                        weight.toDoubleOrNull() ?: 80.0,
-                        bf.toDoubleOrNull() ?: 13.5,
-                        chest.toDoubleOrNull() ?: 105.0,
-                        arm.toDoubleOrNull() ?: 40.0,
-                        waist.toDoubleOrNull() ?: 80.0,
-                        thigh.toDoubleOrNull() ?: 60.0,
-                        calf.toDoubleOrNull() ?: 39.0
+                        weight.toDoubleOrNull() ?: fallbackWeight,
+                        bf.toDoubleOrNull() ?: fallbackBf,
+                        chest.toDoubleOrNull() ?: 0.0,
+                        arm.toDoubleOrNull() ?: 0.0,
+                        waist.toDoubleOrNull() ?: 0.0,
+                        thigh.toDoubleOrNull() ?: 0.0,
+                        calf.toDoubleOrNull() ?: 0.0
                     )
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = palette.primary),

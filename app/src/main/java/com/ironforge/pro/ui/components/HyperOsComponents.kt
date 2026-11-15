@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.model.WorkoutSessionRecord
@@ -425,8 +427,39 @@ fun VolumeBarChart(
 ) {
     val palette = LocalIronPalette.current
     val recent = sessions.take(6).reversed()
-    if (recent.isEmpty()) return
-    val maxVol = (recent.maxOfOrNull { it.totalVolumeKg } ?: 10000.0).coerceAtLeast(1000.0)
+
+    if (recent.isEmpty()) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(HyperTileElevated)
+                .padding(vertical = 22.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.BarChart,
+                contentDescription = null,
+                tint = palette.primary,
+                modifier = Modifier.size(30.dp)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Nenhum volume registrado ainda",
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary
+            )
+            Text(
+                text = "Conclua seu primeiro treino para acompanhar o gráfico real da sua tonelagem.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
+
+    val maxVol = (recent.maxOfOrNull { it.totalVolumeKg } ?: 1000.0).coerceAtLeast(100.0)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Canvas(
@@ -438,7 +471,7 @@ fun VolumeBarChart(
             val barCount = recent.size
             val spacing = 14.dp.toPx()
             val totalSpacing = spacing * (barCount + 1)
-            val barWidth = ((size.width - totalSpacing) / barCount).coerceAtLeast(18f)
+            val barWidth = ((size.width - totalSpacing) / barCount).coerceAtLeast(18f).coerceAtMost(48.dp.toPx())
 
             for (i in 1..3) {
                 val y = size.height * (i / 4f)
@@ -478,7 +511,8 @@ fun VolumeBarChart(
             recent.forEach { session ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "${(session.totalVolumeKg / 1000.0 * 10).toInt() / 10.0}t",
+                        text = if (session.totalVolumeKg >= 1000.0) "${(session.totalVolumeKg / 1000.0 * 10).toInt() / 10.0}t"
+                               else "${session.totalVolumeKg.toInt()}kg",
                         style = MaterialTheme.typography.labelSmall,
                         color = palette.primaryGlow
                     )
@@ -500,15 +534,17 @@ fun MuscleBalanceRadarChart(
 ) {
     val palette = LocalIronPalette.current
     val axes = listOf("Peitoral", "Costas", "Ombros", "Braços", "Quadríceps", "Posterior")
+    val hasAnySets = muscleSets.values.sum() > 0
+
     val values = listOf(
-        (muscleSets["Peitoral"] ?: 10).toFloat(),
-        (muscleSets["Costas & Dorsais"] ?: 12).toFloat(),
-        (muscleSets["Ombros (Deltoides)"] ?: 11).toFloat(),
-        ((muscleSets["Bíceps Braquial"] ?: 6) + (muscleSets["Tríceps Braquial"] ?: 6)).toFloat(),
-        (muscleSets["Quadríceps"] ?: 11).toFloat(),
-        ((muscleSets["Posteriores de Coxa"] ?: 7) + (muscleSets["Glúteos"] ?: 5)).toFloat()
+        (muscleSets["Peitoral"] ?: 0).toFloat(),
+        (muscleSets["Costas & Dorsais"] ?: 0).toFloat(),
+        (muscleSets["Ombros (Deltoides)"] ?: 0).toFloat(),
+        ((muscleSets["Bíceps Braquial"] ?: 0) + (muscleSets["Tríceps Braquial"] ?: 0)).toFloat(),
+        (muscleSets["Quadríceps"] ?: 0).toFloat(),
+        ((muscleSets["Posteriores de Coxa"] ?: 0) + (muscleSets["Glúteos"] ?: 0)).toFloat()
     )
-    val maxScale = 20f
+    val maxScale = (values.maxOrNull() ?: 16f).coerceAtLeast(12f)
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -517,10 +553,10 @@ fun MuscleBalanceRadarChart(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(205.dp),
+                .height(195.dp),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(180.dp)) {
+            Canvas(modifier = Modifier.size(175.dp)) {
                 val center = Offset(size.width / 2f, size.height / 2f)
                 val radius = size.minDimension * 0.42f
                 val sides = axes.size
@@ -554,39 +590,49 @@ fun MuscleBalanceRadarChart(
                     )
                 }
 
-                val dataPath = Path()
-                values.forEachIndexed { i, v ->
-                    val norm = (v / maxScale).coerceIn(0.15f, 1.0f)
-                    val r = radius * norm
-                    val angle = (2.0 * PI * i / sides) - PI / 2.0
-                    val x = center.x + (r * cos(angle)).toFloat()
-                    val y = center.y + (r * sin(angle)).toFloat()
-                    if (i == 0) dataPath.moveTo(x, y) else dataPath.lineTo(x, y)
-                }
-                dataPath.close()
+                if (hasAnySets) {
+                    val dataPath = Path()
+                    values.forEachIndexed { i, v ->
+                        val norm = (v / maxScale).coerceIn(0.08f, 1.0f)
+                        val r = radius * norm
+                        val angle = (2.0 * PI * i / sides) - PI / 2.0
+                        val x = center.x + (r * cos(angle)).toFloat()
+                        val y = center.y + (r * sin(angle)).toFloat()
+                        if (i == 0) dataPath.moveTo(x, y) else dataPath.lineTo(x, y)
+                    }
+                    dataPath.close()
 
-                drawPath(
-                    path = dataPath,
-                    color = palette.primary.copy(alpha = 0.24f)
-                )
-                drawPath(
-                    path = dataPath,
-                    color = palette.primary,
-                    style = Stroke(width = 2.2.dp.toPx())
-                )
-
-                values.forEachIndexed { i, v ->
-                    val norm = (v / maxScale).coerceIn(0.15f, 1.0f)
-                    val r = radius * norm
-                    val angle = (2.0 * PI * i / sides) - PI / 2.0
-                    val x = center.x + (r * cos(angle)).toFloat()
-                    val y = center.y + (r * sin(angle)).toFloat()
-                    drawCircle(
-                        color = palette.secondary,
-                        radius = 4.dp.toPx(),
-                        center = Offset(x, y)
+                    drawPath(
+                        path = dataPath,
+                        color = palette.primary.copy(alpha = 0.24f)
                     )
+                    drawPath(
+                        path = dataPath,
+                        color = palette.primary,
+                        style = Stroke(width = 2.2.dp.toPx())
+                    )
+
+                    values.forEachIndexed { i, v ->
+                        val norm = (v / maxScale).coerceIn(0.08f, 1.0f)
+                        val r = radius * norm
+                        val angle = (2.0 * PI * i / sides) - PI / 2.0
+                        val x = center.x + (r * cos(angle)).toFloat()
+                        val y = center.y + (r * sin(angle)).toFloat()
+                        drawCircle(
+                            color = palette.secondary,
+                            radius = 4.dp.toPx(),
+                            center = Offset(x, y)
+                        )
+                    }
                 }
+            }
+
+            if (!hasAnySets) {
+                Text(
+                    text = "Aguardando 1º treino",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted
+                )
             }
         }
 

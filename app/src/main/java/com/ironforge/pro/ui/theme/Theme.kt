@@ -51,13 +51,11 @@ fun IronForgeTheme(
         val onPrim = if (dyn.primary.luminance() > 0.45f) Color(0xFF0B0E14) else Color(0xFFF5F8FF)
         val p = IronAccentPalette(
             primary = dyn.primary,
-            primaryGlow = dyn.primaryContainer.copy(alpha = 0.95f).let {
-                Color(
-                    red = (dyn.primary.red * 0.8f + 0.2f).coerceIn(0f, 1f),
-                    green = (dyn.primary.green * 0.8f + 0.2f).coerceIn(0f, 1f),
-                    blue = (dyn.primary.blue * 0.8f + 0.2f).coerceIn(0f, 1f)
-                )
-            },
+            primaryGlow = Color(
+                red = (dyn.primary.red * 0.8f + 0.2f).coerceIn(0f, 1f),
+                green = (dyn.primary.green * 0.8f + 0.2f).coerceIn(0f, 1f),
+                blue = (dyn.primary.blue * 0.8f + 0.2f).coerceIn(0f, 1f)
+            ),
             onPrimaryAccent = onPrim,
             secondary = dyn.secondary,
             tertiary = dyn.tertiary,

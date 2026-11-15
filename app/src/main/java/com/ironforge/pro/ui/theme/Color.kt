@@ -2,7 +2,6 @@ package com.ironforge.pro.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Base HyperOS Dark Titanium Surfaces
 val HyperBgDark = Color(0xFF0B0E14)
 val HyperCardDark = Color(0xFF151A24)
 val HyperTileElevated = Color(0xFF1D2433)
@@ -10,7 +9,6 @@ val HyperGlassOverlay = Color(0xD9161C28)
 val HyperHairline = Color(0xFF2B3447)
 val HyperSpecularTop = Color(0x33FFFFFF)
 
-// Fixed Semantic Colors
 val HyperEmerald = Color(0xFF00E676)
 val HyperAmber = Color(0xFFFFB800)
 val HyperCrimson = Color(0xFFFF4757)

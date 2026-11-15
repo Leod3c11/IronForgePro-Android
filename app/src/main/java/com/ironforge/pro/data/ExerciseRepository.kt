@@ -5,7 +5,6 @@ import com.ironforge.pro.model.*
 object ExerciseRepository {
 
     val allExercises: List<Exercise> = listOf(
-        // ==================== PEITORAL (CHEST) ====================
         Exercise(
             id = "chest_bench_barbell",
             name = "Supino Reto com Barra Olímpica",
@@ -21,17 +20,70 @@ object ExerciseRepository {
             restSeconds = 180,
             executionSteps = listOf(
                 "Deite-se no banco com os olhos alinhados sob a barra e pés firmes no chão.",
-                "Retraia e deprima as escápulas formando um arco torácico natural e estável.",
-                "Segure a barra ligeiramente além da largura dos ombros e retire-a do suporte.",
-                "Desça a barra controladamente até tocar a linha média/inferior do esterno, com cotovelos a ~45-60° do tronco, e empurre explosivamente."
+                "Retraia e deprima as escápulas formando arco torácico estável.",
+                "Desça a barra controladamente até tocar a linha inferior do esterno com cotovelos a ~45-60°.",
+                "Empurre explosivamente mantendo escápulas travadas."
             ),
             biomechanicsTips = listOf(
-                "Mantenha os punhos neutros alinhados aos antebraços para evitar torque articular.",
-                "Use leg drive empurrando o chão com os pés para estabilizar o tronco durante a fase concêntrica."
+                "Mantenha punhos neutros alinhados aos antebraços.",
+                "Use leg drive empurrando o solo com os pés."
             ),
             commonMistakes = listOf(
-                "Abrir os cotovelos a 90° (guilhotina), sobrecarregando o manguito rotador.",
-                "Quicar a barra no tórax ou tirar os glúteos do banco."
+                "Abrir cotovelos a 90° sobrecarregando o ombro.",
+                "Quicar a barra no tórax."
+            )
+        ),
+        Exercise(
+            id = "chest_bench_dumbbell",
+            name = "Supino Reto com Halteres",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.BENCH_PRESS,
+            primaryTarget = "Peitoral Maior (Amplitude Livre Esternal)",
+            synergists = listOf("Deltoide Anterior", "Tríceps Braquial"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Deite-se no banco plano com halteres alinhados ao meio do peito.",
+                "Desça os halteres além da linha do tronco buscando alongamento profundo.",
+                "Empurre convergindo os halteres no topo sem bater um no outro."
+            ),
+            biomechanicsTips = listOf(
+                "Maior liberdade articular para os ombros comparado à barra.",
+                "Corrige assimetrias entre lados."
+            ),
+            commonMistakes = listOf(
+                "Deixar os cotovelos abrirem excessivamente.",
+                "Encurtar a descida."
+            )
+        ),
+        Exercise(
+            id = "chest_incline_barbell",
+            name = "Supino Inclinado com Barra (30°)",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.INCLINE_PRESS,
+            primaryTarget = "Peitoral Maior (Porção Clavicular / Superior)",
+            synergists = listOf("Deltoide Anterior", "Tríceps Braquial"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "6–10 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 150,
+            executionSteps = listOf(
+                "Ajuste o banco a 30° e posicione-se com escápulas retraídas.",
+                "Desça a barra até a porção superior do tórax (abaixo da clavícula).",
+                "Empurre verticalmente até quase estender os cotovelos."
+            ),
+            biomechanicsTips = listOf(
+                "Inclinação de 30° maximiza o feixe clavicular sem excesso de deltoide anterior."
+            ),
+            commonMistakes = listOf(
+                "Usar banco a 45-60°.",
+                "Tirar o quadril do assento."
             )
         ),
         Exercise(
@@ -39,7 +91,7 @@ object ExerciseRepository {
             name = "Supino Inclinado com Halteres (30°)",
             muscleGroup = MuscleGroup.CHEST,
             motionPattern = MotionPattern.INCLINE_PRESS,
-            primaryTarget = "Peitoral Maior (Porção Clavicular / Superior)",
+            primaryTarget = "Peitoral Maior (Feixe Clavicular Superior)",
             synergists = listOf("Deltoide Anterior", "Tríceps Braquial"),
             equipment = EquipmentType.DUMBBELL,
             mechanics = MechanicsType.COMPOUND,
@@ -48,102 +100,16 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 120,
             executionSteps = listOf(
-                "Ajuste o banco em inclinação de 30° (evite 45°+ para não transferir excessivamente para o deltoide anterior).",
-                "Apoie os halteres nas coxas e impulsione-os para a posição inicial com escápulas retraídas.",
-                "Desça os halteres ao lado da porção superior do peitoral buscando alongamento profundo.",
-                "Empurre convergindo suavemente os halteres no topo sem bater um no outro."
+                "Ajuste o banco em 30° e impulsione os halteres com as coxas.",
+                "Desça os halteres ao lado do peitoral superior alongando ao máximo.",
+                "Empurre convergindo suavemente no topo."
             ),
             biomechanicsTips = listOf(
-                "A amplitude livre dos halteres permite maior estiramento sob carga na porção clavicular.",
-                "Mantenha o peito estufado durante todo o movimento."
+                "Considerado um dos melhores construtores de peitoral superior."
             ),
             commonMistakes = listOf(
-                "Usar inclinação excessiva (45° ou 60°), transformando o exercício em desenvolvimento.",
-                "Encurtar a fase excêntrica descendo apenas até a metade."
-            )
-        ),
-        Exercise(
-            id = "chest_cable_crossover_high",
-            name = "Crucifixo na Polia Alta (Crossover)",
-            muscleGroup = MuscleGroup.CHEST,
-            motionPattern = MotionPattern.FLY_CROSSOVER,
-            primaryTarget = "Peitoral Maior (Fibras Inferiores e Esternais)",
-            synergists = listOf("Deltoide Anterior", "Bíceps Braquial"),
-            equipment = EquipmentType.CABLE,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Iniciante",
-            recommendedReps = "12–15 reps",
-            tempoTUT = "2-1-1-2",
-            restSeconds = 75,
-            executionSteps = listOf(
-                "Posicione as polias acima da linha da cabeça e dê um passo à frente em base alternada.",
-                "Mantenha uma leve flexão fixa nos cotovelos (15–20°) durante todo o arco.",
-                "Traga os pegadores para baixo e para frente até cruzar levemente os punhos na linha do umbigo.",
-                "Segure 1–2 segundos no pico de contração e retorne controladamente."
-            ),
-            biomechanicsTips = listOf(
-                "Cabos oferecem tensão contínua mesmo no ponto de contração máxima, onde halteres perdem resistência.",
-                "Pense em aproximar os bíceps um do outro, não apenas as mãos."
-            ),
-            commonMistakes = listOf(
-                "Flexionar e estender os cotovelos transformando o exercício em supino na polia.",
-                "Inclinar excessivamente o tronco para compensar carga alta."
-            )
-        ),
-        Exercise(
-            id = "chest_pec_deck",
-            name = "Voador / Peck Deck na Máquina",
-            muscleGroup = MuscleGroup.CHEST,
-            motionPattern = MotionPattern.FLY_CROSSOVER,
-            primaryTarget = "Peitoral Maior (Adução Horizontal)",
-            synergists = listOf("Deltoide Anterior"),
-            equipment = EquipmentType.MACHINE,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Iniciante",
-            recommendedReps = "10–15 reps",
-            tempoTUT = "3-0-1-2",
-            restSeconds = 75,
-            executionSteps = listOf(
-                "Ajuste o banco para que as manoplas fiquem alinhadas exatamente com o meio do peitoral.",
-                "Mantenha as escápulas apoiadas no encosto e os ombros baixos longe das orelhas.",
-                "Feche os braços até unir as manoplas à frente, contraindo intensamente o peitoral.",
-                "Controle a volta por 3 segundos sem deixar os pesos baterem."
-            ),
-            biomechanicsTips = listOf(
-                "Excelente opção para levar o peitoral próximo à falha mecânica com total segurança.",
-                "Evite projetar os ombros para frente no final da concêntrica."
-            ),
-            commonMistakes = listOf(
-                "Banco muito baixo fazendo os cotovelos subirem e estressando o ombro.",
-                "Soltar o peso rapidamente na volta."
-            )
-        ),
-        Exercise(
-            id = "chest_dips_weighted",
-            name = "Paralelas Foco Peitoral (Chest Dips)",
-            muscleGroup = MuscleGroup.CHEST,
-            motionPattern = MotionPattern.DIPS,
-            primaryTarget = "Peitoral Maior (Porção Costal Inferior)",
-            synergists = listOf("Tríceps Braquial", "Deltoide Anterior"),
-            equipment = EquipmentType.BODYWEIGHT,
-            mechanics = MechanicsType.COMPOUND,
-            difficulty = "Intermediário / Avançado",
-            recommendedReps = "6–12 reps",
-            tempoTUT = "3-1-1-0",
-            restSeconds = 120,
-            executionSteps = listOf(
-                "Segure as barras paralelas com pegada ligeiramente aberta e incline o tronco ~30° à frente.",
-                "Mantenha as pernas levemente dobradas atrás e o queixo próximo ao peito.",
-                "Desça até que os ombros fiquem ligeiramente abaixo da linha dos cotovelos.",
-                "Empurre até quase estender os cotovelos mantendo a inclinação do tronco."
-            ),
-            biomechanicsTips = listOf(
-                "A inclinação anterior do tronco aumenta o braço de momento para o peitoral inferior.",
-                "Adicione carga com cinto de lastro quando ultrapassar 12 repetições limpas."
-            ),
-            commonMistakes = listOf(
-                "Manter o tronco totalmente vertical (foca quase exclusivamente no tríceps).",
-                "Descer além da mobilidade individual do ombro."
+                "Encurtar a fase excêntrica.",
+                "Bater os halteres no topo."
             )
         ),
         Exercise(
@@ -160,101 +126,190 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-1",
             restSeconds = 90,
             executionSteps = listOf(
-                "Ajuste o assento para alinhar as manoplas com a porção superior do peito.",
-                "Retraia as escápulas e empurre até quase travar os cotovelos.",
-                "Controle a excêntrica buscando máximo alongamento."
+                "Ajuste o assento para alinhar as manoplas com a parte superior do peito.",
+                "Empurre com trajetória convergente mantendo ombros colados no encosto.",
+                "Controle a volta por 3 segundos."
             ),
             biomechanicsTips = listOf(
-                "Trajetória convergente fixa maximiza a tensão no peitoral superior com alta segurança."
+                "Estabilidade total permite treinar até a falha técnica com segurança."
             ),
             commonMistakes = listOf(
-                "Descolar os ombros do encosto no final do empurrão."
-            )
-        ),
-
-        // ==================== COSTAS & DORSAIS (BACK) ====================
-        Exercise(
-            id = "back_lat_pulldown",
-            name = "Puxada Frontal Pegada Pronada",
-            muscleGroup = MuscleGroup.BACK,
-            motionPattern = MotionPattern.LAT_PULLDOWN,
-            primaryTarget = "Latíssimo do Dorso (Largura Dorsal)",
-            synergists = listOf("Redondo Maior", "Romboides", "Trapézio Inferior", "Bíceps Braquial"),
-            equipment = EquipmentType.CABLE,
-            mechanics = MechanicsType.COMPOUND,
-            difficulty = "Iniciante",
-            recommendedReps = "8–12 reps",
-            tempoTUT = "2-1-1-1",
-            restSeconds = 90,
-            executionSteps = listOf(
-                "Trave as coxas sob o apoio e segure a barra a cerca de 1,3x a largura dos ombros.",
-                "Inicie o movimento deprimindo os ombros (abaixando as escápulas) antes de dobrar os cotovelos.",
-                "Puxe a barra em direção à parte superior do esterno inclinando o tronco apenas 10–15°.",
-                "Estenda completamente os braços no topo permitindo o alongamento total das dorsais."
-            ),
-            biomechanicsTips = listOf(
-                "Use pegada sem polegar (thumbless) ou straps se o antebraço falhar antes das dorsais.",
-                "Concentre-se em puxar com os cotovelos para baixo e para os quadris."
-            ),
-            commonMistakes = listOf(
-                "Balançar o tronco para trás usando impulso lombar.",
-                "Puxar a barra atrás da nuca (alto risco de impacto cervical e glenoumeral)."
+                "Projetar os ombros para frente no final do movimento."
             )
         ),
         Exercise(
-            id = "back_barbell_row",
-            name = "Remada Curvada com Barra",
-            muscleGroup = MuscleGroup.BACK,
-            motionPattern = MotionPattern.ROW_HORIZONTAL,
-            primaryTarget = "Latíssimo do Dorso, Romboides e Trapézio Médio",
-            synergists = listOf("Deltoide Posterior", "Eretores da Espinha", "Bíceps Braquial"),
+            id = "chest_decline_barbell",
+            name = "Supino Declinado com Barra / Máquina",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.BENCH_PRESS,
+            primaryTarget = "Peitoral Maior (Porção Esternal Inferior)",
+            synergists = listOf("Tríceps Braquial", "Deltoide Anterior"),
             equipment = EquipmentType.BARBELL,
             mechanics = MechanicsType.COMPOUND,
-            difficulty = "Intermediário / Avançado",
-            recommendedReps = "6–10 reps",
-            tempoTUT = "2-1-1-1",
-            restSeconds = 150,
+            difficulty = "Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-0-1-0",
+            restSeconds = 120,
             executionSteps = listOf(
-                "Com pés na largura dos quadris, flexione o quadril mantendo a coluna neutra em 35–45°.",
-                "Segure a barra com pegada pronada ou supinada na largura dos ombros.",
-                "Puxe a barra em direção à linha do umbigo fechando as escápulas no topo.",
-                "Controle a descida sem arredondar a região lombar."
+                "Trave as pernas no apoio do banco declinado (-15°).",
+                "Desça a barra até a linha inferior do peitoral.",
+                "Empurre mantendo controle total."
             ),
             biomechanicsTips = listOf(
-                "Puxar mais baixo enfatiza o latíssimo; puxar mais alto enfatiza trapézio médio e romboides.",
-                "Mantenha o bracing abdominal ativo em 100% da série."
+                "Menor tensão no deltoide anterior comparado ao supino reto."
             ),
             commonMistakes = listOf(
-                "Arredondar a lombar sob fadiga.",
-                "Ficar quase em pé transformando o movimento em encolhimento de trapézio."
+                "Usar declinação exagerada causando desconforto cefálico."
             )
         ),
         Exercise(
-            id = "back_seated_cable_row",
-            name = "Remada Baixa Sentada na Polia",
-            muscleGroup = MuscleGroup.BACK,
-            motionPattern = MotionPattern.ROW_HORIZONTAL,
-            primaryTarget = "Espessura Dorsal (Romboides, Trapézio Médio e Latíssimo)",
-            synergists = listOf("Deltoide Posterior", "Bíceps Braquial", "Braquial"),
-            equipment = EquipmentType.CABLE,
-            mechanics = MechanicsType.COMPOUND,
-            difficulty = "Iniciante",
-            recommendedReps = "10–12 reps",
-            tempoTUT = "2-1-1-1",
+            id = "chest_dumbbell_fly",
+            name = "Crucifixo Reto com Halteres",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.FLY_CROSSOVER,
+            primaryTarget = "Peitoral Maior (Alongamento Sob Carga)",
+            synergists = listOf("Deltoide Anterior"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "3-1-1-0",
             restSeconds = 90,
             executionSteps = listOf(
-                "Apoie os pés na plataforma com joelhos semiflexionados e coluna ereta.",
-                "Permita que as escápulas abram à frente no início para alongar o meio das costas.",
-                "Puxe o triângulo até tocar o abdômen enquanto retrai e deprime as escápulas.",
-                "Segure 1 segundo na contração máxima antes de retornar."
+                "Deitado no banco plano, mantenha leve flexão fixa nos cotovelos (15°).",
+                "Abra os braços em arco amplo até sentir alongamento profundo no peitoral.",
+                "Retorne até os halteres alinharem acima dos ombros (onde ainda há tensão)."
             ),
             biomechanicsTips = listOf(
-                "Mantenha os cotovelos raspando próximos às costelas para maximizar o recrutamento dorsal.",
-                "Evite elevar os ombros em direção às orelhas."
+                "Não encoste os halteres no topo para não perder a tensão gravitacional."
             ),
             commonMistakes = listOf(
-                "Usar gangorra excessiva de tronco para frente e para trás.",
-                "Encurtar o alongamento escapular na fase excêntrica."
+                "Dobrar demais os cotovelos transformando em supino."
+            )
+        ),
+        Exercise(
+            id = "chest_cable_crossover_high",
+            name = "Crucifixo na Polia Alta (Crossover)",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.FLY_CROSSOVER,
+            primaryTarget = "Peitoral Maior (Fibras Inferiores e Esternais)",
+            synergists = listOf("Deltoide Anterior"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps",
+            tempoTUT = "2-1-1-2",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Posicione as polias acima da cabeça e dê um passo à frente.",
+                "Mantenha cotovelos semiflexionados e traga os pegadores até cruzar na frente do umbigo.",
+                "Segure 2 segundos no pico de contração."
+            ),
+            biomechanicsTips = listOf(
+                "Tensão contínua no ponto de contração máxima."
+            ),
+            commonMistakes = listOf(
+                "Flexionar e estender cotovelos durante a série."
+            )
+        ),
+        Exercise(
+            id = "chest_cable_crossover_low",
+            name = "Crucifixo na Polia Baixa (Fibras Superiores)",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.FLY_CROSSOVER,
+            primaryTarget = "Peitoral Maior (Porção Clavicular)",
+            synergists = listOf("Deltoide Anterior", "Bíceps Braquial"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "12–15 reps",
+            tempoTUT = "2-1-1-2",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Ajuste as polias na posição mais baixa e segure os pegadores com palmas para cima.",
+                "Eleve os braços à frente e para dentro até a altura do queixo/nariz.",
+                "Contraia o peitoral superior no topo e desça lentamente."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente isolador para a região clavicular do peito."
+            ),
+            commonMistakes = listOf(
+                "Usar impulso de lombar para subir a carga."
+            )
+        ),
+        Exercise(
+            id = "chest_pec_deck",
+            name = "Voador / Peck Deck na Máquina",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.FLY_CROSSOVER,
+            primaryTarget = "Peitoral Maior (Adução Horizontal)",
+            synergists = listOf("Deltoide Anterior"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "3-0-1-2",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Ajuste o banco para manoplas na altura média do peitoral.",
+                "Feche os braços até unir as manoplas mantendo ombros baixos.",
+                "Controle a volta em 3 segundos."
+            ),
+            biomechanicsTips = listOf(
+                "Isolamento puro com curva de resistência constante."
+            ),
+            commonMistakes = listOf(
+                "Subir os ombros em direção às orelhas."
+            )
+        ),
+        Exercise(
+            id = "chest_dips_weighted",
+            name = "Paralelas Foco Peitoral (Chest Dips)",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.DIPS,
+            primaryTarget = "Peitoral Maior (Porção Costal Inferior)",
+            synergists = listOf("Tríceps Braquial", "Deltoide Anterior"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário / Avançado",
+            recommendedReps = "6–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Incline o tronco ~30° à frente e abra levemente os cotovelos.",
+                "Desça até os ombros ficarem ligeiramente abaixo dos cotovelos.",
+                "Empurre mantendo o tronco inclinado."
+            ),
+            biomechanicsTips = listOf(
+                "Adicione cinto de carga quando superar 12 reps."
+            ),
+            commonMistakes = listOf(
+                "Manter tronco reto foca apenas no tríceps."
+            )
+        ),
+        Exercise(
+            id = "chest_weighted_pushup",
+            name = "Flexão de Braços com Sobrecarga / Déficit",
+            muscleGroup = MuscleGroup.CHEST,
+            motionPattern = MotionPattern.BENCH_PRESS,
+            primaryTarget = "Peitoral Maior e Serrátil Anterior",
+            synergists = listOf("Tríceps Braquial", "Deltoide Anterior", "Core"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–20 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Apoie as mãos em steps ou pegadores para aumentar a amplitude.",
+                "Desça o peito abaixo da linha das mãos mantendo o corpo alinhado.",
+                "Empurre até prostração completa das escápulas."
+            ),
+            biomechanicsTips = listOf(
+                "Permite movimento natural das escápulas sobre a caixa torácica."
+            ),
+            commonMistakes = listOf(
+                "Deixar o quadril cair hiperestendendo a lombar."
             )
         ),
         Exercise(
@@ -271,46 +326,216 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 120,
             executionSteps = listOf(
-                "Segure a barra fixa acima da cabeça com pegada pronada aberta.",
-                "Parta da posição de suspensão ativa (ombros longe das orelhas).",
-                "Puxe o peito em direção à barra até passar o queixo acima da linha da barra.",
-                "Desça lentamente até a extensão completa dos cotovelos."
+                "Segure a barra com pegada pronada aberta.",
+                "Inicie deprimindo as escápulas e puxe o peito em direção à barra.",
+                "Desça até extensão completa dos braços."
             ),
             biomechanicsTips = listOf(
-                "Imagine levar os cotovelos até os bolsos da calça para ativar intensamente o latíssimo.",
-                "Se ainda não completa 6 reps, utilize elástico de assistência ou graviton."
+                "Imagine puxar os cotovelos para dentro dos bolsos."
             ),
             commonMistakes = listOf(
-                "Fazer meias repetições sem estender os braços embaixo.",
-                "Chutar as pernas (kipping) durante treino de hipertrofia."
+                "Fazer meias repetições sem estender os cotovelos."
             )
         ),
         Exercise(
-            id = "back_straight_arm_pulldown",
-            name = "Pulldown Braços Estendidos na Polia",
+            id = "back_chin_up",
+            name = "Barra Fixa Supinada (Chin-Up)",
             muscleGroup = MuscleGroup.BACK,
-            motionPattern = MotionPattern.STRAIGHT_ARM_PULL,
-            primaryTarget = "Latíssimo do Dorso (Isolamento)",
-            synergists = listOf("Redondo Maior", "Tríceps (Cabeça Longa)", "Peitoral Menor"),
-            equipment = EquipmentType.CABLE,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Iniciante",
-            recommendedReps = "12–15 reps",
-            tempoTUT = "2-1-1-2",
-            restSeconds = 60,
+            motionPattern = MotionPattern.PULL_UP,
+            primaryTarget = "Latíssimo do Dorso Inferior e Bíceps Braquial",
+            synergists = listOf("Redondo Maior", "Braquial", "Romboides"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "6–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
             executionSteps = listOf(
-                "Em pé frente à polia alta com barra reta ou corda, incline o tronco ~25° à frente.",
-                "Com cotovelos travados em leve flexão, puxe a barra em arco até encostar nas coxas.",
-                "Contraia fortemente as dorsais por 1–2 segundos.",
-                "Retorne até os braços ficarem alinhados com o tronco acima da cabeça."
+                "Segure a barra com palmas voltadas para você na largura dos ombros.",
+                "Puxe até o queixo passar a barra mantendo o peito alto.",
+                "Controle a descida por 3 segundos."
             ),
             biomechanicsTips = listOf(
-                "Ideal como pré-exaustão ou finalizador sem fadigar o bíceps.",
-                "Mantenha o abdômen contraído para evitar hiperextensão lombar."
+                "Maior vantagem mecânica para o bíceps e fibras inferiores do latíssimo."
             ),
             commonMistakes = listOf(
-                "Dobrar os cotovelos e empurrar como tríceps pulley.",
-                "Subir pouco os braços perdendo o alongamento dorsal."
+                "Balançar as pernas para ganhar impulso."
+            )
+        ),
+        Exercise(
+            id = "back_lat_pulldown",
+            name = "Puxada Frontal Pegada Pronada Aberta",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.LAT_PULLDOWN,
+            primaryTarget = "Latíssimo do Dorso (Largura Dorsal)",
+            synergists = listOf("Redondo Maior", "Romboides", "Bíceps Braquial"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Trave as coxas no apoio e segure a barra a ~1,3x a largura dos ombros.",
+                "Puxe a barra até a parte superior do esterno inclinando apenas 10–15°.",
+                "Estenda completamente os braços no topo."
+            ),
+            biomechanicsTips = listOf(
+                "Use pegada sem polegar ou straps se o antebraço cansar antes."
+            ),
+            commonMistakes = listOf(
+                "Puxar atrás da nuca.",
+                "Balançar o tronco para trás."
+            )
+        ),
+        Exercise(
+            id = "back_lat_pulldown_neutral",
+            name = "Puxada Frontal Pegada Triângulo / Neutra",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.LAT_PULLDOWN,
+            primaryTarget = "Latíssimo do Dorso (Plano Sagital)",
+            synergists = listOf("Braquial", "Trapézio Inferior", "Romboides"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–12 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Use pegador triângulo ou barra neutra paralela.",
+                "Puxe os cotovelos rentes ao tronco até o pegador tocar o esterno.",
+                "Alongue completamente as dorsais no topo."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente ativação das fibras ilíacas e lombares do latíssimo."
+            ),
+            commonMistakes = listOf(
+                "Arredondar os ombros para frente no final da puxada."
+            )
+        ),
+        Exercise(
+            id = "back_single_arm_pulldown",
+            name = "Puxada Unilateral na Polia Alta (Iliac Pulldown)",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.LAT_PULLDOWN,
+            primaryTarget = "Latíssimo do Dorso (Fibras Ilíacas Inferiores)",
+            synergists = listOf("Redondo Maior", "Bíceps Braquial"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "10–14 reps / lado",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Ajoelhe-se ou sente-se de lado para a polia alta segurando o pegador D.",
+                "Puxe o cotovelo em direção ao quadril mantendo o tronco estável.",
+                "Permita que o braço suba totalmente alongando a lateral das costas."
+            ),
+            biomechanicsTips = listOf(
+                "Alinha perfeitamente o vetor do cabo com as fibras inferiores do latíssimo."
+            ),
+            commonMistakes = listOf(
+                "Girar o tronco para ajudar na puxada."
+            )
+        ),
+        Exercise(
+            id = "back_barbell_row",
+            name = "Remada Curvada com Barra (Pronada)",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.ROW_HORIZONTAL,
+            primaryTarget = "Latíssimo do Dorso, Romboides e Trapézio Médio",
+            synergists = listOf("Deltoide Posterior", "Eretores da Espinha", "Bíceps"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário / Avançado",
+            recommendedReps = "6–10 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 150,
+            executionSteps = listOf(
+                "Incline o tronco a ~40° mantendo a coluna rigorosamente neutra.",
+                "Puxe a barra em direção ao umbigo fechando as escápulas no topo.",
+                "Controle a descida sem perder o bracing abdominal."
+            ),
+            biomechanicsTips = listOf(
+                "Construtor fundamental de densidade e espessura dorsal."
+            ),
+            commonMistakes = listOf(
+                "Arredondar a lombar sob fadiga."
+            )
+        ),
+        Exercise(
+            id = "back_pendlay_row",
+            name = "Remada Pendlay Explosiva com Barra",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.ROW_HORIZONTAL,
+            primaryTarget = "Dorsais, Trapézio Médio e Potência Posterior",
+            synergists = listOf("Deltoide Posterior", "Bíceps", "Core"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Avançado",
+            recommendedReps = "5–8 reps",
+            tempoTUT = "1-0-X-1",
+            restSeconds = 150,
+            executionSteps = listOf(
+                "Com tronco quase paralelo ao solo, parta com a barra apoiada no chão a cada repetição.",
+                "Puxe explosivamente até a barra tocar a base do esterno.",
+                "Retorne a barra ao solo, resete a postura e repita."
+            ),
+            biomechanicsTips = listOf(
+                "Elimina impulso entre repetições e desenvolve força explosiva."
+            ),
+            commonMistakes = listOf(
+                "Levantar o tronco durante a puxada."
+            )
+        ),
+        Exercise(
+            id = "back_one_arm_dumbbell_row",
+            name = "Remada Unilateral com Halter (Serrote)",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.ROW_HORIZONTAL,
+            primaryTarget = "Latíssimo do Dorso e Redondo Maior",
+            synergists = listOf("Romboides", "Deltoide Posterior", "Bíceps"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "8–12 reps / lado",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Apoie uma mão e um joelho no banco (ou mão no rack em base tripla).",
+                "Deixe o ombro descer no fundo para alongar a escápula.",
+                "Puxe o halter em arco em direção ao quadril mantendo o cotovelo próximo ao corpo."
+            ),
+            biomechanicsTips = listOf(
+                "Puxar em direção ao quadril (e não ao ombro) isola o latíssimo."
+            ),
+            commonMistakes = listOf(
+                "Torcer a coluna excessivamente no topo."
+            )
+        ),
+        Exercise(
+            id = "back_seated_cable_row",
+            name = "Remada Baixa Sentada na Polia (Triângulo)",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.ROW_HORIZONTAL,
+            primaryTarget = "Espessura Dorsal (Romboides, Trapézio e Latíssimo)",
+            synergists = listOf("Deltoide Posterior", "Bíceps", "Braquial"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–12 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Apoie os pés na plataforma com joelhos semiflexionados e coluna ereta.",
+                "Abra as escápulas à frente no início para alongar o meio das costas.",
+                "Puxe o triângulo até o abdômen retraindo as escápulas por 1 segundo."
+            ),
+            biomechanicsTips = listOf(
+                "Mantenha cotovelos raspando nas costelas."
+            ),
+            commonMistakes = listOf(
+                "Usar gangorra lombar excessiva."
             )
         ),
         Exercise(
@@ -327,15 +552,40 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 120,
             executionSteps = listOf(
-                "Apoie o tórax no encosto eliminando qualquer estresse lombar.",
+                "Apoie o tórax no encosto eliminando fadiga lombar.",
                 "Puxe as manoplas fechando as escápulas no topo por 1 segundo.",
-                "Estenda completamente os braços no final da descida."
+                "Estenda completamente os braços na descida."
             ),
             biomechanicsTips = listOf(
-                "Sem fadiga lombar, permite treinar as costas até a falha técnica real."
+                "Permite levar as costas à falha mecânica real com total segurança."
             ),
             commonMistakes = listOf(
-                "Descolar o peito do apoio para roubar na subida."
+                "Descolar o peito do apoio para roubar."
+            )
+        ),
+        Exercise(
+            id = "back_straight_arm_pulldown",
+            name = "Pulldown Braços Estendidos na Polia",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.STRAIGHT_ARM_PULL,
+            primaryTarget = "Latíssimo do Dorso (Isolamento)",
+            synergists = listOf("Redondo Maior", "Tríceps (Cabeça Longa)"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps",
+            tempoTUT = "2-1-1-2",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Incline o tronco ~25° frente à polia alta com barra ou corda.",
+                "Com cotovelos quase estendidos, puxe em arco até as coxas.",
+                "Contraia por 2 segundos e retorne até acima da cabeça."
+            ),
+            biomechanicsTips = listOf(
+                "Isola as dorsais sem fadigar o bíceps."
+            ),
+            commonMistakes = listOf(
+                "Dobrar os cotovelos transformando em tríceps pulley."
             )
         ),
         Exercise(
@@ -344,7 +594,7 @@ object ExerciseRepository {
             muscleGroup = MuscleGroup.BACK,
             motionPattern = MotionPattern.DEADLIFT,
             primaryTarget = "Cadeia Posterior Completa (Eretores, Glúteos, Posteriores e Trapézio)",
-            synergists = listOf("Quadríceps", "Latíssimo do Dorso", "Antebraços", "Core"),
+            synergists = listOf("Quadríceps", "Dorsais", "Antebraços", "Core"),
             equipment = EquipmentType.BARBELL,
             mechanics = MechanicsType.COMPOUND,
             difficulty = "Avançado",
@@ -352,29 +602,75 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-0",
             restSeconds = 210,
             executionSteps = listOf(
-                "Posicione os pés na largura dos quadris com a barra sobre o meio do pé (2–3 cm da canela).",
-                "Flexione o quadril, segure a barra logo fora das pernas, tire a folga da barra e trave o peito alto.",
-                "Empurre o chão com as pernas enquanto mantém a barra colada ao corpo até travar quadril e joelhos.",
-                "Desça controladamente devolvendo o quadril para trás antes de dobrar os joelhos."
+                "Pés na largura dos quadris, barra sobre o meio do pé.",
+                "Tire a folga da barra, trave o peito alto e empurre o chão com as pernas.",
+                "Mantenha a barra colada às canelas e coxas até travar quadril e joelhos."
             ),
             biomechanicsTips = listOf(
-                "O movimento mais completo de força bruta do corpo humano.",
-                "Mantenha a coluna rigorosamente neutra em toda a repetição."
+                "Principal exercício de força bruta do corpo humano."
             ),
             commonMistakes = listOf(
-                "Arredondar a coluna lombar na saída do chão.",
-                "Deixar a barra afastar das canelas."
+                "Arredondar a lombar.",
+                "Afastar a barra das pernas."
             )
         ),
-
-        // ==================== OMBROS (SHOULDERS) ====================
+        Exercise(
+            id = "back_rack_pull",
+            name = "Meio-Terra no Rack (Rack Pull)",
+            muscleGroup = MuscleGroup.BACK,
+            motionPattern = MotionPattern.DEADLIFT,
+            primaryTarget = "Trapézio Superior/Médio, Romboides e Eretores",
+            synergists = listOf("Glúteos", "Antebraços", "Dorsais"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário / Avançado",
+            recommendedReps = "5–8 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 180,
+            executionSteps = listOf(
+                "Posicione a barra nos pinos do rack na altura dos joelhos.",
+                "Segure com straps, trave as escápulas e estenda o quadril.",
+                "Controle a descida até apoiar nos pinos."
+            ),
+            biomechanicsTips = listOf(
+                "Permite sobrecarga supramáxima na parte superior das costas."
+            ),
+            commonMistakes = listOf(
+                "Hiperestender a lombar no topo."
+            )
+        ),
+        Exercise(
+            id = "shld_barbell_ohp",
+            name = "Desenvolvimento Militar com Barra em Pé (OHP)",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.OVERHEAD_PRESS,
+            primaryTarget = "Deltoide Anterior e Lateral + Estabilidade Core",
+            synergists = listOf("Tríceps Braquial", "Trapézio Superior", "Serrátil"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário / Avançado",
+            recommendedReps = "5–8 reps",
+            tempoTUT = "2-0-1-0",
+            restSeconds = 150,
+            executionSteps = listOf(
+                "Em pé com glúteos e abdômen travados, apoie a barra na clavícula.",
+                "Empurre verticalmente passando a barra rente ao nariz e encaixando a cabeça à frente no topo.",
+                "Desça controladamente até a clavícula."
+            ),
+            biomechanicsTips = listOf(
+                "Contraia os glúteos o tempo todo para blindar a lombar."
+            ),
+            commonMistakes = listOf(
+                "Inclinar o tronco para trás fazendo um supino em pé."
+            )
+        ),
         Exercise(
             id = "shld_overhead_press_dumbbell",
             name = "Desenvolvimento Militar com Halteres Sentado",
             muscleGroup = MuscleGroup.SHOULDERS,
             motionPattern = MotionPattern.OVERHEAD_PRESS,
             primaryTarget = "Deltoide Anterior e Lateral",
-            synergists = listOf("Tríceps Braquial", "Trapézio Superior", "Serrátil Anterior"),
+            synergists = listOf("Tríceps Braquial", "Trapézio Superior", "Serrátil"),
             equipment = EquipmentType.DUMBBELL,
             mechanics = MechanicsType.COMPOUND,
             difficulty = "Iniciante / Intermediário",
@@ -382,18 +678,65 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-0",
             restSeconds = 120,
             executionSteps = listOf(
-                "Sente-se no banco a 80–85° com lombar bem apoiada e pés firmes.",
-                "Posicione os halteres na altura das orelhas com cotovelos levemente à frente do plano escapular (~30°).",
-                "Empurre os halteres acima da cabeça sem bater um no outro no topo.",
-                "Desça controladamente até os halteres alinharem com o queixo/orelhas."
+                "Banco a 80–85°, halteres na altura das orelhas com cotovelos 30° à frente (plano escapular).",
+                "Empurre acima da cabeça sem bater os halteres no topo.",
+                "Desça até alinhar com o queixo."
             ),
             biomechanicsTips = listOf(
-                "Trabalhar no plano escapular (cotovelos 30° à frente) protege o espaço subacromial do ombro.",
-                "Evite arquear excessivamente a lombar no final da série."
+                "O plano escapular protege os tendões do manguito rotador."
             ),
             commonMistakes = listOf(
-                "Encurtar a descida parando no topo da cabeça.",
-                "Jogar os cotovelos totalmente abertos para trás."
+                "Encurtar a descida parando no topo da cabeça."
+            )
+        ),
+        Exercise(
+            id = "shld_arnold_press",
+            name = "Desenvolvimento Arnold com Halteres",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.OVERHEAD_PRESS,
+            primaryTarget = "Deltoide Anterior e Lateral (Rotação Completa)",
+            synergists = listOf("Tríceps Braquial", "Serrátil Anterior"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "10–12 reps",
+            tempoTUT = "3-0-1-0",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Inicie com halteres à frente dos ombros e palmas voltadas para você.",
+                "Ao empurrar acima da cabeça, gire os punhos externamente terminando com palmas para frente.",
+                "Inverta a rotação na descida."
+            ),
+            biomechanicsTips = listOf(
+                "Aumenta o tempo sob tensão nos feixes anterior e lateral."
+            ),
+            commonMistakes = listOf(
+                "Girar rápido demais sem controle escapular."
+            )
+        ),
+        Exercise(
+            id = "shld_machine_press",
+            name = "Desenvolvimento na Máquina Articulada",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.OVERHEAD_PRESS,
+            primaryTarget = "Deltoide Anterior e Lateral",
+            synergists = listOf("Tríceps Braquial"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–14 reps",
+            tempoTUT = "3-0-1-0",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Ajuste o banco para manoplas na altura dos ombros.",
+                "Empurre até quase estender os cotovelos.",
+                "Controle a descida por 3 segundos."
+            ),
+            biomechanicsTips = listOf(
+                "Ótimo para finalizar ombros com segurança."
+            ),
+            commonMistakes = listOf(
+                "Descolar a lombar do encosto."
             )
         ),
         Exercise(
@@ -410,18 +753,16 @@ object ExerciseRepository {
             tempoTUT = "2-0-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Em pé com tronco inclinado 10° à frente, segure os halteres ao lado das coxas.",
-                "Eleve os braços lateralmente no plano escapular até a altura dos ombros, liderando com os cotovelos.",
-                "Mantenha os punhos neutros (evite girar o polegar para baixo).",
-                "Desça lentamente resistindo à gravidade sem deixar os halteres descansarem nas pernas."
+                "Incline o tronco 10° à frente e eleve os braços no plano escapular até a altura dos ombros.",
+                "Lidere com os cotovelos mantendo punhos neutros.",
+                "Desça resistindo sem descansar os halteres nas coxas."
             ),
             biomechanicsTips = listOf(
-                "Pense em afastar os halteres para as paredes laterais da sala, não em levantá-los para o teto.",
-                "O deltoide lateral responde excepcionalmente bem a altas repetições e frequência 3–4x/semana."
+                "Pense em empurrar os halteres para as paredes laterais."
             ),
             commonMistakes = listOf(
-                "Balançar o quadril para impulsionar pesos excessivos.",
-                "Encolher o trapézio antes de iniciar a abdução do braço."
+                "Balançar o quadril.",
+                "Encolher o trapézio antes de abduzir."
             )
         ),
         Exercise(
@@ -438,18 +779,64 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Ajuste a polia na altura do punho/joelho e segure o pegador cruzando à frente do corpo.",
-                "Com a mão livre segurando a estrutura da máquina, incline-se levemente para o lado oposto.",
-                "Abduza o braço até a linha paralela ao solo com tensão contínua desde o grau zero.",
-                "Controle a descida até o punho cruzar levemente à frente do quadril."
+                "Polia na altura do punho, segure a estrutura com a mão livre e incline-se levemente.",
+                "Abduza o braço até a horizontal com tensão desde o início.",
+                "Controle a descida."
             ),
             biomechanicsTips = listOf(
-                "Ao contrário do halter, o cabo maximiza a tensão na posição alongada.",
-                "Excelente para corrigir assimetrias entre ombro esquerdo e direito."
+                "Maximiza a tensão na posição alongada do deltoide lateral."
             ),
             commonMistakes = listOf(
-                "Girar o tronco durante a elevação.",
-                "Subir o braço muito acima da linha do ombro."
+                "Girar o tronco durante a subida."
+            )
+        ),
+        Exercise(
+            id = "shld_machine_lateral_raise",
+            name = "Elevação Lateral na Máquina",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.LATERAL_RAISE,
+            primaryTarget = "Deltoide Lateral (Isolamento Total)",
+            synergists = listOf("Supraespinal"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–18 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie os cotovelos nos rolos alinhando o eixo do ombro com a máquina.",
+                "Eleve até a paralela ao chão e segure 1 segundo.",
+                "Desça lentamente."
+            ),
+            biomechanicsTips = listOf(
+                "Elimina qualquer compensação de punho ou antebraço."
+            ),
+            commonMistakes = listOf(
+                "Subir os ombros para as orelhas."
+            )
+        ),
+        Exercise(
+            id = "shld_front_raise",
+            name = "Elevação Frontal com Barra W ou Anilha",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.OVERHEAD_PRESS,
+            primaryTarget = "Deltoide Anterior (Porção Clavicular)",
+            synergists = listOf("Peitoral Superior", "Serrátil"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Em pé com tronco firme, eleve a barra ou anilha à frente até a linha dos olhos.",
+                "Controle a descida sem balançar o quadril."
+            ),
+            biomechanicsTips = listOf(
+                "Mantenha cotovelos levemente flexionados."
+            ),
+            commonMistakes = listOf(
+                "Jogar o corpo para trás para subir o peso."
             )
         ),
         Exercise(
@@ -458,7 +845,7 @@ object ExerciseRepository {
             muscleGroup = MuscleGroup.SHOULDERS,
             motionPattern = MotionPattern.REVERSE_FLY,
             primaryTarget = "Deltoide Posterior",
-            synergists = listOf("Infraespinal", "Redondo Menor", "Romboides", "Trapézio Médio"),
+            synergists = listOf("Infraespinal", "Redondo Menor", "Romboides"),
             equipment = EquipmentType.MACHINE,
             mechanics = MechanicsType.ISOLATION,
             difficulty = "Iniciante",
@@ -466,17 +853,40 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Sente-se de frente para o encosto do Peck Deck com o peito apoiado.",
-                "Segure as manoplas horizontais com pegada neutra e cotovelos quase estendidos.",
-                "Abra os braços para trás em arco mantendo os ombros deprimidos.",
-                "Pare quando os braços alinharem com o tronco e retorne lentamente."
+                "Peito apoiado no encosto, segure as manoplas horizontais.",
+                "Abra os braços para trás em arco mantendo ombros baixos.",
+                "Pare na linha do tronco e retorne lentamente."
             ),
             biomechanicsTips = listOf(
-                "Evite juntar demais as escápulas no final para que o trapézio não roube o trabalho do deltoide posterior."
+                "Evite fechar demais as escápulas para o trapézio não roubar."
             ),
             commonMistakes = listOf(
-                "Puxar excessivamente para trás fechando as escápulas como uma remada.",
-                "Usar carga alta demais gerando impulso cervical."
+                "Usar carga alta gerando impulso cervical."
+            )
+        ),
+        Exercise(
+            id = "shld_bent_over_rear_delt",
+            name = "Crucifixo Invertido Inclinado com Halteres",
+            muscleGroup = MuscleGroup.SHOULDERS,
+            motionPattern = MotionPattern.REVERSE_FLY,
+            primaryTarget = "Deltoide Posterior",
+            synergists = listOf("Romboides", "Trapézio Médio", "Infraespinal"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Intermediário",
+            recommendedReps = "12–20 reps",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Incline o tronco a ~45° (ou apoie o peito em banco inclinado).",
+                "Abra os halteres para os lados e levemente para trás liderando com os cotovelos.",
+                "Controle a descida."
+            ),
+            biomechanicsTips = listOf(
+                "Apoiar o peito no banco inclinado elimina balanço lombar."
+            ),
+            commonMistakes = listOf(
+                "Subir os pesos com impulso de coluna."
             )
         ),
         Exercise(
@@ -493,21 +903,42 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-2",
             restSeconds = 60,
             executionSteps = listOf(
-                "Ajuste a polia na altura do rosto e segure a corda com polegares apontando para trás.",
-                "Puxe o centro da corda em direção à testa enquanto abre as pontas e realiza rotação externa dos ombros.",
-                "No final do movimento, os punhos devem estar alinhados ou atrás das orelhas.",
-                "Segure 2 segundos e retorne controladamente."
+                "Polia na altura do rosto, puxe a corda em direção à testa abrindo as pontas.",
+                "Faça rotação externa terminando em pose de duplo bíceps.",
+                "Segure 2 segundos no pico."
             ),
             biomechanicsTips = listOf(
-                "Exercício indispensável para saúde articular dos ombros e equilíbrio postural."
+                "Essencial para saúde articular dos ombros e postura."
             ),
             commonMistakes = listOf(
-                "Puxar a corda em direção ao peito sem rotação externa.",
-                "Deixar os cotovelos caírem abaixo da linha dos punhos."
+                "Puxar a corda para o peito sem rotação externa."
             )
         ),
-
-        // ==================== BÍCEPS (BICEPS) ====================
+        Exercise(
+            id = "bi_straight_bar_curl",
+            name = "Rosca Direta com Barra Reta Olímpica",
+            muscleGroup = MuscleGroup.BICEPS,
+            motionPattern = MotionPattern.BICEP_CURL,
+            primaryTarget = "Bíceps Braquial (Supinação Máxima)",
+            synergists = listOf("Braquial", "Braquiorradial"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-0-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Segure a barra reta na largura dos ombros com palmas totalmente supinadas.",
+                "Flexione os cotovelos mantendo-os fixos ao lado das costelas.",
+                "Desça em 3 segundos até extensão quase completa."
+            ),
+            biomechanicsTips = listOf(
+                "A supinação completa ativa fortemente a cabeça curta e longa."
+            ),
+            commonMistakes = listOf(
+                "Jogar os cotovelos para frente na subida."
+            )
+        ),
         Exercise(
             id = "bi_barbell_ez_curl",
             name = "Rosca Direta com Barra W",
@@ -522,18 +953,39 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-1",
             restSeconds = 75,
             executionSteps = listOf(
-                "Segure a barra W na angulação ergonômica confortável com cotovelos fixos ao lado do tronco.",
-                "Flexione os cotovelos elevando a barra até a contração máxima sem projetar os cotovelos à frente.",
-                "Contraia o bíceps no topo por 1 segundo.",
-                "Desça em 3 segundos até a extensão quase completa dos cotovelos."
+                "Segure a barra W na curvatura ergonômica e flexione até contração total.",
+                "Contraia por 1 segundo no topo e desça lentamente."
             ),
             biomechanicsTips = listOf(
-                "A barra W reduz o estresse em valgo nos punhos comparado à barra reta.",
-                "Mantenha glúteos e abdômen contraídos para eliminar balanço."
+                "Reduz estresse articular nos punhos comparado à barra reta."
             ),
             commonMistakes = listOf(
-                "Jogar o tronco para trás no início da repetição.",
-                "Parar a descida na metade do caminho."
+                "Balançar o tronco para trás."
+            )
+        ),
+        Exercise(
+            id = "bi_alternating_dumbbell_curl",
+            name = "Rosca Alternada com Halteres Supinando",
+            muscleGroup = MuscleGroup.BICEPS,
+            motionPattern = MotionPattern.BICEP_CURL,
+            primaryTarget = "Bíceps Braquial (Flexão + Supinação Ativa)",
+            synergists = listOf("Braquial", "Supinador"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "10–12 reps / braço",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Inicie com halteres em pegada neutra ao lado do corpo.",
+                "À medida que flexiona o cotovelo, gire o punho para fora (supinação) elevando o dedo mindinho.",
+                "Desça controladamente alternando os braços."
+            ),
+            biomechanicsTips = listOf(
+                "Explora as duas funções principais do bíceps: flexão e supinação."
+            ),
+            commonMistakes = listOf(
+                "Girar o tronco a cada repetição."
             )
         ),
         Exercise(
@@ -541,7 +993,7 @@ object ExerciseRepository {
             name = "Rosca Inclinada com Halteres no Banco (45–60°)",
             muscleGroup = MuscleGroup.BICEPS,
             motionPattern = MotionPattern.BICEP_CURL,
-            primaryTarget = "Bíceps Braquial (Ênfase na Cabeça Longa — Pico)",
+            primaryTarget = "Bíceps Braquial (Ênfase Cabeça Longa — Pico)",
             synergists = listOf("Braquial"),
             equipment = EquipmentType.DUMBBELL,
             mechanics = MechanicsType.ISOLATION,
@@ -550,17 +1002,89 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-1",
             restSeconds = 75,
             executionSteps = listOf(
-                "Sente-se em um banco inclinado a 45–60° e deixe os braços pendurados verticalmente atrás da linha do tronco.",
-                "Mantendo os cotovelos apontados para o chão, flexione os braços supinando os punhos.",
-                "Suba até a contração total sem puxar os cotovelos para frente.",
-                "Desça totalmente até sentir o alongamento profundo na cabeça longa do bíceps."
+                "Banco inclinado a 45–60°, deixe os braços pendurados atrás da linha do tronco.",
+                "Flexione os cotovelos sem trazê-los para frente.",
+                "Desça totalmente alongando a cabeça longa."
             ),
             biomechanicsTips = listOf(
-                "A extensão do ombro coloca a cabeça longa do bíceps em estiramento máximo sob carga."
+                "Estiramento máximo sob carga potencializa a hipertrofia."
             ),
             commonMistakes = listOf(
-                "Avançar os cotovelos para frente anulando o alongamento.",
-                "Descolar a cabeça e os ombros do banco."
+                "Avançar os cotovelos para frente na subida."
+            )
+        ),
+        Exercise(
+            id = "bi_bayesian_cable_curl",
+            name = "Rosca Bayesiana Unilateral na Polia Baixa",
+            muscleGroup = MuscleGroup.BICEPS,
+            motionPattern = MotionPattern.BICEP_CURL,
+            primaryTarget = "Bíceps Braquial (Estiramento Sob Tensão Contínua)",
+            synergists = listOf("Braquial"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Intermediário",
+            recommendedReps = "10–15 reps / braço",
+            tempoTUT = "3-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "De costas para a polia baixa, dê um passo à frente deixando o braço estendido atrás do corpo.",
+                "Flexione o cotovelo mantendo-o atrás do tronco.",
+                "Retorne até extensão total."
+            ),
+            biomechanicsTips = listOf(
+                "Um dos exercícios mais eficientes para hipertrofia mediada pelo alongamento."
+            ),
+            commonMistakes = listOf(
+                "Puxar o cotovelo à frente do tronco."
+            )
+        ),
+        Exercise(
+            id = "bi_preacher_curl",
+            name = "Rosca Scott na Máquina ou Banco W",
+            muscleGroup = MuscleGroup.BICEPS,
+            motionPattern = MotionPattern.PREACHER_CURL,
+            primaryTarget = "Bíceps Braquial (Ênfase Cabeça Curta)",
+            synergists = listOf("Braquial"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "3-1-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Encaixe as axilas no apoio e flexione até próximo de 90°.",
+                "Desça lentamente até quase estender o cotovelo sem soltar o peso."
+            ),
+            biomechanicsTips = listOf(
+                "Bloqueia totalmente a ajuda dos ombros."
+            ),
+            commonMistakes = listOf(
+                "Hiperestender bruscamente o cotovelo no fundo."
+            )
+        ),
+        Exercise(
+            id = "bi_concentration_curl",
+            name = "Rosca Concentrada Unilateral",
+            muscleGroup = MuscleGroup.BICEPS,
+            motionPattern = MotionPattern.PREACHER_CURL,
+            primaryTarget = "Bíceps Braquial (Pico de Contração)",
+            synergists = listOf("Braquial"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "10–15 reps / braço",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Sentado, apoie o tríceps na face interna da coxa.",
+                "Flexione o halter em direção ao ombro supinando o punho.",
+                "Segure 1 segundo no topo."
+            ),
+            biomechanicsTips = listOf(
+                "Conexão mente-músculo máxima."
+            ),
+            commonMistakes = listOf(
+                "Levantar o cotovelo da coxa."
             )
         ),
         Exercise(
@@ -577,123 +1101,38 @@ object ExerciseRepository {
             tempoTUT = "2-0-1-1",
             restSeconds = 75,
             executionSteps = listOf(
-                "Segure os halteres em pegada neutra ao lado do corpo.",
-                "Flexione os cotovelos mantendo o punho neutro durante todo o trajeto.",
-                "Suba até a altura do ombro sem balançar o tronco.",
-                "Desça de forma controlada até estender os braços."
+                "Segure os halteres em pegada neutra e flexione os cotovelos sem girar o punho.",
+                "Suba até a altura do ombro e desça controladamente."
             ),
             biomechanicsTips = listOf(
-                "O músculo braquial empurra o bíceps para cima aumentando o volume total do braço."
+                "O braquial empurra o bíceps para cima aumentando a circunferência do braço."
             ),
             commonMistakes = listOf(
-                "Girar o punho para supinação durante a subida.",
-                "Usar impulso de ombro."
+                "Supinar o punho na subida."
             )
         ),
         Exercise(
-            id = "bi_preacher_curl",
-            name = "Rosca Scott na Máquina ou Banco",
+            id = "bi_rope_hammer_curl",
+            name = "Rosca Martelo na Polia Baixa com Corda",
             muscleGroup = MuscleGroup.BICEPS,
-            motionPattern = MotionPattern.PREACHER_CURL,
-            primaryTarget = "Bíceps Braquial (Ênfase na Cabeça Curta)",
-            synergists = listOf("Braquial"),
-            equipment = EquipmentType.MACHINE,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Iniciante / Intermediário",
-            recommendedReps = "10–15 reps",
-            tempoTUT = "3-1-1-1",
-            restSeconds = 75,
-            executionSteps = listOf(
-                "Ajuste o assento para que as axilas encaixem confortavelmente no topo do apoio.",
-                "Segure a barra ou manopla com palmas para cima.",
-                "Flexione até próximo de 90° sem descansar no topo.",
-                "Desça lentamente até quase estender o cotovelo."
-            ),
-            biomechanicsTips = listOf(
-                "Bloqueia completamente qualquer roubo do ombro."
-            ),
-            commonMistakes = listOf(
-                "Soltar o peso na descida causando hiperextensão articular."
-            )
-        ),
-
-        // ==================== TRÍCEPS (TRICEPS) ====================
-        Exercise(
-            id = "tri_cable_pushdown_rope",
-            name = "Tríceps Pulley com Corda",
-            muscleGroup = MuscleGroup.TRICEPS,
-            motionPattern = MotionPattern.TRICEP_PUSHDOWN,
-            primaryTarget = "Tríceps Braquial (Cabeças Lateral e Medial)",
-            synergists = listOf("Ancôneo"),
+            motionPattern = MotionPattern.BICEP_CURL,
+            primaryTarget = "Braquial, Braquiorradial e Bíceps",
+            synergists = listOf("Antebraços"),
             equipment = EquipmentType.CABLE,
             mechanics = MechanicsType.ISOLATION,
             difficulty = "Iniciante",
-            recommendedReps = "10–15 reps",
+            recommendedReps = "12–15 reps",
             tempoTUT = "2-0-1-1",
-            restSeconds = 75,
+            restSeconds = 60,
             executionSteps = listOf(
-                "Em pé frente à polia alta, incline o tronco levemente e trave os cotovelos ao lado das costelas.",
-                "Estenda os cotovelos para baixo abrindo as pontas da corda no final do movimento.",
-                "Contraia intensamente o tríceps por 1 segundo.",
-                "Suba os antebraços até ultrapassar levemente 90° de flexão."
+                "Polia baixa com corda, puxe mantendo polegares para cima.",
+                "Contraia no topo e controle a volta."
             ),
             biomechanicsTips = listOf(
-                "Manter os cotovelos imóveis como dobradiças isola o tríceps."
+                "Tensão constante em todo o arco de movimento."
             ),
             commonMistakes = listOf(
-                "Deixar os cotovelos abrirem ou irem para trás e para frente."
-            )
-        ),
-        Exercise(
-            id = "tri_overhead_cable_extension",
-            name = "Tríceps Francês na Polia (Acima da Cabeça)",
-            muscleGroup = MuscleGroup.TRICEPS,
-            motionPattern = MotionPattern.OVERHEAD_TRICEP,
-            primaryTarget = "Tríceps Braquial (Ênfase na Cabeça Longa)",
-            synergists = listOf("Ancôneo"),
-            equipment = EquipmentType.CABLE,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Intermediário",
-            recommendedReps = "10–15 reps",
-            tempoTUT = "3-1-1-1",
-            restSeconds = 75,
-            executionSteps = listOf(
-                "De costas para a polia ajustada na altura do quadril, segure a corda acima da cabeça.",
-                "Incline o tronco à frente em base alternada com cotovelos apontados para cima.",
-                "Flexione os cotovelos deixando as mãos descerem atrás da nuca para máximo alongamento.",
-                "Estenda os cotovelos completamente contraindo a cabeça longa do tríceps."
-            ),
-            biomechanicsTips = listOf(
-                "Elevar os braços acima da cabeça coloca a cabeça longa em estiramento ideal para hipertrofia."
-            ),
-            commonMistakes = listOf(
-                "Abrir demais os cotovelos para os lados."
-            )
-        ),
-        Exercise(
-            id = "tri_skullcrusher_ez",
-            name = "Tríceps Testa com Barra W",
-            muscleGroup = MuscleGroup.TRICEPS,
-            motionPattern = MotionPattern.SKULLCRUSHER,
-            primaryTarget = "Tríceps Braquial (Todas as Cabeças)",
-            synergists = listOf("Ancôneo", "Deltoide Anterior"),
-            equipment = EquipmentType.BARBELL,
-            mechanics = MechanicsType.ISOLATION,
-            difficulty = "Intermediário",
-            recommendedReps = "8–12 reps",
-            tempoTUT = "3-1-1-0",
-            restSeconds = 90,
-            executionSteps = listOf(
-                "Deitado no banco reto, segure a barra W com os braços inclinados ~15° para trás da vertical.",
-                "Flexione apenas os cotovelos descendo a barra em direção ao topo/atrás da cabeça.",
-                "Estenda os cotovelos mantendo os braços na mesma angulação.",
-                "Repita com controle total."
-            ),
-            biomechanicsTips = listOf(
-                "Manter os braços ligeiramente inclinados para trás mantém tensão constante no topo."
-            ),
-            commonMistakes = listOf(
-                "Abrir os cotovelos excessivamente."
+                "Inclinar o tronco para trás."
             )
         ),
         Exercise(
@@ -710,26 +1149,218 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-0",
             restSeconds = 120,
             executionSteps = listOf(
-                "Deite-se no banco reto e segure a barra na largura exata dos ombros.",
-                "Desça a barra mantendo os cotovelos rentes ao tronco até tocar a linha inferior do peito.",
-                "Empurre com foco na extensão dos cotovelos até o topo."
+                "Pegada na largura exata dos ombros, desça a barra com cotovelos rentes ao tronco.",
+                "Empurre focando na extensão dos cotovelos."
             ),
             biomechanicsTips = listOf(
-                "Principal exercício composto para sobrecarga progressiva pesada no tríceps."
+                "Principal exercício composto para progredir carga pesada no tríceps."
             ),
             commonMistakes = listOf(
-                "Pegada estreita demais gerando dor nos punhos."
+                "Pegada estreita demais forçando os punhos."
             )
         ),
-
-        // ==================== QUADRÍCEPS (QUADS) ====================
+        Exercise(
+            id = "tri_dips_upright",
+            name = "Paralelas Foco Tríceps (Tronco Vertical)",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.DIPS,
+            primaryTarget = "Tríceps Braquial (Todas as Cabeças)",
+            synergists = listOf("Deltoide Anterior", "Peitoral Inferior"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-0-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Mantenha o tronco vertical e cotovelos apontados diretamente para trás.",
+                "Desça até 90° de flexão e estenda completamente no topo."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente construtor de massa geral no tríceps."
+            ),
+            commonMistakes = listOf(
+                "Abrir os cotovelos para os lados."
+            )
+        ),
+        Exercise(
+            id = "tri_dip_machine",
+            name = "Mergulho na Máquina (Triceps Dip Machine)",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.DIPS,
+            primaryTarget = "Tríceps Braquial",
+            synergists = listOf("Deltoide Anterior"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–14 reps",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Costas apoiadas, empurre as manoplas até extensão completa dos cotovelos.",
+                "Controle a volta até 90°."
+            ),
+            biomechanicsTips = listOf(
+                "Alta estabilidade para treinar próximo à falha."
+            ),
+            commonMistakes = listOf(
+                "Encolher os ombros durante a descida."
+            )
+        ),
+        Exercise(
+            id = "tri_skullcrusher_ez",
+            name = "Tríceps Testa com Barra W",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.SKULLCRUSHER,
+            primaryTarget = "Tríceps Braquial (Cabeças Lateral, Medial e Longa)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Deitado no banco, mantenha os braços inclinados ~15° para trás da vertical.",
+                "Flexione apenas os cotovelos descendo a barra atrás da cabeça.",
+                "Estenda mantendo os braços na mesma angulação."
+            ),
+            biomechanicsTips = listOf(
+                "A leve inclinação mantém tensão constante mesmo no topo."
+            ),
+            commonMistakes = listOf(
+                "Abrir demais os cotovelos."
+            )
+        ),
+        Exercise(
+            id = "tri_dumbbell_skullcrusher",
+            name = "Tríceps Testa com Halteres (Pegada Neutra)",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.SKULLCRUSHER,
+            primaryTarget = "Tríceps Braquial (Unilateral / Simétrico)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "10–14 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Segure os halteres em pegada neutra e desça ao lado das têmporas/orelhas.",
+                "Estenda completamente contraindo o tríceps."
+            ),
+            biomechanicsTips = listOf(
+                "Confortável para cotovelos sensíveis."
+            ),
+            commonMistakes = listOf(
+                "Mover os ombros durante a repetição."
+            )
+        ),
+        Exercise(
+            id = "tri_overhead_cable_extension",
+            name = "Tríceps Francês na Polia (Acima da Cabeça)",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.OVERHEAD_TRICEP,
+            primaryTarget = "Tríceps Braquial (Ênfase Cabeça Longa)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Intermediário",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "3-1-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "De costas para a polia, segure a corda acima da cabeça com cotovelos apontados para cima.",
+                "Deixe as mãos descerem atrás da nuca alongando a cabeça longa.",
+                "Estenda completamente à frente e acima."
+            ),
+            biomechanicsTips = listOf(
+                "Posição overhead maximiza o crescimento da cabeça longa do tríceps."
+            ),
+            commonMistakes = listOf(
+                "Arquear a lombar por falta de bracing."
+            )
+        ),
+        Exercise(
+            id = "tri_overhead_dumbbell_extension",
+            name = "Tríceps Francês Unilateral com Halter",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.OVERHEAD_TRICEP,
+            primaryTarget = "Tríceps Braquial (Cabeça Longa)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "10–14 reps / braço",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Sentado, eleve o halter acima da cabeça com o braço vertical.",
+                "Flexione o cotovelo descendo o halter atrás da cabeça.",
+                "Estenda até o topo."
+            ),
+            biomechanicsTips = listOf(
+                "Corrige desequilíbrios de força entre os braços."
+            ),
+            commonMistakes = listOf(
+                "Deixar o cotovelo abrir lateralmente."
+            )
+        ),
+        Exercise(
+            id = "tri_cable_pushdown_rope",
+            name = "Tríceps Pulley com Corda",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.TRICEP_PUSHDOWN,
+            primaryTarget = "Tríceps Braquial (Cabeças Lateral e Medial)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Trave os cotovelos ao lado das costelas e estenda abrindo as pontas da corda no final.",
+                "Contraia por 1 segundo e suba até 90°."
+            ),
+            biomechanicsTips = listOf(
+                "Mantenha cotovelos imóveis como dobradiças."
+            ),
+            commonMistakes = listOf(
+                "Debruçar-se sobre a corda usando o peso do tronco."
+            )
+        ),
+        Exercise(
+            id = "tri_cable_pushdown_bar",
+            name = "Tríceps Pulley com Barra Reta / V",
+            muscleGroup = MuscleGroup.TRICEPS,
+            motionPattern = MotionPattern.TRICEP_PUSHDOWN,
+            primaryTarget = "Tríceps Braquial (Carga Progressiva)",
+            synergists = listOf("Ancôneo"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "2-0-1-1",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Segure a barra V ou reta na altura do peito com cotovelos fixos.",
+                "Empurre até extensão completa e controle a volta."
+            ),
+            biomechanicsTips = listOf(
+                "Permite usar mais carga que a corda para tensão mecânica."
+            ),
+            commonMistakes = listOf(
+                "Jogar os ombros para frente na descida."
+            )
+        ),
         Exercise(
             id = "quad_high_bar_squat",
             name = "Agachamento Livre High-Bar",
             muscleGroup = MuscleGroup.QUADS,
             motionPattern = MotionPattern.SQUAT,
-            primaryTarget = "Quadríceps Femoral (Vasto Lateral, Medial, Intermédio e Reto)",
-            synergists = listOf("Glúteo Máximo", "Adutor Magno", "Eretores da Espinha", "Core"),
+            primaryTarget = "Quadríceps Femoral (Vastos e Reto)",
+            synergists = listOf("Glúteo Máximo", "Adutor Magno", "Eretores", "Core"),
             equipment = EquipmentType.BARBELL,
             mechanics = MechanicsType.COMPOUND,
             difficulty = "Intermediário / Avançado",
@@ -737,42 +1368,40 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 180,
             executionSteps = listOf(
-                "Apoie a barra sobre o trapézio superior, pés na largura dos ombros com pontas 15–25° para fora.",
-                "Inspire profundamente fazendo bracing abdominal 360°.",
-                "Inicie flexionando joelhos e quadris simultaneamente, descendo até quebra da paralela.",
-                "Empurre o chão mantendo o tronco o mais vertical possível até a extensão completa."
+                "Barra sobre trapézio superior, pés na largura dos ombros com pontas 20° para fora.",
+                "Faça bracing abdominal e desça até quebra da paralela.",
+                "Empurre o solo mantendo tronco ereto."
             ),
             biomechanicsTips = listOf(
-                "A projeção anterior dos joelhos sobre a ponta dos pés é natural, segura e maximiza o torque no quadríceps."
+                "Projeção natural dos joelhos sobre os pés maximiza o quadríceps."
             ),
             commonMistakes = listOf(
-                "Deixar os joelhos caírem para dentro (valgo dinâmico) na subida."
+                "Valgo dinâmico (joelhos entrando na subida)."
             )
         ),
         Exercise(
-            id = "quad_leg_press_45",
-            name = "Leg Press 45°",
+            id = "quad_front_squat",
+            name = "Agachamento Frontal com Barra (Front Squat)",
             muscleGroup = MuscleGroup.QUADS,
-            motionPattern = MotionPattern.LEG_PRESS,
-            primaryTarget = "Quadríceps Femoral",
-            synergists = listOf("Glúteo Máximo", "Adutores"),
-            equipment = EquipmentType.MACHINE,
+            motionPattern = MotionPattern.SQUAT,
+            primaryTarget = "Quadríceps Femoral e Core Torácico",
+            synergists = listOf("Glúteo Máximo", "Eretores Torácicos"),
+            equipment = EquipmentType.BARBELL,
             mechanics = MechanicsType.COMPOUND,
-            difficulty = "Iniciante",
-            recommendedReps = "8–15 reps",
+            difficulty = "Avançado",
+            recommendedReps = "6–10 reps",
             tempoTUT = "3-1-1-0",
-            restSeconds = 150,
+            restSeconds = 180,
             executionSteps = listOf(
-                "Posicione os pés na parte média-baixa da plataforma na largura dos quadris.",
-                "Destrave a plataforma e segure firme nas alças laterais puxando o quadril contra o banco.",
-                "Desça até o máximo ângulo de flexão sem que o sacro/lombar descole do encosto.",
-                "Empurre sem hiperestender os joelhos no topo."
+                "Apoie a barra sobre os deltoides anteriores com cotovelos altos.",
+                "Desça profundamente mantendo o tronco quase vertical.",
+                "Suba sem deixar os cotovelos caírem."
             ),
             biomechanicsTips = listOf(
-                "Pés mais baixos na plataforma aumentam o momento flexor no joelho e priorizam o quadríceps."
+                "Reduz cisalhamento lombar e isola intensamente o quadríceps."
             ),
             commonMistakes = listOf(
-                "Descer tanto que a lombar enrola e sai do banco."
+                "Deixar os cotovelos baixarem fazendo a barra rolar."
             )
         ),
         Exercise(
@@ -789,16 +1418,87 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 150,
             executionSteps = listOf(
-                "Apoie ombros e costas firmemente no encosto e posicione os pés na base da plataforma.",
-                "Destrave a máquina e desça profundamente com controle de 3 segundos.",
-                "Faça uma pausa breve de 1 segundo no fundo para eliminar o reflexo elástico.",
-                "Suba explosivamente até quase estender os joelhos."
+                "Costas firmes no encosto, pés na parte baixa da plataforma.",
+                "Desça profundamente em 3 segundos, pause 1 segundo e suba."
             ),
             biomechanicsTips = listOf(
-                "Um dos melhores construtores de quadríceps da musculação pela estabilidade total."
+                "Um dos melhores construtores de quadríceps da musculação."
             ),
             commonMistakes = listOf(
-                "Tirar os calcanhares da plataforma na descida."
+                "Tirar os calcanhares da plataforma."
+            )
+        ),
+        Exercise(
+            id = "quad_smith_squat",
+            name = "Agachamento no Smith (Pés à Frente)",
+            muscleGroup = MuscleGroup.QUADS,
+            motionPattern = MotionPattern.SQUAT,
+            primaryTarget = "Quadríceps Femoral",
+            synergists = listOf("Glúteo Máximo"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Posicione os pés 15–20 cm à frente da linha da barra.",
+                "Desça mantendo o tronco vertical até flexão profunda dos joelhos."
+            ),
+            biomechanicsTips = listOf(
+                "Guias lineares permitem focar 100% na flexão do joelho."
+            ),
+            commonMistakes = listOf(
+                "Pés muito atrás da barra."
+            )
+        ),
+        Exercise(
+            id = "quad_leg_press_45",
+            name = "Leg Press 45°",
+            muscleGroup = MuscleGroup.QUADS,
+            motionPattern = MotionPattern.LEG_PRESS,
+            primaryTarget = "Quadríceps Femoral",
+            synergists = listOf("Glúteo Máximo", "Adutores"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "8–15 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 150,
+            executionSteps = listOf(
+                "Pés na região média-baixa da plataforma, segure nas alças travando o quadril.",
+                "Desça até o máximo ângulo sem tirar o sacro do encosto.",
+                "Empurre sem travar os joelhos no topo."
+            ),
+            biomechanicsTips = listOf(
+                "Altíssimo volume sem fadiga axial na coluna."
+            ),
+            commonMistakes = listOf(
+                "Deixar a lombar enrolar no final da descida."
+            )
+        ),
+        Exercise(
+            id = "quad_leg_press_horizontal",
+            name = "Leg Press Horizontal",
+            muscleGroup = MuscleGroup.QUADS,
+            motionPattern = MotionPattern.LEG_PRESS,
+            primaryTarget = "Quadríceps Femoral",
+            synergists = listOf("Glúteo Máximo"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante",
+            recommendedReps = "10–15 reps",
+            tempoTUT = "3-0-1-1",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Ajuste o encosto para flexão profunda inicial de joelhos.",
+                "Empurre até quase estender e controle a volta."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente opção segura para alta densidade e drop-sets."
+            ),
+            commonMistakes = listOf(
+                "Hiperestender os joelhos no final."
             )
         ),
         Exercise(
@@ -815,16 +1515,15 @@ object ExerciseRepository {
             tempoTUT = "2-0-1-2",
             restSeconds = 75,
             executionSteps = listOf(
-                "Alinhe o eixo de rotação do joelho exatamente com o eixo da máquina.",
-                "Ajuste o rolo inferior logo acima dos tornozelos.",
-                "Estenda completamente os joelhos e segure 1–2 segundos no topo.",
-                "Desça lentamente até a flexão total antes de iniciar a próxima repetição."
+                "Alinhe o eixo do joelho com o eixo da máquina.",
+                "Estenda completamente e segure 2 segundos no topo.",
+                "Desça até flexão total."
             ),
             biomechanicsTips = listOf(
-                "Por ser biarticular, o reto femoral precisa da extensora para desenvolvimento completo."
+                "Indispensável para hipertrofia completa do reto femoral."
             ),
             commonMistakes = listOf(
-                "Dar chutes rápidos usando impulso."
+                "Dar chutes rápidos com impulso."
             )
         ),
         Exercise(
@@ -841,26 +1540,46 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 90,
             executionSteps = listOf(
-                "Apoie o peito do pé traseiro em um banco atrás de você e dê um passo firme à frente.",
-                "Mantenha o tronco mais ereto para focar quadríceps.",
-                "Desça até o joelho traseiro quase tocar o chão.",
-                "Empurre através do meio do pé dianteiro até retornar ao topo."
+                "Peito do pé traseiro apoiado no banco, tronco ereto para focar quadríceps.",
+                "Desça até o joelho de trás quase tocar o solo e empurre com a perna dianteira."
             ),
             biomechanicsTips = listOf(
-                "Elimina desequilíbrios entre pernas e gera alto estresse mecânico."
+                "Corrige assimetrias e gera estímulo extremo."
             ),
             commonMistakes = listOf(
-                "Colocar os dois pés na mesma linha perdendo o equilíbrio."
+                "Colocar os pés na mesma linha perdendo equilíbrio."
             )
         ),
-
-        // ==================== POSTERIORES DE COXA (HAMSTRINGS) ====================
+        Exercise(
+            id = "quad_walking_lunge",
+            name = "Avanço / Passada Caminhando com Halteres",
+            muscleGroup = MuscleGroup.QUADS,
+            motionPattern = MotionPattern.LUNGE_SPLIT,
+            primaryTarget = "Quadríceps e Glúteos",
+            synergists = listOf("Isquiotibiais", "Core"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "10–14 passos / perna",
+            tempoTUT = "2-0-1-0",
+            restSeconds = 90,
+            executionSteps = listOf(
+                "Dê passos firmes descendo o joelho traseiro próximo ao chão.",
+                "Impulsione através do meio do pé dianteiro."
+            ),
+            biomechanicsTips = listOf(
+                "Passos médios enfatizam quadríceps; longos enfatizam glúteos."
+            ),
+            commonMistakes = listOf(
+                "Bater o joelho no chão."
+            )
+        ),
         Exercise(
             id = "ham_rdl_barbell",
             name = "Stiff / Levantamento Terra Romeno (RDL)",
             muscleGroup = MuscleGroup.HAMSTRINGS,
             motionPattern = MotionPattern.RDL_HINGE,
-            primaryTarget = "Isquiotibiais (Bíceps Femoral, Semitendíneo e Semimembranáceo)",
+            primaryTarget = "Isquiotibiais (Alongamento Pesado)",
             synergists = listOf("Glúteo Máximo", "Eretores da Espinha", "Antebraços"),
             equipment = EquipmentType.BARBELL,
             mechanics = MechanicsType.COMPOUND,
@@ -869,16 +1588,39 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 150,
             executionSteps = listOf(
-                "Segure a barra na largura dos ombros, destrave levemente os joelhos (10–15° fixos).",
-                "Empurre o quadril diretamente para trás mantendo a barra raspando nas coxas e canelas.",
-                "Desça até o limite de flexibilidade dos posteriores sem arredondar a lombar.",
-                "Contraia glúteos e posteriores para empurrar o quadril de volta à posição vertical."
+                "Joelhos destravados (15° fixos), empurre o quadril para trás com a barra raspando nas pernas.",
+                "Pare quando o quadril parar de recuar (meio da canela) e suba contraindo glúteos/posteriores."
             ),
             biomechanicsTips = listOf(
-                "O movimento deve parar assim que o quadril parar de ir para trás."
+                "Principal exercício de sobrecarga excêntrica para posteriores."
             ),
             commonMistakes = listOf(
-                "Afastar a barra das pernas, multiplicando o torque na coluna lombar."
+                "Afastar a barra das pernas.",
+                "Arredondar a lombar."
+            )
+        ),
+        Exercise(
+            id = "ham_dumbbell_rdl",
+            name = "RDL com Halteres (Bilateral / Unilateral)",
+            muscleGroup = MuscleGroup.HAMSTRINGS,
+            motionPattern = MotionPattern.RDL_HINGE,
+            primaryTarget = "Isquiotibiais e Glúteo Máximo",
+            synergists = listOf("Glúteo Médio", "Eretores"),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Deslize os halteres ao lado das coxas e canelas empurrando o quadril para trás.",
+                "Retorne sem hiperestender a lombar."
+            ),
+            biomechanicsTips = listOf(
+                "A versão unilateral desafia equilíbrio e estabilidade pélvica."
+            ),
+            commonMistakes = listOf(
+                "Dobrar demais os joelhos."
             )
         ),
         Exercise(
@@ -895,15 +1637,14 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-1",
             restSeconds = 75,
             executionSteps = listOf(
-                "Ajuste o encosto e trave firmemente o apoio sobre as coxas.",
-                "Flexione os joelhos puxando o rolo o máximo possível para baixo do banco.",
-                "Controle o retorno por 3 segundos até a extensão total."
+                "Trave firme o apoio sobre as coxas e flexione puxando o rolo para baixo do banco.",
+                "Controle a volta em 3 segundos."
             ),
             biomechanicsTips = listOf(
-                "A cadeira flexora gera maior hipertrofia porque o quadril flexionado mantém os isquiotibiais pré-alongados."
+                "Estudos mostram hipertrofia superior à mesa flexora devido ao pré-alongamento no quadril."
             ),
             commonMistakes = listOf(
-                "Deixar o apoio das coxas frouxo fazendo o quadril subir."
+                "Deixar o apoio das coxas frouxo."
             )
         ),
         Exercise(
@@ -920,19 +1661,88 @@ object ExerciseRepository {
             tempoTUT = "3-0-1-1",
             restSeconds = 75,
             executionSteps = listOf(
-                "Deite-se de bruços mantendo o quadril pressionado contra o banco.",
-                "Puxe o rolo em direção aos glúteos com dorsiflexão dos tornozelos.",
+                "Deite-se pressionando o púbis contra o banco e flexione os joelhos.",
                 "Contraia no topo por 1 segundo sem levantar o quadril."
             ),
             biomechanicsTips = listOf(
-                "Pressionar o púbis contra o banco evita que os flexores do quadril roubem."
+                "Mantenha dorsiflexão (ponta do pé puxada) para maior ativação."
             ),
             commonMistakes = listOf(
-                "Levantar o bumbum do banco durante a subida."
+                "Levantar o quadril do banco."
             )
         ),
-
-        // ==================== GLÚTEOS (GLUTES) ====================
+        Exercise(
+            id = "ham_standing_leg_curl",
+            name = "Flexora Unilateral em Pé na Máquina",
+            muscleGroup = MuscleGroup.HAMSTRINGS,
+            motionPattern = MotionPattern.LEG_CURL,
+            primaryTarget = "Isquiotibiais (Isolamento Unilateral)",
+            synergists = listOf("Gastrocnêmio"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps / perna",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie o tronco e a coxa na almofada e flexione uma perna de cada vez.",
+                "Controle a descida até extensão completa."
+            ),
+            biomechanicsTips = listOf(
+                "Ótimo para corrigir assimetrias entre perna direita e esquerda."
+            ),
+            commonMistakes = listOf(
+                "Impulsionar com a lombar."
+            )
+        ),
+        Exercise(
+            id = "ham_good_morning",
+            name = "Bom-Dia (Good Morning) com Barra",
+            muscleGroup = MuscleGroup.HAMSTRINGS,
+            motionPattern = MotionPattern.RDL_HINGE,
+            primaryTarget = "Isquiotibiais e Eretores da Espinha",
+            synergists = listOf("Glúteo Máximo", "Core"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Avançado",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Barra apoiada no trapézio, joelhos semiflexionados, incline o tronco até próximo da paralela.",
+                "Estenda o quadril retornando à vertical."
+            ),
+            biomechanicsTips = listOf(
+                "Fortalece intensamente toda a cadeia posterior."
+            ),
+            commonMistakes = listOf(
+                "Perder a neutralidade da coluna."
+            )
+        ),
+        Exercise(
+            id = "ham_nordic_curl",
+            name = "Flexão Nórdica (Nordic Hamstring Curl)",
+            muscleGroup = MuscleGroup.HAMSTRINGS,
+            motionPattern = MotionPattern.LEG_CURL,
+            primaryTarget = "Isquiotibiais (Força Excêntrica Extrema)",
+            synergists = listOf("Glúteos", "Panturrilhas"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Avançado",
+            recommendedReps = "5–8 reps",
+            tempoTUT = "4-0-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Ajoelhado com tornozelos presos, desça o tronco à frente o mais devagar possível mantendo quadril reto.",
+                "Amorteça com as mãos no chão e empurre suavemente para voltar."
+            ),
+            biomechanicsTips = listOf(
+                "Reduz drasticamente o risco de estiramento de posteriores."
+            ),
+            commonMistakes = listOf(
+                "Dobrar o quadril em vez de manter tronco e coxas alinhados."
+            )
+        ),
         Exercise(
             id = "glute_hip_thrust",
             name = "Elevação Pélvica com Barra (Hip Thrust)",
@@ -947,16 +1757,62 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-2",
             restSeconds = 120,
             executionSteps = listOf(
-                "Apoie a base das escápulas em um banco estável e posicione a barra acolchoada sobre o quadril.",
-                "Deixe os pés na largura dos ombros de modo que as canelas fiquem verticais (90°) no topo.",
-                "Empurre pelos calcanhares elevando o quadril até alinhar ombros, quadril e joelhos.",
-                "Faça retroversão pélvica no topo por 2 segundos e desça controladamente."
+                "Base das escápulas no banco, canelas verticais (90°) no topo.",
+                "Empurre pelos calcanhares e faça retroversão pélvica no topo por 2 segundos."
             ),
             biomechanicsTips = listOf(
-                "Mantenha o queixo apontado para o peito para evitar hiperextensão lombar."
+                "Mantenha o queixo apontado para o peito para não hiperestender a lombar."
             ),
             commonMistakes = listOf(
-                "Jogar a cabeça para trás e hiperestender a lombar no topo."
+                "Jogar a cabeça para trás."
+            )
+        ),
+        Exercise(
+            id = "glute_single_leg_hip_thrust",
+            name = "Elevação Pélvica Unilateral",
+            muscleGroup = MuscleGroup.GLUTES,
+            motionPattern = MotionPattern.HIP_THRUST,
+            primaryTarget = "Glúteo Máximo e Glúteo Médio",
+            synergists = listOf("Isquiotibiais", "Core"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Intermediário",
+            recommendedReps = "10–15 reps / perna",
+            tempoTUT = "2-1-1-2",
+            restSeconds = 75,
+            executionSteps = listOf(
+                "Apoie apenas um pé no solo e eleve o quadril até alinhamento completo.",
+                "Segure 2 segundos no topo contraindo o glúteo."
+            ),
+            biomechanicsTips = listOf(
+                "Altíssima ativação glútea mesmo sem cargas extremas."
+            ),
+            commonMistakes = listOf(
+                "Deixar a pelve rodar para o lado."
+            )
+        ),
+        Exercise(
+            id = "glute_sumo_squat",
+            name = "Agachamento Sumô com Barra / Halter",
+            muscleGroup = MuscleGroup.GLUTES,
+            motionPattern = MotionPattern.SQUAT,
+            primaryTarget = "Glúteo Máximo e Adutores",
+            synergists = listOf("Quadríceps", "Isquiotibiais"),
+            equipment = EquipmentType.BARBELL,
+            mechanics = MechanicsType.COMPOUND,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "8–12 reps",
+            tempoTUT = "3-1-1-0",
+            restSeconds = 120,
+            executionSteps = listOf(
+                "Base bem aberta com pontas dos pés a 45° para fora.",
+                "Desça empurrando os joelhos na direção dos pés e suba contraindo glúteos."
+            ),
+            biomechanicsTips = listOf(
+                "Recruta fortemente os adutores e glúteo máximo."
+            ),
+            commonMistakes = listOf(
+                "Deixar os joelhos caírem para dentro."
             )
         ),
         Exercise(
@@ -973,19 +1829,64 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Prenda a tornozeleira na polia baixa e incline o tronco ~30°.",
-                "Estenda o quadril para trás e levemente para fora (~15°).",
-                "Pare assim que atingir a contração máxima do glúteo sem girar a pelve."
+                "Tornozeleira na polia baixa, estenda o quadril para trás e ~15° para fora.",
+                "Pare na contração máxima sem girar a pelve."
             ),
             biomechanicsTips = listOf(
-                "A leve abdução de 15° acompanha a orientação natural das fibras do glúteo máximo."
+                "A abdução de 15° acompanha as fibras do glúteo máximo."
             ),
             commonMistakes = listOf(
-                "Subir demais a perna compensando com a coluna lombar."
+                "Compensar subindo a perna com a coluna lombar."
             )
         ),
-
-        // ==================== PANTURRILHAS (CALVES) ====================
+        Exercise(
+            id = "glute_abduction_machine",
+            name = "Cadeira Abdutora",
+            muscleGroup = MuscleGroup.GLUTES,
+            motionPattern = MotionPattern.LUNGE_SPLIT,
+            primaryTarget = "Glúteo Médio e Glúteo Máximo Superior",
+            synergists = listOf("Tensor da Fáscia Lata"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "15–20 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Empurre os apoios externos abrindo as coxas ao máximo.",
+                "Segure 1 segundo na abertura e controle a volta."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente para estética lateral do quadril e estabilidade pélvica."
+            ),
+            commonMistakes = listOf(
+                "Balançar o tronco para abrir."
+            )
+        ),
+        Exercise(
+            id = "glute_cable_abduction",
+            name = "Abdução de Quadril na Polia Baixa",
+            muscleGroup = MuscleGroup.GLUTES,
+            motionPattern = MotionPattern.LUNGE_SPLIT,
+            primaryTarget = "Glúteo Médio (Estabilizador Pélvico)",
+            synergists = listOf("Glúteo Mínimo"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "15–20 reps / perna",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Prenda a tornozeleira e abduza a perna lateralmente sem inclinar o tronco.",
+                "Controle a descida cruzando levemente à frente."
+            ),
+            biomechanicsTips = listOf(
+                "Tensão contínua do início ao fim da amplitude."
+            ),
+            commonMistakes = listOf(
+                "Inclinar o corpo para o lado oposto."
+            )
+        ),
         Exercise(
             id = "calf_standing_machine",
             name = "Panturrilha em Pé na Máquina",
@@ -1000,15 +1901,38 @@ object ExerciseRepository {
             tempoTUT = "2-2-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Apoie a ponta dos pés na plataforma mantendo os joelhos estendidos.",
-                "Desça os calcanhares até o alongamento máximo e FAÇA PAUSA DE 2 SEGUNDOS no fundo.",
-                "Suba na ponta dos pés o mais alto possível contraindo no topo por 1 segundo."
+                "Joelhos estendidos, desça os calcanhares ao máximo e FAÇA PAUSA DE 2 SEGUNDOS no fundo.",
+                "Suba na ponta dos pés contraindo por 1 segundo."
             ),
             biomechanicsTips = listOf(
-                "A pausa de 2 segundos elimina o efeito mola do tendão de Aquiles e multiplica a hipertrofia."
+                "A pausa de 2s elimina o efeito mola do tendão de Aquiles."
             ),
             commonMistakes = listOf(
-                "Fazer repetições rápidas quicando."
+                "Quicar rápido sem pausar embaixo."
+            )
+        ),
+        Exercise(
+            id = "calf_leg_press",
+            name = "Panturrilha no Leg Press 45°",
+            muscleGroup = MuscleGroup.CALVES,
+            motionPattern = MotionPattern.CALF_RAISE,
+            primaryTarget = "Gastrocnêmio",
+            synergists = listOf("Sóleo"),
+            equipment = EquipmentType.MACHINE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–16 reps",
+            tempoTUT = "2-2-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie a ponta dos pés na borda inferior da plataforma com joelhos quase estendidos.",
+                "Alongue 2 segundos no fundo e empurre com flexão plantar máxima."
+            ),
+            biomechanicsTips = listOf(
+                "Permite carga progressiva alta sem pressão nos ombros."
+            ),
+            commonMistakes = listOf(
+                "Dobrar os joelhos para empurrar a plataforma."
             )
         ),
         Exercise(
@@ -1025,19 +1949,40 @@ object ExerciseRepository {
             tempoTUT = "2-2-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Com joelhos flexionados a 90°, ajuste o apoio firme sobre o final das coxas.",
-                "Desça os calcanhares ao máximo com pausa de 2 segundos.",
-                "Eleve os calcanhares até a flexão plantar máxima."
+                "Joelhos a 90°, desça os calcanhares ao máximo com pausa de 2 segundos.",
+                "Eleve até o pico de contração."
             ),
             biomechanicsTips = listOf(
-                "Com o joelho dobrado a 90°, o sóleo assume o protagonismo."
+                "Com joelhos flexionados, o sóleo realiza quase todo o trabalho."
             ),
             commonMistakes = listOf(
-                "Não pausar no alongamento inferior."
+                "Amplitude curta."
             )
         ),
-
-        // ==================== ABDÔMEN & CORE (CORE) ====================
+        Exercise(
+            id = "calf_single_leg_dumbbell",
+            name = "Panturrilha Unilateral com Halter em Degrau",
+            muscleGroup = MuscleGroup.CALVES,
+            motionPattern = MotionPattern.CALF_RAISE,
+            primaryTarget = "Gastrocnêmio e Sóleo (Unilateral)",
+            synergists = emptyList(),
+            equipment = EquipmentType.DUMBBELL,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps / perna",
+            tempoTUT = "2-2-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie um pé no degrau segurando um halter e use a mão livre para equilíbrio.",
+                "Desça profundamente, pause 2s e suba."
+            ),
+            biomechanicsTips = listOf(
+                "Corrige assimetrias entre panturrilhas."
+            ),
+            commonMistakes = listOf(
+                "Fazer repetições rápidas sem controle."
+            )
+        ),
         Exercise(
             id = "core_cable_crunch",
             name = "Abdominal Supra na Polia Alta (Cable Crunch)",
@@ -1052,16 +1997,15 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Ajoelhe-se frente à polia alta segurando a corda ao lado das têmporas.",
-                "Mantenha o quadril fixo acima dos joelhos.",
-                "Enrole a coluna torácica levando os cotovelos em direção às coxas enquanto expira.",
-                "Retorne estendendo a coluna sem sentar nos calcanhares."
+                "Ajoelhado frente à polia alta com corda ao lado das têmporas e quadril fixo.",
+                "Enrole a coluna torácica levando os cotovelos em direção às coxas.",
+                "Retorne alongando o abdômen sem sentar nos calcanhares."
             ),
             biomechanicsTips = listOf(
-                "Permite progredir carga como qualquer outro músculo."
+                "Permite progredir carga como qualquer outro grupo muscular."
             ),
             commonMistakes = listOf(
-                "Sentar nos calcanhares usando os flexores do quadril."
+                "Dobrar o quadril sentando nos calcanhares."
             )
         ),
         Exercise(
@@ -1069,7 +2013,7 @@ object ExerciseRepository {
             name = "Elevação de Pernas Suspenso na Barra",
             muscleGroup = MuscleGroup.CORE,
             motionPattern = MotionPattern.LEG_RAISE,
-            primaryTarget = "Reto Abdominal (Porção Infra)",
+            primaryTarget = "Reto Abdominal (Porção Infra) e Flexores",
             synergists = listOf("Oblíquos", "Antebraços"),
             equipment = EquipmentType.BODYWEIGHT,
             mechanics = MechanicsType.COMPOUND,
@@ -1078,15 +2022,38 @@ object ExerciseRepository {
             tempoTUT = "2-1-1-1",
             restSeconds = 60,
             executionSteps = listOf(
-                "Pendure-se na barra fixa com ombros ativos.",
-                "Eleve as pernas e ENROLE A PELVE para cima no final.",
-                "Desça lentamente evitando balançar o corpo."
+                "Pendure-se na barra fixa e eleve as pernas ENROLANDO A PELVE para cima no final.",
+                "Desça devagar sem balançar."
             ),
             biomechanicsTips = listOf(
-                "O reto abdominal atua nos últimos graus quando a pelve faz retroversão."
+                "A retroversão pélvica no topo ativa o reto abdominal."
             ),
             commonMistakes = listOf(
-                "Balançar o corpo como um pêndulo."
+                "Balançar o corpo como pêndulo."
+            )
+        ),
+        Exercise(
+            id = "core_captains_chair",
+            name = "Elevação de Joelhos na Paralela (Captain's Chair)",
+            muscleGroup = MuscleGroup.CORE,
+            motionPattern = MotionPattern.LEG_RAISE,
+            primaryTarget = "Reto Abdominal Infra",
+            synergists = listOf("Oblíquos"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–20 reps",
+            tempoTUT = "2-1-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie os antebraços nas almofadas e eleve os joelhos em direção ao peito enrolando o quadril.",
+                "Desça controladamente."
+            ),
+            biomechanicsTips = listOf(
+                "Excelente opção sem limitar pela força da pegada."
+            ),
+            commonMistakes = listOf(
+                "Parar os joelhos a 90° sem enrolar a pelve."
             )
         ),
         Exercise(
@@ -1103,15 +2070,62 @@ object ExerciseRepository {
             tempoTUT = "3-1-1-0",
             restSeconds = 75,
             executionSteps = listOf(
-                "Ajoelhe-se, segure a roda com braços estendidos e contraia glúteos e abdômen.",
-                "Role lentamente à frente mantendo a lombar neutra.",
-                "Retorne puxando com o abdômen e dorsais sem arquear a coluna."
+                "Ajoelhado, contraia glúteos e abdômen e role à frente mantendo a lombar neutra.",
+                "Retorne puxando com abdômen e dorsais."
             ),
             biomechanicsTips = listOf(
-                "Altíssima ativação eletromiográfica de todo o reto abdominal e transverso."
+                "Ativação eletromiográfica máxima do reto abdominal e transverso."
             ),
             commonMistakes = listOf(
-                "Deixar a barriga afundar e hiperestender a lombar."
+                "Deixar a barriga afundar arqueando a lombar."
+            )
+        ),
+        Exercise(
+            id = "core_weighted_plank",
+            name = "Prancha Isométrica com Sobrecarga (RKC Plank)",
+            muscleGroup = MuscleGroup.CORE,
+            motionPattern = MotionPattern.AB_WHEEL,
+            primaryTarget = "Transverso Abdominal e Estabilidade Profunda",
+            synergists = listOf("Glúteos", "Serrátil"),
+            equipment = EquipmentType.BODYWEIGHT,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante / Intermediário",
+            recommendedReps = "30–60 seg",
+            tempoTUT = "Isometria",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "Apoie antebraços e pontas dos pés, faça retroversão pélvica e contraia glúteos e abdômen com força máxima.",
+                "Adicione anilha nas costas conforme evoluir."
+            ),
+            biomechanicsTips = listOf(
+                "Puxar isométricamente cotovelos em direção aos pés multiplica a ativação."
+            ),
+            commonMistakes = listOf(
+                "Deixar o quadril subir ou afundar."
+            )
+        ),
+        Exercise(
+            id = "core_pallof_press",
+            name = "Pallof Press na Polia (Anti-Rotação)",
+            muscleGroup = MuscleGroup.CORE,
+            motionPattern = MotionPattern.CRUNCH_FLEXION,
+            primaryTarget = "Oblíquos Internos/Externos e Transverso",
+            synergists = listOf("Glúteo Médio"),
+            equipment = EquipmentType.CABLE,
+            mechanics = MechanicsType.ISOLATION,
+            difficulty = "Iniciante",
+            recommendedReps = "12–15 reps / lado",
+            tempoTUT = "2-2-1-1",
+            restSeconds = 60,
+            executionSteps = listOf(
+                "De lado para a polia na altura do esterno, segure o pegador junto ao peito.",
+                "Empurre os braços à frente resistindo à força lateral do cabo por 2 segundos."
+            ),
+            biomechanicsTips = listOf(
+                "Blindagem funcional anti-rotacional para agachamento e levantamento terra."
+            ),
+            commonMistakes = listOf(
+                "Deixar o tronco girar em direção à polia."
             )
         )
     )
@@ -1340,6 +2354,101 @@ object ExerciseRepository {
                         PlannedExercise("bi_incline_dumbbell_curl", 3, "10–14", 1, 75),
                         PlannedExercise("tri_cable_pushdown_rope", 3, "12–15", 0, 60),
                         PlannedExercise("bi_hammer_curl", 3, "10–14", 0, 60)
+                    )
+                )
+            )
+        ),
+        WorkoutSplit(
+            id = "split_arnold",
+            name = "Arnold Split — Peito/Costas • Ombros/Braços • Pernas",
+            subtitle = "6x na semana • Antagonistas & Super-Bomba",
+            frequencyPerWeek = 6,
+            level = "Avançado",
+            description = "Divisão clássica de alta densidade que combina músculos antagonistas (Peito + Costas e Bíceps + Tríceps + Ombros) permitindo recuperação recíproca entre séries.",
+            days = listOf(
+                WorkoutDay(
+                    id = "arn_1",
+                    dayLabel = "DIA 1",
+                    title = "Peito & Costas (Antagonistas)",
+                    focusSummary = "Volume denso de tronco superior",
+                    estimatedMinutes = 70,
+                    exercises = listOf(
+                        PlannedExercise("chest_incline_barbell", 4, "6–10", 2, 150),
+                        PlannedExercise("back_pull_up", 4, "6–10", 2, 120),
+                        PlannedExercise("chest_bench_dumbbell", 3, "8–12", 1, 120),
+                        PlannedExercise("back_one_arm_dumbbell_row", 3, "8–12", 1, 90),
+                        PlannedExercise("chest_pec_deck", 3, "12–15", 0, 60),
+                        PlannedExercise("back_straight_arm_pulldown", 3, "12–15", 0, 60)
+                    )
+                ),
+                WorkoutDay(
+                    id = "arn_2",
+                    dayLabel = "DIA 2",
+                    title = "Ombros, Bíceps & Tríceps",
+                    focusSummary = "Deltoides 3D e braços completos",
+                    estimatedMinutes = 65,
+                    exercises = listOf(
+                        PlannedExercise("shld_barbell_ohp", 4, "6–8", 2, 150),
+                        PlannedExercise("shld_lateral_raise_dumbbell", 4, "12–18", 1, 60),
+                        PlannedExercise("bi_straight_bar_curl", 3, "8–12", 1, 75),
+                        PlannedExercise("tri_skullcrusher_ez", 3, "8–12", 1, 75),
+                        PlannedExercise("bi_bayesian_cable_curl", 3, "12–15", 0, 60),
+                        PlannedExercise("tri_overhead_cable_extension", 3, "12–15", 0, 60)
+                    )
+                ),
+                WorkoutDay(
+                    id = "arn_3",
+                    dayLabel = "DIA 3",
+                    title = "Pernas & Core",
+                    focusSummary = "Agachamento, posterior e panturrilha",
+                    estimatedMinutes = 70,
+                    exercises = listOf(
+                        PlannedExercise("quad_high_bar_squat", 4, "6–8", 2, 180),
+                        PlannedExercise("ham_rdl_barbell", 4, "6–10", 2, 150),
+                        PlannedExercise("quad_leg_extension", 3, "12–15", 0, 75),
+                        PlannedExercise("ham_seated_leg_curl", 3, "12–15", 0, 75),
+                        PlannedExercise("calf_standing_machine", 4, "10–15", 1, 60),
+                        PlannedExercise("core_ab_wheel", 3, "10–15", 1, 60)
+                    )
+                )
+            )
+        ),
+        WorkoutSplit(
+            id = "split_fullbody_3x",
+            name = "Full Body — Força Base & Eficiência",
+            subtitle = "3x na semana • Síntese Proteica Contínua",
+            frequencyPerWeek = 3,
+            level = "Iniciante / Intermediário",
+            description = "Estimula todo o corpo 3x na semana com 4 dias livres para máxima recuperação.",
+            days = listOf(
+                WorkoutDay(
+                    id = "fb_a",
+                    dayLabel = "FULL BODY A",
+                    title = "Sessão A — Agachamento & Supino",
+                    focusSummary = "Compostos fundamentais",
+                    estimatedMinutes = 65,
+                    exercises = listOf(
+                        PlannedExercise("quad_high_bar_squat", 4, "6–8", 2, 180),
+                        PlannedExercise("chest_bench_barbell", 4, "6–8", 2, 150),
+                        PlannedExercise("back_barbell_row", 3, "8–10", 2, 120),
+                        PlannedExercise("shld_lateral_raise_dumbbell", 3, "12–16", 1, 60),
+                        PlannedExercise("bi_barbell_ez_curl", 3, "10–12", 1, 60),
+                        PlannedExercise("calf_standing_machine", 3, "12–15", 1, 60)
+                    )
+                ),
+                WorkoutDay(
+                    id = "fb_b",
+                    dayLabel = "FULL BODY B",
+                    title = "Sessão B — Terra Romeno & Desenvolvimento",
+                    focusSummary = "Cadeia posterior e empurrão vertical",
+                    estimatedMinutes = 65,
+                    exercises = listOf(
+                        PlannedExercise("ham_rdl_barbell", 4, "6–10", 2, 150),
+                        PlannedExercise("shld_overhead_press_dumbbell", 4, "8–10", 2, 120),
+                        PlannedExercise("back_lat_pulldown", 3, "10–12", 1, 90),
+                        PlannedExercise("quad_leg_press_45", 3, "10–12", 1, 120),
+                        PlannedExercise("tri_cable_pushdown_rope", 3, "12–15", 1, 60),
+                        PlannedExercise("core_cable_crunch", 3, "12–15", 1, 60)
                     )
                 )
             )

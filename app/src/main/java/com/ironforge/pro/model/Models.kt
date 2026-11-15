@@ -1,9 +1,9 @@
 package com.ironforge.pro.model
 
-enum class ExperienceLevel(val label: String, val subtitle: String) {
-    BEGINNER("Iniciante", "0 a 12 meses de treino contínuo"),
-    INTERMEDIATE("Intermediário", "1 a 3 anos • Domina técnica básica"),
-    ADVANCED("Avançado", "3+ anos • Periodização & alta carga")
+enum class ExperienceLevel(val label: String, val subtitle: String, val loadMultiplier: Double) {
+    BEGINNER("Iniciante", "0 a 12 meses de treino contínuo", 0.65),
+    INTERMEDIATE("Intermediário", "1 a 3 anos • Domina técnica básica", 1.0),
+    ADVANCED("Avançado", "3+ anos • Periodização & alta carga", 1.35)
 }
 
 enum class FitnessGoal(val label: String, val kcalOffset: Double, val proteinPerKg: Double) {
@@ -16,10 +16,10 @@ enum class FitnessGoal(val label: String, val kcalOffset: Double, val proteinPer
 data class UserProfile(
     val name: String = "Atleta",
     val isMale: Boolean = true,
-    val age: Int = 26,
-    val weightKg: Double = 80.0,
-    val heightCm: Double = 178.0,
-    val bodyFatPct: Double = 13.5,
+    val age: Int = 25,
+    val weightKg: Double = 75.0,
+    val heightCm: Double = 175.0,
+    val bodyFatPct: Double = 14.0,
     val experience: ExperienceLevel = ExperienceLevel.INTERMEDIATE,
     val goal: FitnessGoal = FitnessGoal.LEAN_BULK,
     val weeklyDaysGoal: Int = 4,
@@ -180,11 +180,11 @@ data class BodyMeasurementRecord(
     val dateFormatted: String,
     val weightKg: Double,
     val bodyFatPct: Double,
-    val chestCm: Double,
-    val armCm: Double,
-    val waistCm: Double,
-    val thighCm: Double,
-    val calfCm: Double
+    val chestCm: Double = 0.0,
+    val armCm: Double = 0.0,
+    val waistCm: Double = 0.0,
+    val thighCm: Double = 0.0,
+    val calfCm: Double = 0.0
 )
 
 data class ScienceArticle(

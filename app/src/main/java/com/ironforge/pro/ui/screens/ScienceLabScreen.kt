@@ -136,7 +136,7 @@ private fun PlateCalculatorSection(
     targetWeightInput: String,
     onUpdateWeight: (String) -> Unit
 ) {
-    val weight = (targetWeightInput.toDoubleOrNull() ?: 100.0).coerceIn(20.0, 400.0)
+    val weight = (targetWeightInput.toDoubleOrNull() ?: 60.0).coerceIn(20.0, 400.0)
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         HyperSquircleCard(accentGlow = true) {
@@ -157,7 +157,7 @@ private fun PlateCalculatorSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                listOf(60, 80, 100, 120, 140, 180).forEach { preset ->
+                listOf(40, 60, 80, 100, 120, 160).forEach { preset ->
                     FilterChip(
                         selected = weight.toInt() == preset,
                         onClick = { onUpdateWeight(preset.toString()) },
@@ -180,8 +180,8 @@ private fun OneRmCalculatorSection(
     onUpdate: (String, String) -> Unit
 ) {
     val palette = LocalIronPalette.current
-    val weight = (weightInput.toDoubleOrNull() ?: 100.0).coerceAtLeast(1.0)
-    val reps = (repsInput.toIntOrNull() ?: 6).coerceIn(1, 30)
+    val weight = (weightInput.toDoubleOrNull() ?: 60.0).coerceAtLeast(1.0)
+    val reps = (repsInput.toIntOrNull() ?: 8).coerceIn(1, 30)
 
     val epley1Rm = IronForgeViewModel.estimate1RM(weight, reps)
     val brzycki1Rm = if (reps == 1) weight else ((weight * (36.0 / (37.0 - reps))) * 10.0).roundToInt() / 10.0
@@ -263,9 +263,9 @@ private fun NutritionMacroCalculatorSection(
     viewModel: IronForgeViewModel
 ) {
     val palette = LocalIronPalette.current
-    val weight = (state.userWeightKg.toDoubleOrNull() ?: 80.0).coerceIn(35.0, 220.0)
-    val height = (state.userHeightCm.toDoubleOrNull() ?: 178.0).coerceIn(120.0, 230.0)
-    val age = (state.userAge.toIntOrNull() ?: 26).coerceIn(14, 90)
+    val weight = (state.userWeightKg.toDoubleOrNull() ?: 75.0).coerceIn(35.0, 220.0)
+    val height = (state.userHeightCm.toDoubleOrNull() ?: 175.0).coerceIn(120.0, 230.0)
+    val age = (state.userAge.toIntOrNull() ?: 25).coerceIn(14, 90)
 
     val bmr = if (state.isMale) {
         (10.0 * weight) + (6.25 * height) - (5.0 * age) + 5.0

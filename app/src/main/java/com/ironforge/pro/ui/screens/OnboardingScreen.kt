@@ -40,9 +40,8 @@ fun OnboardingScreen(
     onComplete: (UserProfile, AppThemePreset, String?, List<String>) -> Unit
 ) {
     val palette = LocalIronPalette.current
-    var step by remember { mutableIntStateOf(0) } // 0..3
+    var step by remember { mutableIntStateOf(0) }
 
-    // Step 1: Athlete Bio State
     var name by remember { mutableStateOf(if (initialProfile.name == "Atleta") "" else initialProfile.name) }
     var isMale by remember { mutableStateOf(initialProfile.isMale) }
     var ageInput by remember { mutableStateOf(initialProfile.age.toString()) }
@@ -52,10 +51,9 @@ fun OnboardingScreen(
     var selectedExp by remember { mutableStateOf(initialProfile.experience) }
     var selectedGoal by remember { mutableStateOf(initialProfile.goal) }
 
-    // Step 3: Workout Setup State
-    var workoutMode by remember { mutableIntStateOf(0) } // 0 = Split Científico, 1 = Montar Meu Treino
+    var workoutMode by remember { mutableIntStateOf(0) }
     var selectedSplitId by remember { mutableStateOf(ExerciseRepository.defaultSplits.first().id) }
-    var customWorkoutName by remember { mutableStateOf("Meu Treino A — Full Performance") }
+    var customWorkoutName by remember { mutableStateOf("Meu Treino A — Personalizado") }
     var exerciseSearch by remember { mutableStateOf("") }
     var selectedMuscleFilter by remember { mutableStateOf<MuscleGroup?>(null) }
     val customExerciseIds = remember {
@@ -84,7 +82,6 @@ fun OnboardingScreen(
             .navigationBarsPadding()
             .padding(16.dp)
     ) {
-        // Top Wizard Progress Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,7 +117,6 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Segmented HyperOS Progress Pill Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -140,7 +136,6 @@ fun OnboardingScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Step Body
         Box(modifier = Modifier.weight(1f)) {
             AnimatedContent(
                 targetState = step,
@@ -294,7 +289,7 @@ fun OnboardingScreen(
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Toque em qualquer paleta abaixo para aplicar as cores em tempo real em todo o aplicativo (botões, gráficos, Ilha Dinâmica e vídeos).",
+                                        text = "Toque em qualquer paleta abaixo para aplicar as cores em tempo real em todo o aplicativo.",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = TextSecondary
                                     )
@@ -344,7 +339,6 @@ fun OnboardingScreen(
                                             )
                                         }
 
-                                        // Android 17 Material You Tri-Tone Swatch Circle
                                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(swatchPrimary))
                                             Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(swatchSecondary))
@@ -376,6 +370,7 @@ fun OnboardingScreen(
                             item {
                                 HyperSquircleCard(accentGlow = true) {
                                     Text("Escolha ou Monte seu Treino", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+                                    Text("Catálogo completo com ${ExerciseRepository.allExercises.size} exercícios disponíveis", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         FilterChip(
@@ -431,7 +426,7 @@ fun OnboardingScreen(
                                         OutlinedTextField(
                                             value = exerciseSearch,
                                             onValueChange = { exerciseSearch = it },
-                                            label = { Text("Buscar exercícios...") },
+                                            label = { Text("Buscar entre ${ExerciseRepository.allExercises.size} exercícios...") },
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth()
                                         )
@@ -487,9 +482,9 @@ fun OnboardingScreen(
                     }
 
                     3 -> {
-                        val finalWeight = (weightInput.toDoubleOrNull() ?: 80.0).coerceIn(35.0, 220.0)
-                        val finalHeight = (heightInput.toDoubleOrNull() ?: 178.0).coerceIn(120.0, 230.0)
-                        val finalAge = (ageInput.toIntOrNull() ?: 26).coerceIn(14, 90)
+                        val finalWeight = (weightInput.toDoubleOrNull() ?: 75.0).coerceIn(35.0, 220.0)
+                        val finalHeight = (heightInput.toDoubleOrNull() ?: 175.0).coerceIn(120.0, 230.0)
+                        val finalAge = (ageInput.toIntOrNull() ?: 25).coerceIn(14, 90)
                         val bmr = if (isMale) {
                             (10.0 * finalWeight) + (6.25 * finalHeight) - (5.0 * finalAge) + 5.0
                         } else {
@@ -515,7 +510,7 @@ fun OnboardingScreen(
                                         color = TextPrimary
                                     )
                                     Text(
-                                        text = "Seu perfil fisiológico, tema Android 17 e rotina de treino foram calibrados.",
+                                        text = "Seu dashboard iniciará 100% limpo para registrar apenas seus treinos, cargas e recordes reais.",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = TextSecondary
                                     )
@@ -570,7 +565,6 @@ fun OnboardingScreen(
             }
         }
 
-        // Bottom Navigation Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -597,10 +591,10 @@ fun OnboardingScreen(
                         val profile = UserProfile(
                             name = name.ifBlank { "Atleta" },
                             isMale = isMale,
-                            age = (ageInput.toIntOrNull() ?: 26).coerceIn(14, 90),
-                            weightKg = (weightInput.toDoubleOrNull() ?: 80.0).coerceIn(35.0, 220.0),
-                            heightCm = (heightInput.toDoubleOrNull() ?: 178.0).coerceIn(120.0, 230.0),
-                            bodyFatPct = (bfInput.toDoubleOrNull() ?: 13.5).coerceIn(3.0, 50.0),
+                            age = (ageInput.toIntOrNull() ?: 25).coerceIn(14, 90),
+                            weightKg = (weightInput.toDoubleOrNull() ?: 75.0).coerceIn(35.0, 220.0),
+                            heightCm = (heightInput.toDoubleOrNull() ?: 175.0).coerceIn(120.0, 230.0),
+                            bodyFatPct = (bfInput.toDoubleOrNull() ?: 14.0).coerceIn(3.0, 50.0),
                             experience = selectedExp,
                             goal = selectedGoal,
                             selectedSplitId = selectedSplitId

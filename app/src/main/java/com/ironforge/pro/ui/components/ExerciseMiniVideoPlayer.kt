@@ -124,7 +124,6 @@ fun ExerciseMiniVideoPlayer(
                 }
             }
 
-            // Top HUD Overlay
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

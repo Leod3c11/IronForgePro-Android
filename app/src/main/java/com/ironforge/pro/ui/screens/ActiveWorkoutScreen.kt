@@ -483,7 +483,7 @@ private fun ExercisePickerModal(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Buscar por nome ou músculo...") },
+                    label = { Text("Buscar entre ${ExerciseRepository.allExercises.size} exercícios...") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )

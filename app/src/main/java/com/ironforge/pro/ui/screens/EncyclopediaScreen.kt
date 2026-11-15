@@ -90,7 +90,7 @@ fun EncyclopediaScreen(
         item {
             SectionHeader(
                 title = "Enciclopédia Biomecânica",
-                subtitle = "${filteredExercises.size} exercícios com mini vídeo de execução"
+                subtitle = "${filteredExercises.size} de ${ExerciseRepository.allExercises.size} exercícios com mini vídeo"
             )
         }
 
@@ -120,7 +120,7 @@ fun EncyclopediaScreen(
                         selected = state.selectedMuscleFilter == null,
                         onClick = { onSelectMuscle(null) },
                         shape = CircleShape,
-                        label = { Text("Todos Músculos") },
+                        label = { Text("Todos (${ExerciseRepository.allExercises.size})") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,
@@ -130,13 +130,14 @@ fun EncyclopediaScreen(
                     )
                 }
                 items(MuscleGroup.entries) { muscle ->
+                    val count = ExerciseRepository.allExercises.count { it.muscleGroup == muscle }
                     FilterChip(
                         selected = state.selectedMuscleFilter == muscle,
                         onClick = {
                             onSelectMuscle(if (state.selectedMuscleFilter == muscle) null else muscle)
                         },
                         shape = CircleShape,
-                        label = { Text(muscle.displayName) },
+                        label = { Text("${muscle.displayName} ($count)") },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = palette.primary,
                             selectedLabelColor = palette.onPrimaryAccent,

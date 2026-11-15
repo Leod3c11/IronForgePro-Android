@@ -397,7 +397,7 @@ private fun CustomWorkoutBuilderDialog(
                 OutlinedTextField(
                     value = search,
                     onValueChange = { search = it },
-                    label = { Text("Filtrar exercícios (${selectedIds.size} selecionados)") },
+                    label = { Text("Filtrar entre ${ExerciseRepository.allExercises.size} exercícios (${selectedIds.size})") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
