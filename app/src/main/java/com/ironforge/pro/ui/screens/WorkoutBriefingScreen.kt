@@ -29,6 +29,7 @@ import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.MuscleGroup
 import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.ExerciseVisualThumb
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.WorkoutEditorDialog
@@ -274,23 +275,11 @@ fun WorkoutBriefingScreen(
                                 modifier = Modifier.weight(1f),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(palette.primary.copy(alpha = 0.16f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "${idx + 1}",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = palette.primary
-                                    )
-                                }
+                                ExerciseVisualThumb(exercise = ex, size = 44.dp)
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = ex.name,
+                                        text = "${idx + 1}. ${ex.name}",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = palette.textPrimary
                                     )

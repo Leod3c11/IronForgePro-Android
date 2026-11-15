@@ -11,8 +11,8 @@ android {
         applicationId = "com.ironforge.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "6.0.0-AMOLED-Coach"
+        versionCode = 8
+        versionName = "8.0.0-VisualStudio"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -72,6 +72,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     implementation("com.google.code.gson:gson:2.11.0")
+    implementation("com.airbnb.android:lottie-compose:6.4.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

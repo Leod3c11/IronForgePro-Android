@@ -28,6 +28,7 @@ import com.ironforge.pro.model.EquipmentType
 import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.MuscleGroup
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.ExerciseVisualThumb
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.SectionHeader
@@ -190,16 +191,25 @@ fun EncyclopediaScreen(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = exercise.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.textPrimary
-                )
-                Text(
-                    text = "Alvo: ${exercise.primaryTarget}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = palette.textSecondary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ExerciseVisualThumb(exercise = exercise, size = 48.dp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = exercise.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = palette.textPrimary
+                        )
+                        Text(
+                            text = "Alvo: ${exercise.primaryTarget}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.textSecondary
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
 

@@ -1,6 +1,9 @@
 package com.ironforge.pro.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.ui.res.painterResource
+import com.ironforge.pro.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -141,8 +144,22 @@ private fun PlateCalculatorSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         HyperSquircleCard(accentGlow = true) {
-            Text("Calculadora Visual de Anilhas Olímpicas", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
-            Text("Considera barra olímpica oficial de 20 kg", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Calculadora Visual de Anilhas Olímpicas", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
+                    Text("Considera barra olímpica oficial de 20 kg", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.visual_weight_plates_3d),
+                    contentDescription = "Anilhas Olímpicas 3D",
+                    modifier = Modifier.size(64.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(

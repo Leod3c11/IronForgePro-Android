@@ -1,6 +1,7 @@
 package com.ironforge.pro.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,10 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironforge.pro.R
 import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.BodyMeasurementRecord
 import com.ironforge.pro.model.MuscleReadinessInfo
@@ -47,6 +51,7 @@ fun DashboardScreen(
     var showMeasureDialog by remember { mutableStateOf(false) }
     var showThemeStudioDialog by remember { mutableStateOf(false) }
     var inspectedReadiness by remember { mutableStateOf<MuscleReadinessInfo?>(null) }
+    var activeSyncPartner by remember { mutableStateOf("Health Connect") }
 
     val today = remember { LocalDate.now() }
     val todayIsoWeekday = today.dayOfWeek.value
@@ -64,7 +69,6 @@ fun DashboardScreen(
         map
     }
 
-    // Multi-muscle recovery accounting for BOTH primary target AND synergists
     val muscleReadinessList = remember(state.sessionHistory) {
         IronForgeViewModel.computeMultiMuscleReadiness(state.sessionHistory)
     }
@@ -149,7 +153,6 @@ fun DashboardScreen(
                         )
                     }
 
-                    // Opens Today's Pre-Workout Briefing Screen with Centered Start Button!
                     Button(
                         onClick = { onOpenWorkoutBriefing(heroWorkout) },
                         colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
@@ -174,49 +177,63 @@ fun DashboardScreen(
             }
         }
 
-        // Post-Workout Summary Notification Pill
+        // Post-Workout Summary Celebratory Card with 3D Trophy & Lottie Confetti
         if (state.lastFinishedSession != null) {
             item {
                 val summary = state.lastFinishedSession
                 HyperSquircleCard(accentGlow = true, containerColor = palette.tileElevated) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = null,
-                                tint = HyperEmerald,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "SESSÃO REGISTRADA COM SUCESSO",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = HyperEmerald
-                                )
-                                Text(
-                                    text = summary.workoutTitle,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = palette.textPrimary
-                                )
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        LottieStudioAnimation(
+                            assetPath = "lotties/confetti.json",
+                            iterations = 2,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(115.dp)
+                                .align(Alignment.TopCenter)
+                        )
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.visual_exercise_completed),
+                                        contentDescription = "Treino Concluído",
+                                        modifier = Modifier
+                                            .size(52.dp)
+                                            .clip(RoundedCornerShape(14.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "SESSÃO REGISTRADA COM SUCESSO",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = HyperEmerald
+                                        )
+                                        Text(
+                                            text = summary.workoutTitle,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = palette.textPrimary
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = onDismissSummary) {
+                                    Icon(Icons.Default.Close, contentDescription = "Fechar", tint = palette.textSecondary)
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", palette.primaryGlow)
+                                HyperPillTag("Séries: ${summary.totalWorkingSets}", palette.secondary)
+                                HyperPillTag("PRs: ${summary.prCount}", HyperEmerald)
                             }
                         }
-                        IconButton(onClick = onDismissSummary) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = palette.textSecondary)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", palette.primaryGlow)
-                        HyperPillTag("Séries: ${summary.totalWorkingSets}", palette.secondary)
-                        HyperPillTag("PRs: ${summary.prCount}", HyperEmerald)
                     }
                 }
             }
@@ -294,7 +311,7 @@ fun DashboardScreen(
             }
         }
 
-        // Today's Scheduled Workout Hero Card (Opens Pre-Workout Briefing Screen)
+        // Today's Scheduled Workout Hero Card with OrbitingGlow Shader + 3D Kettlebell Render
         item {
             val leadExercise = ExerciseRepository.getExerciseById(heroWorkout.exercises.first().exerciseId)
             val badgeText = if (todayScheduledWorkout != null) {
@@ -303,56 +320,63 @@ fun DashboardScreen(
                 "HOJE É DESCANSO • PRÓXIMO TREINO"
             }
 
-            HyperSquircleCard(
-                accentGlow = true,
-                onClick = { onOpenWorkoutBriefing(heroWorkout) }
+            OrbitingGlowBanner(
+                modifier = Modifier.clickable { onOpenWorkoutBriefing(heroWorkout) }
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        HyperPillTag(badgeText, palette.primaryGlow)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = heroWorkout.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = palette.textPrimary
-                        )
-                        Text(
-                            text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = palette.textSecondary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    FilledIconButton(
-                        onClick = { onOpenWorkoutBriefing(heroWorkout) },
-                        modifier = Modifier.size(52.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Ver Treino de Hoje",
-                            tint = palette.onPrimaryAccent,
-                            modifier = Modifier.size(30.dp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            HyperPillTag(badgeText, palette.primaryGlow)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = heroWorkout.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = palette.textPrimary
+                            )
+                            Text(
+                                text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = palette.textSecondary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.visual_kettlebell_3d),
+                            contentDescription = "Treino 3D",
+                            modifier = Modifier.size(62.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        FilledIconButton(
+                            onClick = { onOpenWorkoutBriefing(heroWorkout) },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Ver Treino de Hoje",
+                                tint = palette.onPrimaryAccent,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                    if (leadExercise != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ExerciseMiniVideoPlayer(
+                            exercise = leadExercise,
+                            customVideoUri = state.customVideoUris[leadExercise.id],
+                            height = 145.dp,
+                            compact = true
                         )
                     }
-                }
-                if (leadExercise != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ExerciseMiniVideoPlayer(
-                        exercise = leadExercise,
-                        customVideoUri = state.customVideoUris[leadExercise.id],
-                        height = 135.dp,
-                        compact = true
-                    )
                 }
             }
         }
 
-        // 2x2 Bento Grid
+        // 2x2 Bento Grid with Lottie Flame & Target Animations
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -366,9 +390,12 @@ fun DashboardScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
-                            Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+                            LottieStudioAnimation(
+                                assetPath = "lotties/flame.json",
+                                modifier = Modifier.size(26.dp)
+                            )
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "${(totalTonnage / 1000.0 * 10).roundToInt() / 10.0} t",
                             style = MaterialTheme.typography.displayLarge,
@@ -388,9 +415,12 @@ fun DashboardScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("PRONTIDÃO", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
-                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = HyperEmerald, modifier = Modifier.size(16.dp))
+                            LottieStudioAnimation(
+                                assetPath = "lotties/target.json",
+                                modifier = Modifier.size(26.dp)
+                            )
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "$avgReadiness%",
                             style = MaterialTheme.typography.displayLarge,
@@ -443,7 +473,7 @@ fun DashboardScreen(
             }
         }
 
-        // Multi-Muscle Recovery Readiness Strip (Includes Primary + Secondary Synergists!)
+        // Multi-Muscle Recovery Readiness Strip
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -482,6 +512,81 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = palette.textMuted,
                                 fontSize = 9.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Wearables & Fitness Ecosystem Sync Card (Watch Ultra + Google Fit, Garmin, Fitbit, Strava)
+        item {
+            HyperSquircleCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        HyperPillTag("ECOSSISTEMA & WEARABLES", palette.secondary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Sincronização Ativa: $activeSyncPartner",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = palette.textPrimary
+                        )
+                        Text(
+                            text = "Conecte seu relógio ou app para importar gasto calórico e frequência cardíaca.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.textSecondary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.visual_watch_ultra),
+                        contentDescription = "Smartwatch",
+                        modifier = Modifier.size(68.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                val syncPartners = listOf(
+                    "Google Fit" to R.drawable.ic_sync_google_fit,
+                    "Garmin" to R.drawable.ic_sync_garmin,
+                    "Fitbit" to R.drawable.ic_sync_fitbit,
+                    "Strava" to R.drawable.ic_sync_strava
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    syncPartners.forEach { (partnerName, iconRes) ->
+                        val isConnected = activeSyncPartner == partnerName
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    if (isConnected) palette.primary.copy(alpha = 0.16f) else palette.tileElevated
+                                )
+                                .clickable { activeSyncPartner = partnerName }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Image(
+                                painter = painterResource(id = iconRes),
+                                contentDescription = partnerName,
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = partnerName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isConnected) palette.primary else palette.textSecondary,
+                                fontSize = 10.sp,
+                                maxLines = 1
                             )
                         }
                     }
@@ -725,7 +830,7 @@ fun DashboardScreen(
         )
     }
 
-    // Theme Studio Modal (AMOLED Pure Black, Light Mode & Dark Titanium)
+    // Theme Studio Modal
     if (showThemeStudioDialog) {
         var filterStyle by remember { mutableStateOf<ThemeSurfaceStyle?>(null) }
         val presets = remember(filterStyle) {
@@ -787,13 +892,10 @@ fun DashboardScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(preset.title, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    }
+                                    Text(preset.title, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                     Text(preset.subtitle, color = palette.textSecondary, fontSize = 11.sp)
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    // Background swatch + Primary + Secondary swatches
                                     Box(
                                         modifier = Modifier
                                             .size(16.dp)

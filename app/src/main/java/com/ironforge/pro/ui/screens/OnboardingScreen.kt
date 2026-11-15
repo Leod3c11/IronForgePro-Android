@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,13 +23,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironforge.pro.R
 import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.*
-import com.ironforge.pro.ui.components.HyperPillTag
-import com.ironforge.pro.ui.components.HyperSquircleCard
+import com.ironforge.pro.ui.components.*
 import com.ironforge.pro.ui.theme.*
 import kotlin.math.roundToInt
 
@@ -92,12 +95,15 @@ fun OnboardingScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
                         .background(Brush.linearGradient(listOf(palette.primary, palette.secondary))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = palette.onPrimaryAccent, modifier = Modifier.size(20.dp))
+                    LottieStudioAnimation(
+                        assetPath = "lotties/launch_logo.json",
+                        modifier = Modifier.size(34.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
@@ -150,6 +156,10 @@ fun OnboardingScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
+                            item {
+                                WelcomeCoachVideoCard(height = 156.dp)
+                            }
+
                             item {
                                 HyperSquircleCard(accentGlow = true) {
                                     Text("Identificação do Atleta", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
@@ -257,19 +267,33 @@ fun OnboardingScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     FitnessGoal.entries.forEach { goal ->
                                         val selected = selectedGoal == goal
+                                        val goalImgRes = resolveGoalIllustrationRes(goal, isMale)
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(vertical = 4.dp)
-                                                .clip(RoundedCornerShape(14.dp))
-                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else palette.tileElevated)
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .background(if (selected) palette.primary.copy(alpha = 0.18f) else palette.tileElevated)
                                                 .clickable { selectedGoal = goal }
-                                                .padding(12.dp),
+                                                .padding(10.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Image(
+                                                painter = painterResource(id = goalImgRes),
+                                                contentDescription = goal.label,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .size(54.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                            )
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Text(
+                                                text = goal.label,
+                                                color = palette.textPrimary,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.weight(1f)
+                                            )
                                             RadioButton(selected = selected, onClick = { selectedGoal = goal })
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(goal.label, color = palette.textPrimary, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                 }
@@ -490,6 +514,8 @@ fun OnboardingScreen(
                                                 if (it) customExerciseIds.add(ex.id) else customExerciseIds.remove(ex.id)
                                             }
                                         )
+                                        ExerciseVisualThumb(exercise = ex, size = 40.dp)
+                                        Spacer(modifier = Modifier.width(10.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(ex.name, color = palette.textPrimary, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                                             Text("${ex.muscleGroup.displayName} • ${ex.recommendedReps}", color = palette.textSecondary, fontSize = 12.sp)
@@ -517,67 +543,93 @@ fun OnboardingScreen(
                         val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == selectedSplitId }
                             ?: ExerciseRepository.defaultSplits.first()
 
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            item {
-                                HyperSquircleCard(accentGlow = true) {
-                                    Text(
-                                        text = "Tudo Pronto, ${name.ifBlank { "Atleta" }}!",
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = palette.textPrimary
-                                    )
-                                    Text(
-                                        text = "Seu dashboard iniciará 100% limpo e seu calendário semanal já foi preenchido automaticamente.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = palette.textSecondary
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        HyperPillTag("${finalWeight} kg", palette.primaryGlow)
-                                        HyperPillTag("${finalHeight.toInt()} cm", palette.secondary)
-                                        HyperPillTag(selectedExp.label, HyperEmerald)
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                item {
+                                    OrbitingGlowBanner {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = "Tudo Pronto, ${name.ifBlank { "Atleta" }}!",
+                                                        style = MaterialTheme.typography.headlineMedium,
+                                                        color = palette.textPrimary
+                                                    )
+                                                    Text(
+                                                        text = "Seu dashboard iniciará 100% limpo e seu calendário semanal já foi preenchido automaticamente.",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = palette.textSecondary
+                                                    )
+                                                }
+                                                Image(
+                                                    painter = painterResource(id = R.drawable.visual_kettlebell_3d),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(64.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                HyperPillTag("${finalWeight} kg", palette.primaryGlow)
+                                                HyperPillTag("${finalHeight.toInt()} cm", palette.secondary)
+                                                HyperPillTag(selectedExp.label, HyperEmerald)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    HyperSquircleCard {
+                                        Text("Metas Nutricionais Calculadas", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text("$targetKcal kcal / dia", style = MaterialTheme.typography.displayLarge, color = palette.primary)
+                                        Text("TMB: ${bmr.roundToInt()} kcal • GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            HyperPillTag("Proteína: ${proteinG}g", HyperEmerald)
+                                            HyperPillTag("Carbo: ${carbG}g", palette.primaryGlow)
+                                            HyperPillTag("Gordura: ${fatG}g", palette.secondary)
+                                        }
+                                    }
+                                }
+
+                                item {
+                                    HyperSquircleCard {
+                                        Text("Treino & Visual Aplicados", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = if (workoutMode == 1) "Ficha Personalizada: $customWorkoutName (${customExerciseIds.size} exercícios)"
+                                                   else "Divisão Ativa: ${chosenSplit.name}",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = palette.primaryGlow
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Tema Ativo: ${currentTheme.title} (${currentTheme.style.label})",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = palette.secondary
+                                        )
                                     }
                                 }
                             }
 
-                            item {
-                                HyperSquircleCard {
-                                    Text("Metas Nutricionais Calculadas", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text("$targetKcal kcal / dia", style = MaterialTheme.typography.displayLarge, color = palette.primary)
-                                    Text("TMB: ${bmr.roundToInt()} kcal • GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        HyperPillTag("Proteína: ${proteinG}g", HyperEmerald)
-                                        HyperPillTag("Carbo: ${carbG}g", palette.primaryGlow)
-                                        HyperPillTag("Gordura: ${fatG}g", palette.secondary)
-                                    }
-                                }
-                            }
-
-                            item {
-                                HyperSquircleCard {
-                                    Text("Treino & Visual Aplicados", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = if (workoutMode == 1) "Ficha Personalizada: $customWorkoutName (${customExerciseIds.size} exercícios)"
-                                               else "Divisão Ativa: ${chosenSplit.name}",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = palette.primaryGlow
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "Tema Ativo: ${currentTheme.title} (${currentTheme.style.label})",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = palette.secondary
-                                    )
-                                }
-                            }
+                            LottieStudioAnimation(
+                                assetPath = "lotties/confetti.json",
+                                iterations = 1,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(220.dp)
+                                    .align(Alignment.TopCenter)
+                            )
                         }
                     }
                 }
