@@ -1,0 +1,3 @@
+-keep class com.ironforge.pro.model.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
