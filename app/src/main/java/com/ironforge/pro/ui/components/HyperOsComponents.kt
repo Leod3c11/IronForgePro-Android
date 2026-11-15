@@ -252,18 +252,25 @@ fun HyperFloatingDock(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = CircleShape,
             color = palette.glassOverlay,
-            border = BorderStroke(1.dp, palette.hairline),
-            shadowElevation = 12.dp
+            border = BorderStroke(
+                width = 1.1.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(palette.hairline, palette.primary.copy(alpha = 0.45f), palette.hairline)
+                )
+            ),
+            shadowElevation = 14.dp
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .animateContentSize(spring(dampingRatio = 0.78f, stiffness = 380f))
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, (label, icon) ->
@@ -277,7 +284,7 @@ fun HyperFloatingDock(
                             .background(bgColor)
                             .clickable { onSelect(index) }
                             .padding(
-                                horizontal = if (selected) 15.dp else 13.dp,
+                                horizontal = if (selected) 14.dp else 12.dp,
                                 vertical = 10.dp
                             ),
                         verticalAlignment = Alignment.CenterVertically,
@@ -294,7 +301,8 @@ fun HyperFloatingDock(
                                 text = label,
                                 style = MaterialTheme.typography.labelLarge,
                                 color = contentColor,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                maxLines = 1
                             )
                         }
                     }

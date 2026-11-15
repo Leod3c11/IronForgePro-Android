@@ -411,6 +411,18 @@ fun OnboardingScreen(
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
                             item {
+                                EmbeddedStudioVideoCard(
+                                    rawResId = if (isMale) R.raw.studio_sp_male else R.raw.studio_sp_female,
+                                    badge = "DEMONSTRAÇÃO REAL",
+                                    title = "Resultados & Periodização Científica",
+                                    subtitle = "Escolha uma divisão pronta ou monte sua ficha",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    height = 148.dp,
+                                    initialPlaying = true
+                                )
+                            }
+
+                            item {
                                 HyperSquircleCard(accentGlow = true) {
                                     Text("Escolha ou Monte seu Treino", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
                                     Text("Catálogo completo com ${ExerciseRepository.allExercises.size} exercícios disponíveis", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
@@ -549,7 +561,15 @@ fun OnboardingScreen(
                         ) {
                                 item {
                                     OrbitingGlowBanner {
-                                        Column(modifier = Modifier.padding(16.dp)) {
+                                        Box(modifier = Modifier.fillMaxWidth()) {
+                                            AnimatedGifView(
+                                                assetPath = "gifs/plan_review_confetti.gif",
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(145.dp)
+                                                    .align(Alignment.TopCenter)
+                                            )
+                                            Column(modifier = Modifier.padding(16.dp)) {
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -574,10 +594,11 @@ fun OnboardingScreen(
                                                 )
                                             }
                                             Spacer(modifier = Modifier.height(12.dp))
-                                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                HyperPillTag("${finalWeight} kg", palette.primaryGlow)
-                                                HyperPillTag("${finalHeight.toInt()} cm", palette.secondary)
-                                                HyperPillTag(selectedExp.label, HyperEmerald)
+                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                    HyperPillTag("${finalWeight} kg", palette.primaryGlow)
+                                                    HyperPillTag("${finalHeight.toInt()} cm", palette.secondary)
+                                                    HyperPillTag(selectedExp.label, HyperEmerald)
+                                                }
                                             }
                                         }
                                     }

@@ -1,11 +1,15 @@
 package com.ironforge.pro.ui.components
 
+import android.graphics.ImageDecoder
 import android.graphics.RuntimeShader
+import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.widget.ImageView
 import android.widget.VideoView
 import androidx.annotation.DrawableRes
+import androidx.annotation.RawRes
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -40,6 +44,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,6 +90,45 @@ fun LottieStudioAnimation(
                 modifier = Modifier.size(18.dp)
             )
         }
+    }
+}
+
+/**
+ * Renders animated GIFs from assets/ (e.g., gifs/plan_review_confetti.gif)
+ * using Android 9+ AnimatedImageDrawable with graceful Lottie fallback on older APIs.
+ */
+@Composable
+fun AnimatedGifView(
+    assetPath: String,
+    modifier: Modifier = Modifier,
+    fallbackLottieAsset: String = "lotties/confetti.json"
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        AndroidView(
+            factory = { ctx ->
+                ImageView(ctx).apply {
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    runCatching {
+                        val source = ImageDecoder.createSource(ctx.assets, assetPath)
+                        val drawable = ImageDecoder.decodeDrawable(source)
+                        setImageDrawable(drawable)
+                        (drawable as? AnimatedImageDrawable)?.start()
+                    }
+                }
+            },
+            onRelease = { iv ->
+                runCatching {
+                    (iv.drawable as? AnimatedImageDrawable)?.stop()
+                    iv.setImageDrawable(null)
+                }
+            },
+            modifier = modifier
+        )
+    } else {
+        LottieStudioAnimation(
+            assetPath = fallbackLottieAsset,
+            modifier = modifier
+        )
     }
 }
 
@@ -203,29 +247,32 @@ fun OrbitingGlowBanner(
 }
 
 @Composable
-fun WelcomeCoachVideoCard(
+fun EmbeddedStudioVideoCard(
+    @RawRes rawResId: Int,
+    badge: String,
+    title: String,
+    subtitle: String,
     modifier: Modifier = Modifier,
-    height: Dp = 165.dp
+    height: Dp = 165.dp,
+    initialPlaying: Boolean = true
 ) {
     val palette = LocalIronPalette.current
-    var isPlaying by remember { mutableStateOf(true) }
-    var isMuted by remember { mutableStateOf(true) }
-    var isPrepared by remember { mutableStateOf(false) }
-    var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
+    var isPlaying by remember(rawResId) { mutableStateOf(initialPlaying) }
+    var isMuted by remember(rawResId) { mutableStateOf(true) }
+    var isPrepared by remember(rawResId) { mutableStateOf(false) }
+    var mediaPlayerRef by remember(rawResId) { mutableStateOf<MediaPlayer?>(null) }
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height),
+        modifier = modifier.height(height),
         shape = RoundedCornerShape(22.dp),
         color = palette.card,
-        border = BorderStroke(1.2.dp, palette.primary.copy(alpha = 0.6f))
+        border = BorderStroke(1.2.dp, palette.primary.copy(alpha = 0.55f))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AndroidView(
                 factory = { ctx ->
                     VideoView(ctx).apply {
-                        val videoUri = Uri.parse("android.resource://${ctx.packageName}/${R.raw.welcome_pt}")
+                        val videoUri = Uri.parse("android.resource://${ctx.packageName}/$rawResId")
                         setVideoURI(videoUri)
                         setOnPreparedListener { mp ->
                             mediaPlayerRef = mp
@@ -258,12 +305,39 @@ fun WelcomeCoachVideoCard(
                 modifier = Modifier.fillMaxSize()
             )
 
+            // Top LIVE STUDIO pill
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(10.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xCC0A0E17))
+                    .padding(horizontal = 9.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (isPlaying) palette.primary else palette.textMuted)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = badge,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                        color = Color.White,
+                        fontSize = 9.sp
+                    )
+                }
+            }
+
+            // Bottom gradient scrim + controls
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
                     .background(
-                        Brush.verticalGradient(listOf(Color.Transparent, Color(0xD9070A10)))
+                        Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6060910)))
                     )
                     .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
@@ -272,27 +346,33 @@ fun WelcomeCoachVideoCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "IRONFORGE STUDIO COACH",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                            text = title,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black),
                             color = palette.primaryGlow,
-                            fontSize = 10.sp
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Treinos guiados com biomecânica 3D",
+                            text = subtitle,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
-                            fontSize = 12.sp
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Box(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xCC151A24))
+                                .background(Color(0xD9151A24))
                                 .clickable { isMuted = !isMuted },
                             contentAlignment = Alignment.Center
                         ) {
@@ -300,14 +380,14 @@ fun WelcomeCoachVideoCard(
                                 imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
                                 contentDescription = "Som",
                                 tint = palette.secondary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                         Box(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xCC151A24))
+                                .background(Color(0xD9151A24))
                                 .clickable { isPlaying = !isPlaying },
                             contentAlignment = Alignment.Center
                         ) {
@@ -315,7 +395,7 @@ fun WelcomeCoachVideoCard(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = "Play/Pause",
                                 tint = palette.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     }
@@ -323,4 +403,20 @@ fun WelcomeCoachVideoCard(
             }
         }
     }
+}
+
+@Composable
+fun WelcomeCoachVideoCard(
+    modifier: Modifier = Modifier,
+    height: Dp = 165.dp
+) {
+    EmbeddedStudioVideoCard(
+        rawResId = R.raw.welcome_pt,
+        badge = "STUDIO COACH",
+        title = "IRONFORGE STUDIO COACH",
+        subtitle = "Treinos guiados com biomecânica 3D",
+        modifier = modifier.fillMaxWidth(),
+        height = height,
+        initialPlaying = true
+    )
 }

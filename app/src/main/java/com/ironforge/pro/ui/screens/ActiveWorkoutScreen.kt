@@ -32,6 +32,7 @@ import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.SetType
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.ExerciseVisualThumb
 import com.ironforge.pro.ui.components.HyperDynamicIsland
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
@@ -291,6 +292,8 @@ fun ActiveWorkoutScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            ExerciseVisualThumb(exercise = exercise, size = 50.dp)
+                            Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     HyperPillTag("EXERCÍCIO ${safeExIndex + 1}/${state.activeExercises.size}", palette.primaryGlow)

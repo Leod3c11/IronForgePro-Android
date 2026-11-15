@@ -47,6 +47,7 @@ fun EncyclopediaScreen(
     val palette = LocalIronPalette.current
     val context = LocalContext.current
     var pendingVideoExerciseId by remember { mutableStateOf<String?>(null) }
+    var compactListMode by remember { mutableStateOf(false) }
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -91,7 +92,21 @@ fun EncyclopediaScreen(
         item {
             SectionHeader(
                 title = "Enciclopédia Biomecânica",
-                subtitle = "${filteredExercises.size} de ${ExerciseRepository.allExercises.size} exercícios com mini vídeo"
+                subtitle = "${filteredExercises.size} de ${ExerciseRepository.allExercises.size} exercícios com mini vídeo",
+                trailing = {
+                    FilterChip(
+                        selected = compactListMode,
+                        onClick = { compactListMode = !compactListMode },
+                        shape = CircleShape,
+                        label = {
+                            Text(
+                                text = if (compactListMode) "Modo Vídeo" else "Compacto",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    )
+                }
             )
         }
 
@@ -211,18 +226,20 @@ fun EncyclopediaScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                if (!compactListMode) {
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                ExerciseMiniVideoPlayer(
-                    exercise = exercise,
-                    customVideoUri = state.customVideoUris[exercise.id],
-                    height = 148.dp,
-                    compact = true,
-                    onAttachVideoClick = {
-                        pendingVideoExerciseId = exercise.id
-                        videoPickerLauncher.launch("video/*")
-                    }
-                )
+                    ExerciseMiniVideoPlayer(
+                        exercise = exercise,
+                        customVideoUri = state.customVideoUris[exercise.id],
+                        height = 148.dp,
+                        compact = true,
+                        onAttachVideoClick = {
+                            pendingVideoExerciseId = exercise.id
+                            videoPickerLauncher.launch("video/*")
+                        }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(

@@ -21,6 +21,7 @@ import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.ExerciseVisualThumb
 import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.SectionHeader
@@ -340,13 +341,8 @@ private fun WorkoutDayCard(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayCircleFilled,
-                            contentDescription = "Ver Mini Vídeo",
-                            tint = palette.secondary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        ExerciseVisualThumb(exercise = ex, size = 40.dp)
+                        Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
                                 text = "${idx + 1}. ${ex.name}",

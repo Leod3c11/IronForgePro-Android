@@ -98,46 +98,66 @@ fun DashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.bg),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 104.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Personalized HyperOS Top App Bar + Theme Studio + Pre-Workout Briefing Trigger
+        // 1. Upgraded Top App Bar with Athlete Avatar, PRO Badge & Theme Studio
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(palette.primary, palette.secondary))),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "Olá, ${state.userProfile.name}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = palette.textPrimary,
+                            text = state.userProfile.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                            color = palette.onPrimaryAccent
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Olá, ${state.userProfile.name}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = palette.textPrimary,
+                                maxLines = 1
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.horizontalGradient(listOf(palette.primary, palette.secondary))
+                                    )
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "PRO",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                    color = palette.onPrimaryAccent,
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+                        Text(
+                            text = "${state.userProfile.goal.label} • ${state.userProfile.weightKg} kg",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.textSecondary,
                             maxLines = 1
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.horizontalGradient(listOf(palette.primary, palette.secondary))
-                                )
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "PRO",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                color = palette.onPrimaryAccent,
-                                fontSize = 10.sp
-                            )
-                        }
                     }
-                    Text(
-                        text = "${state.userProfile.goal.label} • ${state.userProfile.weightKg} kg",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.textSecondary
-                    )
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -177,18 +197,17 @@ fun DashboardScreen(
             }
         }
 
-        // Post-Workout Summary Celebratory Card with 3D Trophy & Lottie Confetti
+        // 2. Post-Workout Celebration Card with Animated Confetti GIF + 3D Trophy
         if (state.lastFinishedSession != null) {
             item {
                 val summary = state.lastFinishedSession
                 HyperSquircleCard(accentGlow = true, containerColor = palette.tileElevated) {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        LottieStudioAnimation(
-                            assetPath = "lotties/confetti.json",
-                            iterations = 2,
+                        AnimatedGifView(
+                            assetPath = "gifs/plan_review_confetti.gif",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(115.dp)
+                                .height(125.dp)
                                 .align(Alignment.TopCenter)
                         )
                         Column {
@@ -202,14 +221,14 @@ fun DashboardScreen(
                                         painter = painterResource(id = R.drawable.visual_exercise_completed),
                                         contentDescription = "Treino Concluído",
                                         modifier = Modifier
-                                            .size(52.dp)
+                                            .size(54.dp)
                                             .clip(RoundedCornerShape(14.dp)),
                                         contentScale = ContentScale.Crop
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = "SESSÃO REGISTRADA COM SUCESSO",
+                                            text = "TREINO CONCLUÍDO COM SUCESSO",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = HyperEmerald
                                         )
@@ -239,7 +258,84 @@ fun DashboardScreen(
             }
         }
 
-        // Weekly Calendar Strip Widget
+        // 3. Today's Scheduled Workout Hero Card (OrbitingGlow + 3D Kettlebell + Full-Width CTA)
+        item {
+            val leadExercise = heroWorkout.exercises.firstOrNull()?.exerciseId?.let { ExerciseRepository.getExerciseById(it) }
+            val badgeText = if (todayScheduledWorkout != null) {
+                "TREINO DE HOJE • ${heroWorkout.estimatedMinutes} MIN"
+            } else {
+                "HOJE É DESCANSO • PRÓXIMO TREINO"
+            }
+
+            OrbitingGlowBanner(
+                modifier = Modifier.clickable { onOpenWorkoutBriefing(heroWorkout) }
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            HyperPillTag(badgeText, palette.primaryGlow)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = heroWorkout.title,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = palette.textPrimary
+                            )
+                            Text(
+                                text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = palette.textSecondary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Image(
+                            painter = painterResource(id = R.drawable.visual_kettlebell_3d),
+                            contentDescription = "Treino 3D",
+                            modifier = Modifier.size(66.dp)
+                        )
+                    }
+
+                    if (leadExercise != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ExerciseMiniVideoPlayer(
+                            exercise = leadExercise,
+                            customVideoUri = state.customVideoUris[leadExercise.id],
+                            height = 140.dp,
+                            compact = true
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { onOpenWorkoutBriefing(heroWorkout) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = palette.onPrimaryAccent
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "REVISAR & INICIAR TREINO",
+                            color = palette.onPrimaryAccent,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 13.sp,
+                            letterSpacing = 0.4.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Weekly Calendar Strip Widget
         item {
             HyperSquircleCard(onClick = onOpenCalendar) {
                 Row(
@@ -311,79 +407,14 @@ fun DashboardScreen(
             }
         }
 
-        // Today's Scheduled Workout Hero Card with OrbitingGlow Shader + 3D Kettlebell Render
-        item {
-            val leadExercise = heroWorkout.exercises.firstOrNull()?.exerciseId?.let { ExerciseRepository.getExerciseById(it) }
-            val badgeText = if (todayScheduledWorkout != null) {
-                "TREINO DE HOJE • ${heroWorkout.estimatedMinutes} MIN"
-            } else {
-                "HOJE É DESCANSO • PRÓXIMO TREINO"
-            }
-
-            OrbitingGlowBanner(
-                modifier = Modifier.clickable { onOpenWorkoutBriefing(heroWorkout) }
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            HyperPillTag(badgeText, palette.primaryGlow)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = heroWorkout.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = palette.textPrimary
-                            )
-                            Text(
-                                text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = palette.textSecondary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Image(
-                            painter = painterResource(id = R.drawable.visual_kettlebell_3d),
-                            contentDescription = "Treino 3D",
-                            modifier = Modifier.size(62.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        FilledIconButton(
-                            onClick = { onOpenWorkoutBriefing(heroWorkout) },
-                            modifier = Modifier.size(48.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Ver Treino de Hoje",
-                                tint = palette.onPrimaryAccent,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
-                    if (leadExercise != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        ExerciseMiniVideoPlayer(
-                            exercise = leadExercise,
-                            customVideoUri = state.customVideoUris[leadExercise.id],
-                            height = 145.dp,
-                            compact = true
-                        )
-                    }
-                }
-            }
-        }
-
-        // 2x2 Bento Grid with Lottie Flame & Target Animations
+        // 5. 2x2 Bento Grid with Lottie Flame & Target Animations
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    HyperSquircleCard(modifier = Modifier.weight(1.15f)) {
+                    HyperSquircleCard(modifier = Modifier.weight(1.12f)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -408,7 +439,7 @@ fun DashboardScreen(
                         )
                     }
 
-                    HyperSquircleCard(modifier = Modifier.weight(0.85f)) {
+                    HyperSquircleCard(modifier = Modifier.weight(0.88f)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -473,7 +504,52 @@ fun DashboardScreen(
             }
         }
 
-        // Multi-Muscle Recovery Readiness Strip
+        // 6. Studio Reels & Videos Carousel (Embedded MP4 clips from visual pack)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionHeader(
+                    title = "Studio Reels & Execuções",
+                    subtitle = "Clipes de treino, postura e comunidade IronForge"
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    item {
+                        EmbeddedStudioVideoCard(
+                            rawResId = R.raw.studio_showcase_1,
+                            badge = "STUDIO REEL 01",
+                            title = "Alta Performance & Foco",
+                            subtitle = "Controle de cadência e amplitude máxima",
+                            modifier = Modifier.width(275.dp),
+                            height = 165.dp,
+                            initialPlaying = true
+                        )
+                    }
+                    item {
+                        EmbeddedStudioVideoCard(
+                            rawResId = R.raw.studio_showcase_2,
+                            badge = "STUDIO REEL 02",
+                            title = "Técnica & Tensão Mecânica",
+                            subtitle = "Execução limpa em cada repetição",
+                            modifier = Modifier.width(275.dp),
+                            height = 165.dp,
+                            initialPlaying = false
+                        )
+                    }
+                    item {
+                        EmbeddedStudioVideoCard(
+                            rawResId = R.raw.studio_community_1,
+                            badge = "COMUNIDADE",
+                            title = "Desafios & Consistência",
+                            subtitle = "Acompanhe sua evolução semanal",
+                            modifier = Modifier.width(275.dp),
+                            height = 165.dp,
+                            initialPlaying = false
+                        )
+                    }
+                }
+            }
+        }
+
+        // 7. Multi-Muscle Recovery Readiness Strip
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -519,7 +595,7 @@ fun DashboardScreen(
             }
         }
 
-        // Wearables & Fitness Ecosystem Sync Card (Watch Ultra + Google Fit, Garmin, Fitbit, Strava)
+        // 8. Wearables & Fitness Ecosystem Sync Card
         item {
             HyperSquircleCard {
                 Row(
@@ -594,7 +670,7 @@ fun DashboardScreen(
             }
         }
 
-        // Anthropometry & Body Measurements
+        // 9. Anthropometry & Body Measurements
         item {
             val latest = state.bodyMeasurements.lastOrNull()
             HyperSquircleCard {
@@ -636,7 +712,7 @@ fun DashboardScreen(
             }
         }
 
-        // Volume Bar Chart
+        // 10. Volume Bar Chart
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -648,7 +724,7 @@ fun DashboardScreen(
             }
         }
 
-        // Hexagonal Muscle Balance Radar
+        // 11. Hexagonal Muscle Balance Radar
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -660,7 +736,7 @@ fun DashboardScreen(
             }
         }
 
-        // Personal Records
+        // 12. Personal Records
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -711,7 +787,7 @@ fun DashboardScreen(
             }
         }
 
-        // Recent Sessions
+        // 13. Recent Sessions
         item {
             SectionHeader(
                 title = "Seu Histórico de Treinos",
