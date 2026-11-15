@@ -2,21 +2,22 @@ package com.ironforge.pro.model
 
 enum class MuscleGroup(
     val displayName: String,
+    val shortName: String,
     val mevSets: Int,
     val mavSets: Int,
     val mrvSets: Int,
     val recoveryHours: Int
 ) {
-    CHEST("Peitoral", 8, 16, 22, 48),
-    BACK("Costas & Dorsais", 10, 18, 25, 48),
-    SHOULDERS("Ombros (Deltoides)", 8, 16, 22, 36),
-    BICEPS("Bíceps Braquial", 6, 14, 20, 36),
-    TRICEPS("Tríceps Braquial", 6, 12, 18, 36),
-    QUADS("Quadríceps", 8, 16, 22, 72),
-    HAMSTRINGS("Posteriores de Coxa", 6, 12, 18, 72),
-    GLUTES("Glúteos", 4, 12, 18, 48),
-    CALVES("Panturrilhas", 8, 14, 20, 24),
-    CORE("Abdômen & Core", 6, 12, 18, 24)
+    CHEST("Peitoral", "Peito", 8, 16, 22, 48),
+    BACK("Costas & Dorsais", "Costas", 10, 18, 25, 48),
+    SHOULDERS("Ombros (Deltoides)", "Ombros", 8, 16, 22, 36),
+    BICEPS("Bíceps Braquial", "Bíceps", 6, 14, 20, 36),
+    TRICEPS("Tríceps Braquial", "Tríceps", 6, 12, 18, 36),
+    QUADS("Quadríceps", "Quads", 8, 16, 22, 72),
+    HAMSTRINGS("Posteriores de Coxa", "Posterior", 6, 12, 18, 72),
+    GLUTES("Glúteos", "Glúteos", 4, 12, 18, 48),
+    CALVES("Panturrilhas", "Panturrilha", 8, 14, 20, 24),
+    CORE("Abdômen & Core", "Core", 6, 12, 18, 24)
 }
 
 enum class EquipmentType(val label: String) {
@@ -32,6 +33,37 @@ enum class MechanicsType(val label: String) {
     ISOLATION("Isolador Monoarticular")
 }
 
+enum class MotionPattern(val biomechLabel: String) {
+    BENCH_PRESS("Empurrar Horizontal"),
+    INCLINE_PRESS("Empurrar Inclinado 30°"),
+    FLY_CROSSOVER("Adução Horizontal"),
+    DIPS("Mergulho Paralelas"),
+    LAT_PULLDOWN("Puxada Vertical"),
+    ROW_HORIZONTAL("Remada Horizontal"),
+    PULL_UP("Barra Fixa Suspensa"),
+    STRAIGHT_ARM_PULL("Extensão de Ombro"),
+    OVERHEAD_PRESS("Empurrar Vertical"),
+    LATERAL_RAISE("Abdução Escapular"),
+    REVERSE_FLY("Abdução Horizontal"),
+    BICEP_CURL("Flexão de Cotovelo"),
+    PREACHER_CURL("Flexão Scott Isolada"),
+    TRICEP_PUSHDOWN("Extensão de Cotovelo"),
+    OVERHEAD_TRICEP("Extensão Overhead"),
+    SKULLCRUSHER("Extensão Testa Supina"),
+    SQUAT("Agachamento Profundo"),
+    LEG_PRESS("Leg Press 45°"),
+    LEG_EXTENSION("Extensão de Joelho"),
+    LUNGE_SPLIT("Avanço Unilateral"),
+    RDL_HINGE("Dobradiça de Quadril"),
+    LEG_CURL("Flexão de Joelho"),
+    HIP_THRUST("Extensão de Quadril"),
+    CALF_RAISE("Flexão Plantar"),
+    CRUNCH_FLEXION("Flexão Torácica"),
+    LEG_RAISE("Retroversão Pélvica"),
+    AB_WHEEL("Anti-Extensão Core"),
+    DEADLIFT("Levantamento Terra")
+}
+
 enum class SetType(val code: String, val label: String) {
     WARMUP("W", "Aquecimento"),
     FEEDER("F", "Preparatória"),
@@ -44,6 +76,7 @@ data class Exercise(
     val id: String,
     val name: String,
     val muscleGroup: MuscleGroup,
+    val motionPattern: MotionPattern,
     val primaryTarget: String,
     val synergists: List<String>,
     val equipment: EquipmentType,

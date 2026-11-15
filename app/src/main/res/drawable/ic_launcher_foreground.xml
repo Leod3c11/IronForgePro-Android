@@ -5,49 +5,29 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Central Olympic Bar -->
     <path
-        android:fillColor="#E2EAF5"
+        android:fillColor="#F0F5FF"
         android:pathData="M25,51.5 h58 a2.5,2.5 0 0,1 2.5,2.5 v0 a2.5,2.5 0 0,1 -2.5,2.5 h-58 a2.5,2.5 0 0,1 -2.5,-2.5 v0 a2.5,2.5 0 0,1 2.5,-2.5 z" />
 
-    <!-- Left Outer Plate (Cyan) -->
     <path
-        android:fillColor="#00E5FF"
-        android:pathData="M28,39 h5 a2,2 0 0,1 2,2 v26 a2,2 0 0,1 -2,2 h-5 a2,2 0 0,1 -2,-2 v-26 a2,2 0 0,1 2,-2 z" />
+        android:fillColor="#00D2FF"
+        android:pathData="M28,39 h5 a2.5,2.5 0 0,1 2.5,2.5 v25 a2.5,2.5 0 0,1 -2.5,2.5 h-5 a2.5,2.5 0 0,1 -2.5,-2.5 v-25 a2.5,2.5 0 0,1 2.5,-2.5 z" />
 
-    <!-- Right Outer Plate (Cyan) -->
     <path
-        android:fillColor="#00E5FF"
-        android:pathData="M75,39 h5 a2,2 0 0,1 2,2 v26 a2,2 0 0,1 -2,2 h-5 a2,2 0 0,1 -2,-2 v-26 a2,2 0 0,1 2,-2 z" />
+        android:fillColor="#00D2FF"
+        android:pathData="M75,39 h5 a2.5,2.5 0 0,1 2.5,2.5 v25 a2.5,2.5 0 0,1 -2.5,2.5 h-5 a2.5,2.5 0 0,1 -2.5,-2.5 v-25 a2.5,2.5 0 0,1 2.5,-2.5 z" />
 
-    <!-- Left Heavy Inner Plate (Electric Volt) -->
     <path
-        android:fillColor="#CCFF00"
-        android:pathData="M36,33 h6.5 a2.5,2.5 0 0,1 2.5,2.5 v37 a2.5,2.5 0 0,1 -2.5,2.5 h-6.5 a2.5,2.5 0 0,1 -2.5,-2.5 v-37 a2.5,2.5 0 0,1 2.5,-2.5 z" />
-    <path
-        android:fillColor="#0F141C"
-        android:pathData="M38.5,39 h1.5 v30 h-1.5 z" />
+        android:fillColor="#FF6900"
+        android:pathData="M36,33 h6.5 a2.8,2.8 0 0,1 2.8,2.8 v36.4 a2.8,2.8 0 0,1 -2.8,2.8 h-6.5 a2.8,2.8 0 0,1 -2.8,-2.8 v-36.4 a2.8,2.8 0 0,1 2.8,-2.8 z" />
 
-    <!-- Right Heavy Inner Plate (Electric Volt) -->
     <path
-        android:fillColor="#CCFF00"
-        android:pathData="M65.5,33 h6.5 a2.5,2.5 0 0,1 2.5,2.5 v37 a2.5,2.5 0 0,1 -2.5,2.5 h-6.5 a2.5,2.5 0 0,1 -2.5,-2.5 v-37 a2.5,2.5 0 0,1 2.5,-2.5 z" />
-    <path
-        android:fillColor="#0F141C"
-        android:pathData="M68,39 h1.5 v30 h-1.5 z" />
+        android:fillColor="#FF6900"
+        android:pathData="M65.5,33 h6.5 a2.8,2.8 0 0,1 2.8,2.8 v36.4 a2.8,2.8 0 0,1 -2.8,2.8 h-6.5 a2.8,2.8 0 0,1 -2.8,-2.8 v-36.4 a2.8,2.8 0 0,1 2.8,-2.8 z" />
 
-    <!-- Collars -->
     <path
-        android:fillColor="#8C9BB4"
-        android:pathData="M22.5,47 h2.5 v14 h-2.5 z" />
-    <path
-        android:fillColor="#8C9BB4"
-        android:pathData="M83,47 h2.5 v14 h-2.5 z" />
-
-    <!-- Center Forge Lightning Emblem -->
-    <path
-        android:fillColor="#CCFF00"
-        android:strokeColor="#0A0D12"
+        android:fillColor="#FF6900"
+        android:strokeColor="#0B0E14"
         android:strokeWidth="1.2"
         android:pathData="M56,42 L49.5,55 L54.5,55 L52,66 L58.5,53 L53.5,53 Z" />
 </vector>

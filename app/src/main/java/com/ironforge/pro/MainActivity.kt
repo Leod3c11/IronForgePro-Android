@@ -7,25 +7,26 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ironforge.pro.ui.components.HyperFloatingDock
 import com.ironforge.pro.ui.screens.*
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeViewModel
 
 enum class MainNavTab(val label: String, val icon: ImageVector) {
-    DASHBOARD("Dashboard", Icons.Default.Insights),
+    DASHBOARD("Home", Icons.Default.Insights),
     WORKOUTS("Treinos", Icons.Default.FitnessCenter),
-    ENCYCLOPEDIA("Exercícios", Icons.Default.MenuBook),
+    ENCYCLOPEDIA("Vídeos & Guia", Icons.Default.OndemandVideo),
     SCIENCE("Ciência", Icons.Default.Science)
 }
 
@@ -33,8 +34,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(ObsidianDeep.toArgb()),
-            navigationBarStyle = SystemBarStyle.dark(CarbonSurface.toArgb())
+            statusBarStyle = SystemBarStyle.dark(HyperBgDark.toArgb()),
+            navigationBarStyle = SystemBarStyle.dark(HyperBgDark.toArgb())
         )
         setContent {
             IronForgeTheme {
@@ -47,11 +48,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
     val state by viewModel.uiState.collectAsState()
-    var currentTab by remember { mutableStateOf(MainNavTab.DASHBOARD) }
+    var currentTabIndex by remember { mutableIntStateOf(0) }
+
+    val dockItems = remember {
+        MainNavTab.entries.map { it.label to it.icon }
+    }
 
     if (state.isWorkoutActive) {
         Scaffold(
-            containerColor = ObsidianDeep
+            containerColor = HyperBgDark
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -63,48 +68,14 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
         }
     } else {
         Scaffold(
-            containerColor = ObsidianDeep,
-            bottomBar = {
-                NavigationBar(
-                    containerColor = CarbonSurface,
-                    contentColor = TextPrimary
-                ) {
-                    MainNavTab.entries.forEach { tab ->
-                        val selected = currentTab == tab
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { currentTab = tab },
-                            icon = {
-                                Icon(
-                                    imageVector = tab.icon,
-                                    contentDescription = tab.label
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = tab.label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = ObsidianDeep,
-                                selectedTextColor = ElectricVolt,
-                                indicatorColor = ElectricVolt,
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary
-                            )
-                        )
-                    }
-                }
-            }
+            containerColor = HyperBgDark
         ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .padding(top = innerPadding.calculateTopPadding())
             ) {
-                when (currentTab) {
+                when (MainNavTab.entries[currentTabIndex]) {
                     MainNavTab.DASHBOARD -> DashboardScreen(
                         state = state,
                         onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
@@ -127,13 +98,24 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
                         onSearchChange = { viewModel.updateSearchQuery(it) },
                         onSelectMuscle = { viewModel.selectMuscleFilter(it) },
                         onSelectEquipment = { viewModel.selectEquipmentFilter(it) },
-                        onInspectExercise = { viewModel.inspectExercise(it) }
+                        onInspectExercise = { viewModel.inspectExercise(it) },
+                        onAttachVideoUri = { exId, uri -> viewModel.attachCustomVideoUri(exId, uri) }
                     )
                     MainNavTab.SCIENCE -> ScienceLabScreen(
                         state = state,
                         viewModel = viewModel
                     )
                 }
+
+                // Xiaomi HyperOS Floating Pill Bottom Navigation Dock
+                HyperFloatingDock(
+                    items = dockItems,
+                    selectedIndex = currentTabIndex,
+                    onSelect = { currentTabIndex = it },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                )
             }
         }
     }

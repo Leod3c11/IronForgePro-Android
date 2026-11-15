@@ -3,7 +3,9 @@ package com.ironforge.pro.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
+import com.ironforge.pro.model.BodyMeasurementRecord
+import com.ironforge.pro.model.MuscleGroup
 import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.*
 import com.ironforge.pro.ui.theme.*
@@ -34,6 +39,7 @@ fun DashboardScreen(
 
     val totalTonnage = state.sessionHistory.sumOf { it.totalVolumeKg }
     val totalPrs = state.sessionHistory.sumOf { it.prCount }
+
     val aggregatedMuscleSets = remember(state.sessionHistory) {
         val map = mutableMapOf<String, Int>()
         state.sessionHistory.take(6).forEach { rec ->
@@ -44,14 +50,34 @@ fun DashboardScreen(
         map
     }
 
+    // Dynamic Muscle Recovery Readiness (%) based on recent sessions
+    val muscleReadinessList = remember(state.sessionHistory) {
+        val now = System.currentTimeMillis()
+        MuscleGroup.entries.map { muscle ->
+            val lastTrainedSession = state.sessionHistory.firstOrNull { rec ->
+                (rec.muscleSetsBreakdown[muscle.displayName] ?: 0) > 0
+            }
+            val readinessPct = if (lastTrainedSession == null) {
+                100
+            } else {
+                val hoursElapsed = ((now - lastTrainedSession.timestamp) / 3_600_000.0).coerceAtLeast(1.0)
+                ((hoursElapsed / muscle.recoveryHours.toDouble()) * 100.0).roundToInt().coerceIn(32, 100)
+            }
+            muscle to readinessPct
+        }
+    }
+    val avgReadiness = remember(muscleReadinessList) {
+        muscleReadinessList.map { it.second }.average().roundToInt()
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianDeep),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(HyperBgDark),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Top Brand Header
+        // HyperOS Top App Bar
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -65,22 +91,25 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             color = TextPrimary
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(ElectricVolt)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.horizontalGradient(listOf(HyperOrange, HyperOrangeGlow))
+                                )
+                                .padding(horizontal = 9.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "PRO",
+                                text = "HyperOS",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                color = ObsidianDeep
+                                color = TextPrimary,
+                                fontSize = 10.sp
                             )
                         }
                     }
                     Text(
-                        text = "Ciência, Hipertrofia & Alta Performance",
+                        text = "Central de Performance & Biomecânica",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )
@@ -88,20 +117,20 @@ fun DashboardScreen(
 
                 Button(
                     onClick = onStartEmptyWorkout,
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricVolt),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                    shape = CircleShape,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = null,
-                        tint = ObsidianDeep,
+                        tint = TextPrimary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "Treino Livre",
-                        color = ObsidianDeep,
+                        color = TextPrimary,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 13.sp
                     )
@@ -109,11 +138,11 @@ fun DashboardScreen(
             }
         }
 
-        // Post-Workout Summary Banner (if just finished)
+        // Post-Workout Summary Notification Pill
         if (state.lastFinishedSession != null) {
             item {
                 val summary = state.lastFinishedSession
-                IronCard(highlightBorder = true, containerColor = SteelElevated) {
+                HyperSquircleCard(accentGlow = true, containerColor = HyperTileElevated) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,15 +152,15 @@ fun DashboardScreen(
                             Icon(
                                 imageVector = Icons.Default.EmojiEvents,
                                 contentDescription = null,
-                                tint = EmeraldPR,
+                                tint = HyperEmerald,
                                 modifier = Modifier.size(28.dp)
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "TREINO CONCLUÍDO!",
+                                    text = "SESSÃO REGISTRADA COM SUCESSO",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = EmeraldPR
+                                    color = HyperEmerald
                                 )
                                 Text(
                                     text = summary.workoutTitle,
@@ -149,64 +178,159 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        MuscleTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", ElectricVolt)
-                        MuscleTag("Séries: ${summary.totalWorkingSets}", CyanPulse)
-                        MuscleTag("PRs: ${summary.prCount}", EmeraldPR)
+                        HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", HyperOrangeGlow)
+                        HyperPillTag("Séries: ${summary.totalWorkingSets}", HyperCyan)
+                        HyperPillTag("PRs: ${summary.prCount}", HyperEmerald)
                     }
                 }
             }
         }
 
-        // KPI Metrics Row
+        // HyperOS Control Center 2x2 Bento Grid
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                IronCard(modifier = Modifier.weight(1f)) {
-                    Text("TONELAGEM", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${(totalTonnage / 1000.0 * 10).roundToInt() / 10.0}t",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = ElectricVolt
-                    )
-                    Text("Movimentados", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HyperSquircleCard(
+                        modifier = Modifier.weight(1.15f),
+                        accentGlow = true
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = HyperOrange, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "${(totalTonnage / 1000.0 * 10).roundToInt() / 10.0} t",
+                            style = MaterialTheme.typography.displayLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "${totalTonnage.roundToInt()} kg acumulados",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = HyperOrangeGlow
+                        )
+                    }
+
+                    HyperSquircleCard(modifier = Modifier.weight(0.85f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("PRONTIDÃO", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = HyperEmerald, modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "$avgReadiness%",
+                            style = MaterialTheme.typography.displayLarge,
+                            color = HyperEmerald
+                        )
+                        Text(
+                            text = "Recuperação SNC",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextSecondary
+                        )
+                    }
                 }
-                IronCard(modifier = Modifier.weight(1f)) {
-                    Text("SESSÕES", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "${state.sessionHistory.size}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = CyanPulse
-                    )
-                    Text("Concluídas", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                }
-                IronCard(modifier = Modifier.weight(1f)) {
-                    Text("RECORDES", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "$totalPrs",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = EmeraldPR
-                    )
-                    Text("PRs Batidos", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HyperSquircleCard(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("TREINOS", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = HyperCyan, modifier = Modifier.size(15.dp))
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${state.sessionHistory.size} sessões",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = HyperCyan
+                        )
+                    }
+
+                    HyperSquircleCard(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("RECORDES (PR)", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = HyperVolt, modifier = Modifier.size(15.dp))
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "$totalPrs marcas",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = HyperVolt
+                        )
+                    }
                 }
             }
         }
 
-        // Quick-Start Next Suggested Session
+        // Muscle Recovery Readiness Strip (HyperOS Health Widget)
+        item {
+            HyperSquircleCard {
+                SectionHeader(
+                    title = "Status de Recuperação Muscular",
+                    subtitle = "Baseado na janela fisiológica de 24h a 72h"
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(muscleReadinessList) { (muscle, pct) ->
+                        val color = when {
+                            pct >= 90 -> HyperEmerald
+                            pct >= 65 -> HyperCyan
+                            else -> HyperAmber
+                        }
+                        Column(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(HyperTileElevated)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "$pct%",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                color = color
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = muscle.shortName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextPrimary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Featured Next Workout with Live Mini-Video Preview
         item {
             val nextWorkout = ExerciseRepository.defaultSplits.first().days.first()
-            IronCard(highlightBorder = true) {
+            val leadExercise = ExerciseRepository.getExerciseById(nextWorkout.exercises.first().exerciseId)
+            HyperSquircleCard(accentGlow = true) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        MuscleTag("SUGESTÃO DO DIA • ${nextWorkout.estimatedMinutes} MIN", ElectricVolt)
+                        HyperPillTag("TREINO RECOMENDADO • ${nextWorkout.estimatedMinutes} MIN", HyperOrangeGlow)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = nextWorkout.title,
@@ -222,35 +346,44 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.width(10.dp))
                     FilledIconButton(
                         onClick = { onStartWorkoutDay(nextWorkout) },
-                        modifier = Modifier.size(50.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = ElectricVolt)
+                        modifier = Modifier.size(52.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = HyperOrange)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Iniciar",
-                            tint = ObsidianDeep,
+                            tint = TextPrimary,
                             modifier = Modifier.size(30.dp)
                         )
                     }
                 }
+                if (leadExercise != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ExerciseMiniVideoPlayer(
+                        exercise = leadExercise,
+                        customVideoUri = state.customVideoUris[leadExercise.id],
+                        height = 135.dp,
+                        compact = true
+                    )
+                }
             }
         }
 
-        // Volume Progression Bar Chart
+        // Volume Bar Chart
         item {
-            IronCard {
+            HyperSquircleCard {
                 SectionHeader(
                     title = "Evolução de Tonelagem",
-                    subtitle = "Volume total (kg) levantado nas últimas sessões"
+                    subtitle = "Volume total levantado nas últimas sessões"
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 VolumeBarChart(sessions = state.sessionHistory)
             }
         }
 
-        // Hexagonal Muscle Balance Radar Chart
+        // Hexagonal Muscle Balance Radar
         item {
-            IronCard {
+            HyperSquircleCard {
                 SectionHeader(
                     title = "Equilíbrio Muscular",
                     subtitle = "Distribuição de séries válidas por grupamento"
@@ -260,12 +393,12 @@ fun DashboardScreen(
             }
         }
 
-        // Top Personal Records (1RM)
+        // Top Personal Records
         item {
-            IronCard {
+            HyperSquircleCard {
                 SectionHeader(
                     title = "Recordes Pessoais (1RM Est.)",
-                    subtitle = "Melhores marcas calculadas pela fórmula de Epley"
+                    subtitle = "Melhores marcas estimadas pela fórmula de Epley"
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 val topPrs = state.exercisePrs.entries.sortedByDescending { it.value }.take(5)
@@ -285,7 +418,7 @@ fun DashboardScreen(
                             Text(
                                 text = "#${idx + 1}",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = ElectricVolt
+                                color = HyperOrange
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
@@ -294,27 +427,27 @@ fun DashboardScreen(
                                 color = TextPrimary
                             )
                         }
-                        MuscleTag("${entry.value.roundToInt()} kg", EmeraldPR)
+                        HyperPillTag("${entry.value.roundToInt()} kg", HyperEmerald)
                     }
                     if (idx < topPrs.lastIndex) {
-                        HorizontalDivider(color = GraphiteBorder.copy(alpha = 0.5f))
+                        HorizontalDivider(color = HyperHairline.copy(alpha = 0.5f))
                     }
                 }
             }
         }
 
-        // Body Measurements Tracker
+        // Anthropometry & Body Measurements
         item {
             val latest = state.bodyMeasurements.lastOrNull()
-            IronCard {
+            HyperSquircleCard {
                 SectionHeader(
                     title = "Antropometria & Medidas",
                     subtitle = if (latest != null) "Última aferição em ${latest.dateFormatted}" else "Acompanhe sua evolução física",
                     trailing = {
                         TextButton(onClick = { showMeasureDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = ElectricVolt, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = HyperOrange, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Registrar", color = ElectricVolt, fontWeight = FontWeight.Bold)
+                            Text("Registrar", color = HyperOrange, fontWeight = FontWeight.Bold)
                         }
                     }
                 )
@@ -344,16 +477,16 @@ fun DashboardScreen(
             }
         }
 
-        // Recent Sessions History
+        // Recent Sessions
         item {
             SectionHeader(
                 title = "Histórico Recente",
-                subtitle = "Suas últimas sessões de treinamento"
+                subtitle = "Suas últimas sessões concluídas"
             )
         }
 
         items(state.sessionHistory.take(5)) { session ->
-            IronCard {
+            HyperSquircleCard {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -371,7 +504,7 @@ fun DashboardScreen(
                             color = TextSecondary
                         )
                     }
-                    MuscleTag("${session.totalVolumeKg.roundToInt()} kg", CyanPulse)
+                    HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", HyperCyan)
                 }
                 if (session.highlightExercises.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -383,8 +516,6 @@ fun DashboardScreen(
                 }
             }
         }
-
-        item { Spacer(modifier = Modifier.height(24.dp)) }
     }
 
     if (showMeasureDialog) {
@@ -403,8 +534,8 @@ fun DashboardScreen(
 private fun MeasureStatBox(label: String, value: String) {
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(SteelElevated)
+            .clip(RoundedCornerShape(14.dp))
+            .background(HyperTileElevated)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -416,7 +547,7 @@ private fun MeasureStatBox(label: String, value: String) {
 
 @Composable
 private fun BodyMeasurementDialog(
-    initial: com.ironforge.pro.model.BodyMeasurementRecord?,
+    initial: BodyMeasurementRecord?,
     onDismiss: () -> Unit,
     onSave: (Double, Double, Double, Double, Double, Double, Double) -> Unit
 ) {
@@ -430,65 +561,24 @@ private fun BodyMeasurementDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = CarbonSurface,
+        containerColor = HyperCardDark,
+        shape = RoundedCornerShape(26.dp),
         title = { Text("Nova Aferição Corporal", color = TextPrimary, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = weight,
-                        onValueChange = { weight = it },
-                        label = { Text("Peso (kg)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = bf,
-                        onValueChange = { bf = it },
-                        label = { Text("BF (%)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                    OutlinedTextField(value = weight, onValueChange = { weight = it }, label = { Text("Peso (kg)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = bf, onValueChange = { bf = it }, label = { Text("BF (%)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = chest,
-                        onValueChange = { chest = it },
-                        label = { Text("Peitoral (cm)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = arm,
-                        onValueChange = { arm = it },
-                        label = { Text("Braço (cm)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                    OutlinedTextField(value = chest, onValueChange = { chest = it }, label = { Text("Peitoral (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = arm, onValueChange = { arm = it }, label = { Text("Braço (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = waist,
-                        onValueChange = { waist = it },
-                        label = { Text("Cintura (cm)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = thigh,
-                        onValueChange = { thigh = it },
-                        label = { Text("Coxa (cm)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                    OutlinedTextField(value = waist, onValueChange = { waist = it }, label = { Text("Cintura (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
+                    OutlinedTextField(value = thigh, onValueChange = { thigh = it }, label = { Text("Coxa (cm)") }, modifier = Modifier.weight(1f), singleLine = true)
                 }
-                OutlinedTextField(
-                    value = calf,
-                    onValueChange = { calf = it },
-                    label = { Text("Panturrilha (cm)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                OutlinedTextField(value = calf, onValueChange = { calf = it }, label = { Text("Panturrilha (cm)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             }
         },
         confirmButton = {
@@ -504,9 +594,10 @@ private fun BodyMeasurementDialog(
                         calf.toDoubleOrNull() ?: 39.0
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricVolt)
+                colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                shape = CircleShape
             ) {
-                Text("Salvar Medidas", color = ObsidianDeep, fontWeight = FontWeight.Bold)
+                Text("Salvar Medidas", color = TextPrimary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

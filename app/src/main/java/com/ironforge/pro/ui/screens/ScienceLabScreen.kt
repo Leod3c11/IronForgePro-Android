@@ -8,21 +8,21 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.model.MuscleGroup
 import com.ironforge.pro.model.ScienceArticle
-import com.ironforge.pro.ui.components.IronCard
-import com.ironforge.pro.ui.components.MuscleTag
+import com.ironforge.pro.ui.components.HyperPillTag
+import com.ironforge.pro.ui.components.HyperSquircleCard
+import com.ironforge.pro.ui.components.OlympicPlateVisualizer
 import com.ironforge.pro.ui.components.SectionHeader
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
@@ -34,20 +34,20 @@ fun ScienceLabScreen(
     state: IronForgeUiState,
     viewModel: IronForgeViewModel
 ) {
-    val subTabs = listOf("1RM & Zonas", "Dieta & Macros", "Volume MEV/MRV", "Guias Científicos")
+    val subTabs = listOf("1RM & Zonas", "Anilhas", "Dieta & Macros", "Volume MEV/MRV", "Guias")
     var selectedTab by remember { mutableIntStateOf(0) }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianDeep),
-        contentPadding = PaddingValues(16.dp),
+            .background(HyperBgDark),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             SectionHeader(
                 title = "Laboratório de Ciência",
-                subtitle = "Ferramentas fisiológicas, cálculo de cargas e periodização"
+                subtitle = "Calculadoras de força, anilhas olímpicas, dieta e volume"
             )
         }
 
@@ -57,11 +57,12 @@ fun ScienceLabScreen(
                     FilterChip(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
+                        shape = CircleShape,
                         label = { Text(subTabs[index], fontWeight = FontWeight.Bold) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricVolt,
-                            selectedLabelColor = ObsidianDeep,
-                            containerColor = CarbonSurface,
+                            selectedContainerColor = HyperOrange,
+                            selectedLabelColor = TextPrimary,
+                            containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
                     )
@@ -81,15 +82,23 @@ fun ScienceLabScreen(
             }
             1 -> {
                 item {
+                    PlateCalculatorSection(
+                        targetWeightInput = state.plateTargetWeight,
+                        onUpdateWeight = { viewModel.updatePlateTargetWeight(it) }
+                    )
+                }
+            }
+            2 -> {
+                item {
                     NutritionMacroCalculatorSection(
                         state = state,
                         viewModel = viewModel
                     )
                 }
             }
-            2 -> {
+            3 -> {
                 item {
-                    IronCard(highlightBorder = true) {
+                    HyperSquircleCard(accentGlow = true) {
                         Text(
                             text = "Planejador de Volume Semanal (Séries Válidas)",
                             style = MaterialTheme.typography.titleMedium,
@@ -97,7 +106,7 @@ fun ScienceLabScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Ajuste suas séries semanais por músculo e compare com os marcos científicos MEV (Mínimo Efetivo), MAV (Máximo Adaptativo) e MRV (Máximo Recuperável).",
+                            text = "Compare suas séries semanais por grupo muscular com os marcos científicos MEV, MAV e MRV.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
@@ -112,14 +121,54 @@ fun ScienceLabScreen(
                     )
                 }
             }
-            3 -> {
+            4 -> {
                 items(ExerciseRepository.scienceArticles) { article ->
                     ScienceArticleCard(article = article)
                 }
             }
         }
+    }
+}
 
-        item { Spacer(modifier = Modifier.height(24.dp)) }
+@Composable
+private fun PlateCalculatorSection(
+    targetWeightInput: String,
+    onUpdateWeight: (String) -> Unit
+) {
+    val weight = (targetWeightInput.toDoubleOrNull() ?: 100.0).coerceIn(20.0, 400.0)
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        HyperSquircleCard(accentGlow = true) {
+            Text("Calculadora Visual de Anilhas Olímpicas", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+            Text("Considera barra olímpica oficial de 20 kg", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = targetWeightInput,
+                onValueChange = onUpdateWeight,
+                label = { Text("Carga Total Desejada (kg)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                listOf(60, 80, 100, 120, 140, 180).forEach { preset ->
+                    FilterChip(
+                        selected = weight.toInt() == preset,
+                        onClick = { onUpdateWeight(preset.toString()) },
+                        shape = CircleShape,
+                        label = { Text("${preset}kg", fontSize = 11.sp) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+            OlympicPlateVisualizer(totalWeightKg = weight)
+        }
     }
 }
 
@@ -136,21 +185,21 @@ private fun OneRmCalculatorSection(
     val brzycki1Rm = if (reps == 1) weight else ((weight * (36.0 / (37.0 - reps))) * 10.0).roundToInt() / 10.0
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        IronCard(highlightBorder = true) {
+        HyperSquircleCard(accentGlow = true) {
             Text("Calculadora de Força Máxima (1RM)", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
             Spacer(modifier = Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = weightInput,
                     onValueChange = { onUpdate(it, repsInput) },
-                    label = { Text("Carga Levantada (kg)") },
+                    label = { Text("Carga (kg)") },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
                     value = repsInput,
                     onValueChange = { onUpdate(weightInput, it) },
-                    label = { Text("Repetições Feitas") },
+                    label = { Text("Repetições") },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -162,17 +211,17 @@ private fun OneRmCalculatorSection(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("1RM EPLEY", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Text("${epley1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = ElectricVolt)
+                    Text("${epley1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = HyperOrange)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("1RM BRZYCKI", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Text("${brzycki1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = CyanPulse)
+                    Text("${brzycki1Rm} kg", style = MaterialTheme.typography.headlineMedium, color = HyperCyan)
                 }
             }
         }
 
-        IronCard {
-            Text("Tabela de Zonas de Treinamento", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+        HyperSquircleCard {
+            Text("Tabela de Zonas de Intensidade", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
             Spacer(modifier = Modifier.height(8.dp))
             val zones = listOf(
                 Triple("95% (1–2 reps)", "Força Máxima Neural", 0.95),
@@ -196,10 +245,10 @@ private fun OneRmCalculatorSection(
                         Text(pctLabel, style = MaterialTheme.typography.labelLarge, color = TextPrimary)
                         Text(desc, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                     }
-                    MuscleTag("$loadKg kg", ElectricVolt)
+                    HyperPillTag("$loadKg kg", HyperOrangeGlow)
                 }
                 if (idx < zones.lastIndex) {
-                    HorizontalDivider(color = GraphiteBorder.copy(alpha = 0.5f))
+                    HorizontalDivider(color = HyperHairline.copy(alpha = 0.5f))
                 }
             }
         }
@@ -215,7 +264,6 @@ private fun NutritionMacroCalculatorSection(
     val height = (state.userHeightCm.toDoubleOrNull() ?: 178.0).coerceIn(120.0, 230.0)
     val age = (state.userAge.toIntOrNull() ?: 26).coerceIn(14, 90)
 
-    // Mifflin-St Jeor Equation
     val bmr = if (state.isMale) {
         (10.0 * weight) + (6.25 * height) - (5.0 * age) + 5.0
     } else {
@@ -238,7 +286,7 @@ private fun NutritionMacroCalculatorSection(
     val waterLiters = ((weight * 40.0) / 100.0).roundToInt() / 10.0
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        IronCard(highlightBorder = true) {
+        HyperSquircleCard(accentGlow = true) {
             Text("Calculadora Metabólica & Macronutrientes", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -246,11 +294,13 @@ private fun NutritionMacroCalculatorSection(
                 FilterChip(
                     selected = state.isMale,
                     onClick = { viewModel.updateNutritionInputs(isMale = true) },
+                    shape = CircleShape,
                     label = { Text("Masculino") }
                 )
                 FilterChip(
                     selected = !state.isMale,
                     onClick = { viewModel.updateNutritionInputs(isMale = false) },
+                    shape = CircleShape,
                     label = { Text("Feminino") }
                 )
             }
@@ -287,6 +337,7 @@ private fun NutritionMacroCalculatorSection(
                     FilterChip(
                         selected = state.activityLevelIndex == idx,
                         onClick = { viewModel.updateNutritionInputs(activityIndex = idx) },
+                        shape = CircleShape,
                         label = { Text(activityLabels[idx], fontSize = 11.sp) }
                     )
                 }
@@ -299,17 +350,18 @@ private fun NutritionMacroCalculatorSection(
                     FilterChip(
                         selected = state.nutritionGoalIndex == idx,
                         onClick = { viewModel.updateNutritionInputs(goalIndex = idx) },
+                        shape = CircleShape,
                         label = { Text(goalLabels[idx], fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricVolt,
-                            selectedLabelColor = ObsidianDeep
+                            selectedContainerColor = HyperOrange,
+                            selectedLabelColor = TextPrimary
                         )
                     )
                 }
             }
         }
 
-        IronCard {
+        HyperSquircleCard {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -317,12 +369,12 @@ private fun NutritionMacroCalculatorSection(
             ) {
                 Column {
                     Text("META CALÓRICA DIÁRIA", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Text("$targetKcal kcal", style = MaterialTheme.typography.displayLarge, color = ElectricVolt)
+                    Text("$targetKcal kcal", style = MaterialTheme.typography.displayLarge, color = HyperOrange)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("TMB: ${bmr.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                    Text("GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = CyanPulse)
-                    Text("Água: ${waterLiters}L / dia", style = MaterialTheme.typography.labelSmall, color = EmeraldPR)
+                    Text("GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = HyperCyan)
+                    Text("Água: ${waterLiters}L / dia", style = MaterialTheme.typography.labelSmall, color = HyperEmerald)
                 }
             }
 
@@ -335,21 +387,21 @@ private fun NutritionMacroCalculatorSection(
                     title = "PROTEÍNAS",
                     grams = "${proteinGrams}g",
                     sub = "${proteinGrams * 4} kcal (${proteinMultiplier}g/kg)",
-                    accent = EmeraldPR,
+                    accent = HyperEmerald,
                     modifier = Modifier.weight(1f)
                 )
                 MacroBox(
                     title = "CARBOIDRATOS",
                     grams = "${carbGrams}g",
                     sub = "${carbGrams * 4} kcal",
-                    accent = ElectricVolt,
+                    accent = HyperOrangeGlow,
                     modifier = Modifier.weight(1f)
                 )
                 MacroBox(
                     title = "GORDURAS",
                     grams = "${fatGrams}g",
                     sub = "${fatGrams * 9} kcal (0.85g/kg)",
-                    accent = CyanPulse,
+                    accent = HyperCyan,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -362,13 +414,13 @@ private fun MacroBox(
     title: String,
     grams: String,
     sub: String,
-    accent: androidx.compose.ui.graphics.Color,
+    accent: Color,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(SteelElevated)
+            .clip(RoundedCornerShape(16.dp))
+            .background(HyperTileElevated)
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -386,13 +438,13 @@ private fun VolumeLandmarkCard(
     onChangeSets: (Int) -> Unit
 ) {
     val (statusLabel, statusColor) = when {
-        currentSets < muscle.mevSets -> "Sub-estímulo (< MEV)" to AmberWarn
-        currentSets <= muscle.mavSets -> "Zona Ótima (MEV–MAV)" to EmeraldPR
-        currentSets <= muscle.mrvSets -> "Alta Carga (MAV–MRV)" to CyanPulse
-        else -> "Risco Overreaching (> MRV)" to CrimsonPeak
+        currentSets < muscle.mevSets -> "Sub-estímulo (< MEV)" to HyperAmber
+        currentSets <= muscle.mavSets -> "Zona Ótima (MEV–MAV)" to HyperEmerald
+        currentSets <= muscle.mrvSets -> "Alta Carga (MAV–MRV)" to HyperCyan
+        else -> "Risco Overreaching (> MRV)" to HyperCrimson
     }
 
-    IronCard {
+    HyperSquircleCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -412,7 +464,7 @@ private fun VolumeLandmarkCard(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(SteelElevated)
+                        .background(HyperTileElevated)
                         .clickable { onChangeSets(currentSets - 1) },
                     contentAlignment = Alignment.Center
                 ) {
@@ -421,22 +473,22 @@ private fun VolumeLandmarkCard(
                 Text(
                     text = "$currentSets séries",
                     style = MaterialTheme.typography.labelLarge,
-                    color = ElectricVolt
+                    color = HyperOrangeGlow
                 )
                 Box(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(SteelElevated)
+                        .background(HyperTileElevated)
                         .clickable { onChangeSets(currentSets + 1) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("+", color = ElectricVolt, fontWeight = FontWeight.Black)
+                    Text("+", color = HyperOrangeGlow, fontWeight = FontWeight.Black)
                 }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        MuscleTag(statusLabel, statusColor)
+        HyperPillTag(statusLabel, statusColor)
     }
 }
 
@@ -444,16 +496,16 @@ private fun VolumeLandmarkCard(
 private fun ScienceArticleCard(article: ScienceArticle) {
     var expanded by remember { mutableStateOf(false) }
 
-    IronCard(
-        modifier = Modifier.clickable { expanded = !expanded },
-        highlightBorder = expanded
+    HyperSquircleCard(
+        onClick = { expanded = !expanded },
+        accentGlow = expanded
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MuscleTag(article.category, CyanPulse)
+            HyperPillTag(article.category, HyperCyan)
             Text("${article.readTimeMinutes} min leitura", style = MaterialTheme.typography.labelSmall, color = TextMuted)
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -463,20 +515,20 @@ private fun ScienceArticleCard(article: ScienceArticle) {
 
         if (expanded) {
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = GraphiteBorder)
+            HorizontalDivider(color = HyperHairline)
             Spacer(modifier = Modifier.height(10.dp))
 
-            Text("PONTOS-CHAVE PRÁTICOS", style = MaterialTheme.typography.labelSmall, color = ElectricVolt)
+            Text("PONTOS-CHAVE PRÁTICOS", style = MaterialTheme.typography.labelSmall, color = HyperOrangeGlow)
             Spacer(modifier = Modifier.height(6.dp))
             article.keyTakeaways.forEach { point ->
                 Row(modifier = Modifier.padding(vertical = 2.dp)) {
-                    Text("• ", color = ElectricVolt, fontWeight = FontWeight.Bold)
+                    Text("• ", color = HyperOrange, fontWeight = FontWeight.Bold)
                     Text(point, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Text("PROTOCOLO DETALHADO", style = MaterialTheme.typography.labelSmall, color = EmeraldPR)
+            Text("PROTOCOLO DETALHADO", style = MaterialTheme.typography.labelSmall, color = HyperEmerald)
             Spacer(modifier = Modifier.height(4.dp))
             Text(article.detailedProtocol, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
         } else {
@@ -484,7 +536,7 @@ private fun ScienceArticleCard(article: ScienceArticle) {
             Text(
                 text = "Toque para ler o protocolo completo →",
                 style = MaterialTheme.typography.labelSmall,
-                color = ElectricVolt
+                color = HyperOrangeGlow
             )
         }
     }

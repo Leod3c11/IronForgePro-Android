@@ -25,10 +25,10 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 data class IronForgeUiState(
-    // History & Records
     val sessionHistory: List<WorkoutSessionRecord> = emptyList(),
     val exercisePrs: Map<String, Double> = emptyMap(),
     val customWorkouts: List<WorkoutDay> = emptyList(),
+    val customVideoUris: Map<String, String> = emptyMap(),
     val bodyMeasurements: List<BodyMeasurementRecord> = emptyList(),
 
     // Active Workout Session
@@ -37,8 +37,9 @@ data class IronForgeUiState(
     val activeExercises: List<ActiveExerciseSession> = emptyList(),
     val workoutElapsedSeconds: Int = 0,
     val lastFinishedSession: WorkoutSessionRecord? = null,
+    val expandedVideoExerciseIds: Set<String> = emptySet(),
 
-    // Smart Rest Timer
+    // Smart Rest Timer (HyperOS Dynamic Island)
     val restTotalSeconds: Int = 90,
     val restRemainingSeconds: Int = 0,
     val isRestTimerRunning: Boolean = false,
@@ -49,15 +50,16 @@ data class IronForgeUiState(
     val selectedEquipmentFilter: EquipmentType? = null,
     val inspectedExercise: Exercise? = null,
 
-    // Science Calculators
+    // Science Lab Calculators
     val oneRmWeightInput: String = "100",
     val oneRmRepsInput: String = "6",
+    val plateTargetWeight: String = "100",
     val userWeightKg: String = "80",
     val userHeightCm: String = "178",
     val userAge: String = "26",
     val isMale: Boolean = true,
-    val activityLevelIndex: Int = 2, // 0: Sedentário, 1: Leve, 2: Moderado (4-5x), 3: Intenso (6x)
-    val nutritionGoalIndex: Int = 0, // 0: Bulking Limpo (+350), 1: Manutenção (0), 2: Cutting Moderado (-450), 3: Cutting Intenso (-650)
+    val activityLevelIndex: Int = 2,
+    val nutritionGoalIndex: Int = 0,
     val weeklySetsEstimator: Map<MuscleGroup, Int> = mapOf(
         MuscleGroup.CHEST to 14,
         MuscleGroup.BACK to 16,
@@ -81,6 +83,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             sessionHistory = storage.loadSessionHistory(),
             exercisePrs = storage.loadExercisePrs(),
             customWorkouts = storage.loadCustomWorkouts(),
+            customVideoUris = storage.loadCustomVideoUris(),
             bodyMeasurements = storage.loadBodyMeasurements()
         )
     )
@@ -89,7 +92,28 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     private var timerJob: Job? = null
     private var workoutClockJob: Job? = null
 
-    // ==================== WORKOUT SESSION MANAGEMENT ====================
+    fun attachCustomVideoUri(exerciseId: String, uriString: String) {
+        val updated = _uiState.value.customVideoUris.toMutableMap()
+        updated[exerciseId] = uriString
+        storage.saveCustomVideoUris(updated)
+        _uiState.update { it.copy(customVideoUris = updated) }
+    }
+
+    fun removeCustomVideoUri(exerciseId: String) {
+        val updated = _uiState.value.customVideoUris.toMutableMap()
+        updated.remove(exerciseId)
+        storage.saveCustomVideoUris(updated)
+        _uiState.update { it.copy(customVideoUris = updated) }
+    }
+
+    fun toggleInlineVideoInWorkout(exerciseId: String) {
+        _uiState.update { s ->
+            val current = s.expandedVideoExerciseIds
+            val next = if (current.contains(exerciseId)) current - exerciseId else current + exerciseId
+            s.copy(expandedVideoExerciseIds = next)
+        }
+    }
+
     fun startWorkoutFromDay(day: WorkoutDay) {
         val prs = _uiState.value.exercisePrs
         val activeList = day.exercises.mapNotNull { planned ->
@@ -120,13 +144,14 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 activeWorkoutTitle = day.title,
                 activeExercises = activeList,
                 workoutElapsedSeconds = 0,
-                lastFinishedSession = null
+                lastFinishedSession = null,
+                expandedVideoExerciseIds = emptySet()
             )
         }
         startWorkoutClock()
     }
 
-    fun startEmptyWorkout(title: String = "Treino Livre Personalizado") {
+    fun startEmptyWorkout(title: String = "Treino Livre HyperOS") {
         val defaultEx = ExerciseRepository.allExercises.take(3).map { ex ->
             ActiveExerciseSession(
                 exercise = ex,
@@ -145,7 +170,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 activeWorkoutTitle = title,
                 activeExercises = defaultEx,
                 workoutElapsedSeconds = 0,
-                lastFinishedSession = null
+                lastFinishedSession = null,
+                expandedVideoExerciseIds = emptySet()
             )
         }
         startWorkoutClock()
@@ -177,6 +203,23 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun swapExerciseInActiveWorkout(exerciseIndex: Int, newExercise: Exercise) {
+        val currentPr = _uiState.value.exercisePrs[newExercise.id] ?: 30.0
+        val suggestedWeight = (currentPr * 0.75).roundToInt().toDouble().coerceAtLeast(10.0)
+        _uiState.update { state ->
+            val updated = state.activeExercises.mapIndexed { idx, old ->
+                if (idx != exerciseIndex) old
+                else ActiveExerciseSession(
+                    exercise = newExercise,
+                    targetReps = newExercise.recommendedReps,
+                    restSeconds = newExercise.restSeconds,
+                    sets = old.sets.map { s -> s.copy(weightKg = suggestedWeight, completed = false, isPr = false) }
+                )
+            }
+            state.copy(activeExercises = updated)
+        }
+    }
+
     fun addSetToExercise(exerciseIndex: Int) {
         _uiState.update { state ->
             val updated = state.activeExercises.mapIndexed { idx, item ->
@@ -193,20 +236,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                         completed = false
                     )
                     item.copy(sets = item.sets + newSet)
-                }
-            }
-            state.copy(activeExercises = updated)
-        }
-    }
-
-    fun removeSetFromExercise(exerciseIndex: Int, setIndex: Int) {
-        _uiState.update { state ->
-            val updated = state.activeExercises.mapIndexed { idx, item ->
-                if (idx != exerciseIndex || item.sets.size <= 1) item
-                else {
-                    val filtered = item.sets.filterIndexed { sIdx, _ -> sIdx != setIndex }
-                        .mapIndexed { newIdx, s -> s.copy(setNumber = newIdx + 1) }
-                    item.copy(sets = filtered)
                 }
             }
             state.copy(activeExercises = updated)
@@ -305,7 +334,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                     if (est1Rm > bestSetScore) {
                         bestSetScore = est1Rm
-                        bestSetText = "${sessionEx.exercise.name.take(22)} ${set.weightKg.toInt()}kg x ${set.reps}"
+                        bestSetText = "${sessionEx.exercise.name.take(20)} ${set.weightKg.toInt()}kg × ${set.reps}"
                     }
                 }
             }
@@ -327,7 +356,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             totalWorkingSets = totalWorkingSets,
             prCount = prCount,
             muscleSetsBreakdown = muscleBreakdown,
-            highlightExercises = if (highlights.isEmpty()) listOf("Sessão registrada com sucesso") else highlights
+            highlightExercises = if (highlights.isEmpty()) listOf("Sessão concluída") else highlights
         )
 
         val newHistory = listOf(record) + state.sessionHistory
@@ -364,7 +393,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(lastFinishedSession = null) }
     }
 
-    // ==================== SMART REST TIMER ====================
     fun startRestTimer(seconds: Int) {
         timerJob?.cancel()
         val target = seconds.coerceIn(10, 600)
@@ -430,7 +458,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // ==================== CUSTOM WORKOUT BUILDER ====================
     fun saveCustomWorkoutDay(title: String, focus: String, exerciseIds: List<String>) {
         if (title.isBlank() || exerciseIds.isEmpty()) return
         val planned = exerciseIds.map { id ->
@@ -462,7 +489,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(customWorkouts = updatedList) }
     }
 
-    // ==================== ENCYCLOPEDIA FILTERS ====================
     fun updateSearchQuery(q: String) {
         _uiState.update { it.copy(searchQuery = q) }
     }
@@ -479,9 +505,12 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(inspectedExercise = exercise) }
     }
 
-    // ==================== SCIENCE LAB CALCULATORS ====================
     fun updateOneRmInputs(weight: String, reps: String) {
         _uiState.update { it.copy(oneRmWeightInput = weight, oneRmRepsInput = reps) }
+    }
+
+    fun updatePlateTargetWeight(weight: String) {
+        _uiState.update { it.copy(plateTargetWeight = weight) }
     }
 
     fun updateNutritionInputs(
@@ -512,7 +541,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // ==================== BODY MEASUREMENTS ====================
     fun addBodyMeasurement(
         weightKg: Double,
         bodyFatPct: Double,
@@ -542,8 +570,21 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     companion object {
         fun estimate1RM(weightKg: Double, reps: Int): Double {
             if (reps <= 1) return weightKg
-            // Epley formula
             return ((weightKg * (1.0 + reps / 30.0)) * 10.0).roundToInt() / 10.0
+        }
+
+        fun calculatePlatesPerSide(totalWeightKg: Double, barWeightKg: Double = 20.0): List<Double> {
+            val perSide = ((totalWeightKg - barWeightKg) / 2.0).coerceAtLeast(0.0)
+            val availablePlates = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25)
+            val result = mutableListOf<Double>()
+            var remaining = (perSide * 100).roundToInt() / 100.0
+            for (plate in availablePlates) {
+                while (remaining >= plate - 0.001) {
+                    result.add(plate)
+                    remaining = ((remaining - plate) * 100).roundToInt() / 100.0
+                }
+            }
+            return result
         }
     }
 }

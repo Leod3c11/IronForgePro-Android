@@ -4,32 +4,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-private val IronDarkColorScheme = darkColorScheme(
-    primary = ElectricVolt,
-    onPrimary = ObsidianDeep,
-    primaryContainer = SteelElevated,
-    onPrimaryContainer = ElectricVolt,
-    secondary = CyanPulse,
-    onSecondary = ObsidianDeep,
-    secondaryContainer = SteelElevated,
-    onSecondaryContainer = CyanPulse,
-    tertiary = EmeraldPR,
-    onTertiary = ObsidianDeep,
-    background = ObsidianDeep,
+private val HyperOsDarkScheme = darkColorScheme(
+    primary = HyperOrange,
+    onPrimary = TextPrimary,
+    primaryContainer = HyperTileElevated,
+    onPrimaryContainer = HyperOrangeGlow,
+    secondary = HyperCyan,
+    onSecondary = HyperBgDark,
+    secondaryContainer = HyperTileElevated,
+    onSecondaryContainer = HyperCyan,
+    tertiary = HyperVolt,
+    onTertiary = HyperBgDark,
+    background = HyperBgDark,
     onBackground = TextPrimary,
-    surface = CarbonSurface,
+    surface = HyperCardDark,
     onSurface = TextPrimary,
-    surfaceVariant = SteelElevated,
+    surfaceVariant = HyperTileElevated,
     onSurfaceVariant = TextSecondary,
-    outline = GraphiteBorder,
-    error = CrimsonPeak,
+    outline = HyperHairline,
+    error = HyperCrimson,
     onError = TextPrimary
 )
 
 @Composable
 fun IronForgeTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = IronDarkColorScheme,
+        colorScheme = HyperOsDarkScheme,
         typography = IronTypography,
         content = content
     )

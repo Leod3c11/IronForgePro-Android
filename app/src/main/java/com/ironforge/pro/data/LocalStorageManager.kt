@@ -9,7 +9,7 @@ import com.ironforge.pro.model.WorkoutSessionRecord
 
 class LocalStorageManager(context: Context) {
 
-    private val prefs = context.getSharedPreferences("ironforge_pro_prefs_v1", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("ironforge_hyperos_v2", Context.MODE_PRIVATE)
     private val gson = Gson()
 
     fun loadSessionHistory(): List<WorkoutSessionRecord> {
@@ -71,6 +71,20 @@ class LocalStorageManager(context: Context) {
         prefs.edit().putString("custom_workouts", gson.toJson(workouts)).apply()
     }
 
+    fun loadCustomVideoUris(): Map<String, String> {
+        val json = prefs.getString("custom_video_uris", null) ?: return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<String, String>>() {}.type
+            gson.fromJson(json, type) ?: emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun saveCustomVideoUris(uris: Map<String, String>) {
+        prefs.edit().putString("custom_video_uris", gson.toJson(uris)).apply()
+    }
+
     fun loadBodyMeasurements(): List<BodyMeasurementRecord> {
         val json = prefs.getString("body_measurements", null)
         if (json.isNullOrBlank()) {
@@ -97,13 +111,13 @@ class LocalStorageManager(context: Context) {
 
     private fun defaultSeedHistory(): List<WorkoutSessionRecord> {
         val now = System.currentTimeMillis()
-        val dayMs = 86_400_000L
+        val hourMs = 3_600_000L
         return listOf(
             WorkoutSessionRecord(
                 id = "seed_1",
                 workoutTitle = "Push A — Peito, Ombros & Tríceps",
-                dateFormatted = "14/11",
-                timestamp = now - dayMs,
+                dateFormatted = "Ontem",
+                timestamp = now - 22 * hourMs,
                 durationMinutes = 64,
                 totalVolumeKg = 9840.0,
                 totalWorkingSets = 20,
@@ -113,13 +127,13 @@ class LocalStorageManager(context: Context) {
                     "Ombros (Deltoides)" to 7,
                     "Tríceps Braquial" to 6
                 ),
-                highlightExercises = listOf("Supino Reto 90kg x 8", "Elevação Lateral 16kg x 14")
+                highlightExercises = listOf("Supino Reto 90kg × 8", "Elevação Lateral 16kg × 14")
             ),
             WorkoutSessionRecord(
                 id = "seed_2",
                 workoutTitle = "Pull A — Costas, Posterior & Bíceps",
-                dateFormatted = "12/11",
-                timestamp = now - 3 * dayMs,
+                dateFormatted = "Há 3 dias",
+                timestamp = now - 70 * hourMs,
                 durationMinutes = 68,
                 totalVolumeKg = 10420.0,
                 totalWorkingSets = 20,
@@ -129,13 +143,13 @@ class LocalStorageManager(context: Context) {
                     "Ombros (Deltoides)" to 4,
                     "Bíceps Braquial" to 6
                 ),
-                highlightExercises = listOf("Remada Curvada 80kg x 8", "Rosca Barra W 36kg x 10")
+                highlightExercises = listOf("Remada Curvada 80kg × 8", "Rosca Barra W 36kg × 10")
             ),
             WorkoutSessionRecord(
                 id = "seed_3",
                 workoutTitle = "Legs A — Quadríceps & Panturrilhas",
-                dateFormatted = "10/11",
-                timestamp = now - 5 * dayMs,
+                dateFormatted = "Há 5 dias",
+                timestamp = now - 118 * hourMs,
                 durationMinutes = 72,
                 totalVolumeKg = 13650.0,
                 totalWorkingSets = 20,
@@ -146,13 +160,13 @@ class LocalStorageManager(context: Context) {
                     "Panturrilhas" to 4,
                     "Abdômen & Core" to 3
                 ),
-                highlightExercises = listOf("Agachamento Livre 120kg x 7", "Leg Press 45° 240kg x 12")
+                highlightExercises = listOf("Agachamento Livre 120kg × 7", "Leg Press 45° 240kg × 12")
             ),
             WorkoutSessionRecord(
                 id = "seed_4",
                 workoutTitle = "Legs B — Posteriores & Glúteos",
-                dateFormatted = "08/11",
-                timestamp = now - 7 * dayMs,
+                dateFormatted = "Há 7 dias",
+                timestamp = now - 166 * hourMs,
                 durationMinutes = 63,
                 totalVolumeKg = 11920.0,
                 totalWorkingSets = 21,
@@ -164,7 +178,7 @@ class LocalStorageManager(context: Context) {
                     "Panturrilhas" to 4,
                     "Abdômen & Core" to 3
                 ),
-                highlightExercises = listOf("Stiff RDL 110kg x 8", "Hip Thrust 140kg x 10")
+                highlightExercises = listOf("Stiff RDL 110kg × 8", "Hip Thrust 140kg × 10")
             )
         )
     }

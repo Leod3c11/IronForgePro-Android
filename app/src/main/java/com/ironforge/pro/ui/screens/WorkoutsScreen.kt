@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,9 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
+import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.WorkoutDay
-import com.ironforge.pro.ui.components.IronCard
-import com.ironforge.pro.ui.components.MuscleTag
+import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.HyperPillTag
+import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.SectionHeader
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
@@ -32,36 +35,36 @@ fun WorkoutsScreen(
     onDeleteCustomWorkout: (String) -> Unit
 ) {
     val allSplits = ExerciseRepository.defaultSplits
-    var selectedTabIndex by remember { mutableIntStateOf(0) } // 0..3 = default splits, 4 = Custom
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showBuilderDialog by remember { mutableStateOf(false) }
+    var previewExercise by remember { mutableStateOf<Exercise?>(null) }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianDeep),
-        contentPadding = PaddingValues(16.dp),
+            .background(HyperBgDark),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             SectionHeader(
                 title = "Programas & Divisões",
-                subtitle = "Protocolos periodizados para máxima hipertrofia",
+                subtitle = "Toque no ícone de vídeo para ver a execução",
                 trailing = {
                     Button(
                         onClick = { showBuilderDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = ElectricVolt),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = ObsidianDeep, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Add, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Criar Ficha", color = ObsidianDeep, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                        Text("Criar Ficha", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
                     }
                 }
             )
         }
 
-        // Split Selector Chips
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(allSplits.size) { index ->
@@ -69,6 +72,7 @@ fun WorkoutsScreen(
                     FilterChip(
                         selected = selectedTabIndex == index,
                         onClick = { selectedTabIndex = index },
+                        shape = CircleShape,
                         label = {
                             Text(
                                 text = split.name.substringBefore("—").trim(),
@@ -76,9 +80,9 @@ fun WorkoutsScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = ElectricVolt,
-                            selectedLabelColor = ObsidianDeep,
-                            containerColor = CarbonSurface,
+                            selectedContainerColor = HyperOrange,
+                            selectedLabelColor = TextPrimary,
+                            containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
                     )
@@ -87,6 +91,7 @@ fun WorkoutsScreen(
                     FilterChip(
                         selected = selectedTabIndex == allSplits.size,
                         onClick = { selectedTabIndex = allSplits.size },
+                        shape = CircleShape,
                         label = {
                             Text(
                                 text = "Minhas Fichas (${state.customWorkouts.size})",
@@ -94,9 +99,9 @@ fun WorkoutsScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = CyanPulse,
-                            selectedLabelColor = ObsidianDeep,
-                            containerColor = CarbonSurface,
+                            selectedContainerColor = HyperCyan,
+                            selectedLabelColor = HyperBgDark,
+                            containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
                     )
@@ -108,14 +113,14 @@ fun WorkoutsScreen(
             val activeSplit = allSplits[selectedTabIndex]
 
             item {
-                IronCard(highlightBorder = true) {
+                HyperSquircleCard(accentGlow = true) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        MuscleTag("${activeSplit.frequencyPerWeek}x / SEMANA", ElectricVolt)
-                        MuscleTag(activeSplit.level, CyanPulse)
+                        HyperPillTag("${activeSplit.frequencyPerWeek}x / SEMANA", HyperOrangeGlow)
+                        HyperPillTag(activeSplit.level, HyperCyan)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
@@ -135,14 +140,14 @@ fun WorkoutsScreen(
             items(activeSplit.days) { day ->
                 WorkoutDayCard(
                     day = day,
-                    onStart = { onStartWorkoutDay(day) }
+                    onStart = { onStartWorkoutDay(day) },
+                    onPreviewExercise = { previewExercise = it }
                 )
             }
         } else {
-            // Custom User Workouts
             if (state.customWorkouts.isEmpty()) {
                 item {
-                    IronCard {
+                    HyperSquircleCard {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -175,13 +180,12 @@ fun WorkoutsScreen(
                     WorkoutDayCard(
                         day = customDay,
                         onStart = { onStartWorkoutDay(customDay) },
-                        onDelete = { onDeleteCustomWorkout(customDay.id) }
+                        onDelete = { onDeleteCustomWorkout(customDay.id) },
+                        onPreviewExercise = { previewExercise = it }
                     )
                 }
             }
         }
-
-        item { Spacer(modifier = Modifier.height(24.dp)) }
     }
 
     if (showBuilderDialog) {
@@ -194,27 +198,68 @@ fun WorkoutsScreen(
             }
         )
     }
+
+    if (previewExercise != null) {
+        val ex = previewExercise!!
+        AlertDialog(
+            onDismissRequest = { previewExercise = null },
+            containerColor = HyperCardDark,
+            shape = RoundedCornerShape(26.dp),
+            title = {
+                Column {
+                    HyperPillTag(ex.muscleGroup.displayName, HyperOrangeGlow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(ex.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ExerciseMiniVideoPlayer(
+                        exercise = ex,
+                        customVideoUri = state.customVideoUris[ex.id],
+                        height = 190.dp
+                    )
+                    Text(
+                        text = ex.executionSteps.joinToString("
+• ", prefix = "• "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { previewExercise = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                    shape = CircleShape
+                ) {
+                    Text("Fechar", color = TextPrimary, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun WorkoutDayCard(
     day: WorkoutDay,
     onStart: () -> Unit,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
+    onPreviewExercise: (Exercise) -> Unit
 ) {
-    IronCard {
+    HyperSquircleCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MuscleTag(day.dayLabel, ElectricVolt)
-                MuscleTag("~${day.estimatedMinutes} min", CyanPulse)
+                HyperPillTag(day.dayLabel, HyperOrangeGlow)
+                HyperPillTag("~${day.estimatedMinutes} min", HyperCyan)
             }
             if (onDelete != null) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "Remover", tint = CrimsonPeak)
+                    Icon(Icons.Default.DeleteOutline, contentDescription = "Remover", tint = HyperCrimson)
                 }
             }
         }
@@ -232,7 +277,7 @@ private fun WorkoutDayCard(
         )
 
         Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(color = GraphiteBorder.copy(alpha = 0.6f))
+        HorizontalDivider(color = HyperHairline.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.height(10.dp))
 
         day.exercises.forEachIndexed { idx, planned ->
@@ -241,26 +286,39 @@ private fun WorkoutDayCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp),
+                        .clickable { onPreviewExercise(ex) }
+                        .padding(vertical = 5.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "${idx + 1}. ${ex.name}",
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                            color = TextPrimary
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayCircleFilled,
+                            contentDescription = "Ver Mini Vídeo",
+                            tint = HyperCyan,
+                            modifier = Modifier.size(22.dp)
                         )
-                        Text(
-                            text = "${ex.muscleGroup.displayName} • RIR ${planned.targetRir} • Descanso ${planned.restSeconds}s",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted
-                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "${idx + 1}. ${ex.name}",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = "${ex.muscleGroup.displayName} • RIR ${planned.targetRir} • ${planned.restSeconds}s",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextMuted
+                            )
+                        }
                     }
                     Text(
                         text = "${planned.targetSets} × ${planned.targetReps}",
                         style = MaterialTheme.typography.labelLarge,
-                        color = ElectricVolt
+                        color = HyperOrangeGlow
                     )
                 }
             }
@@ -271,15 +329,15 @@ private fun WorkoutDayCard(
             onClick = onStart,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ElectricVolt),
-            shape = RoundedCornerShape(12.dp)
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+            shape = CircleShape
         ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = ObsidianDeep)
+            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = TextPrimary)
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "INICIAR TREINO AGORA",
-                color = ObsidianDeep,
+                color = TextPrimary,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 0.5.sp
             )
@@ -306,7 +364,8 @@ private fun CustomWorkoutBuilderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = CarbonSurface,
+        containerColor = HyperCardDark,
+        shape = RoundedCornerShape(26.dp),
         title = {
             Text("Criar Ficha Personalizada", color = TextPrimary, fontWeight = FontWeight.Bold)
         },
@@ -359,7 +418,7 @@ private fun CustomWorkoutBuilderDialog(
                                 onCheckedChange = {
                                     if (it) selectedIds.add(ex.id) else selectedIds.remove(ex.id)
                                 },
-                                colors = CheckboxDefaults.colors(checkedColor = ElectricVolt, checkmarkColor = ObsidianDeep)
+                                colors = CheckboxDefaults.colors(checkedColor = HyperOrange, checkmarkColor = TextPrimary)
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(ex.name, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -374,9 +433,10 @@ private fun CustomWorkoutBuilderDialog(
             Button(
                 onClick = { onSave(title, focus, selectedIds.toList()) },
                 enabled = title.isNotBlank() && selectedIds.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricVolt)
+                colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                shape = CircleShape
             ) {
-                Text("Salvar Ficha", color = ObsidianDeep, fontWeight = FontWeight.Bold)
+                Text("Salvar Ficha", color = TextPrimary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
