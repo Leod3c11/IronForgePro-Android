@@ -11,8 +11,8 @@ android {
         applicationId = "com.ironforge.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 10
-        versionName = "10.0.0-StudioMedia-UI"
+        versionCode = 11
+        versionName = "11.0.0-RealVideo-CleanUI"
 
         vectorDrawables {
             useSupportLibrary = true

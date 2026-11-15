@@ -1,6 +1,5 @@
-# 🏋️ IronForge Pro 10.0 — Studio Media & Expressive Layout Edition
+# 🏋️ IronForge Pro 11.0 — Real YouTube Execution & Clean Metrics Edition
 
-Aplicativo nativo Android (**Kotlin + Jetpack Compose + Lottie + AGSL RuntimeShader + Animated GIF + Studio MP4 Reels**) com pacote visual completo e layout aprimorado:
-1. **GIFs Animados Nativos (`AnimatedGifView`):** Celebração animada (`plan_review_confetti.gif`) integrada na calibração final do cadastro e no cartão de conclusão de treino.
-2. **Studio Reels & Vídeos Embarcados (`EmbeddedStudioVideoCard`):** Clipes de treino guiado, demonstrações masculinas/femininas e comunidade integrados ao Dashboard e ao Onboarding.
-3. **Layout Expressivo Aprimorado:** Miniaturas visuais (`ExerciseVisualThumb`) nas listas de treinos, agenda e execução ativa, dock flutuante refinado, CTAs de alcance rápido e modo compacto na Enciclopédia.
+Aplicativo nativo Android (**Kotlin + Jetpack Compose + YouTube HD Embed + Lottie + AGSL RuntimeShader**) com:
+1. **Vídeos Reais de Execução (YouTube HD + Local MP4):** Todos os 59 exercícios contam com demonstrações reais em vídeo de instrutores especializados (`ExerciseVideoCatalog` + player embutido e botão direto para o app do YouTube), substituindo completamente os bonecos/stickers anteriores.
+2. **Interface Limpa Sem Contagem de Tonelada:** Remoção completa da contagem e gráficos de tonelagem, mantendo métricas objetivas e acionáveis (séries válidas, prontidão muscular, consistência semanal e recordes pessoais 1RM).

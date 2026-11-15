@@ -52,9 +52,6 @@ fun WorkoutBriefingScreen(
     var showEditWorkoutDialog by remember { mutableStateOf(false) }
 
     val totalSets = remember(day) { day.exercises.sumOf { it.targetSets } }
-    val estimatedTonnage = remember(day, state.exercisePrs, state.userProfile) {
-        viewModel.estimatePlannedWorkoutTonnage(day)
-    }
 
     // Collect both Primary & Synergist muscles recruited in today's workout
     val (primaryMuscles, synergistMuscles) = remember(day) {
@@ -161,9 +158,9 @@ fun WorkoutBriefingScreen(
                             modifier = Modifier.weight(1f)
                         )
                         BriefingStatPill(
-                            label = "CARGA EST.",
-                            value = "${estimatedTonnage.roundToInt()} kg",
-                            modifier = Modifier.weight(1.15f)
+                            label = "DURAÇÃO EST.",
+                            value = "~${day.estimatedMinutes}m",
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }

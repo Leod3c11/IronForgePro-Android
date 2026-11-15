@@ -303,13 +303,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         startWorkoutFromDay(day)
     }
 
-    fun estimatePlannedWorkoutTonnage(day: WorkoutDay): Double {
-        return day.exercises.sumOf { planned ->
-            val ex = ExerciseRepository.getExerciseById(planned.exerciseId)
-            val w = if (ex != null) estimateStartingWeightForUser(ex) else 20.0
-            w * 10 * planned.targetSets
-        }
-    }
+
 
     // ==================== VIDEOS & WORKOUTS ====================
     fun attachCustomVideoUri(exerciseId: String, uriString: String) {

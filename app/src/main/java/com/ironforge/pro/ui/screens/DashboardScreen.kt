@@ -56,7 +56,7 @@ fun DashboardScreen(
     val today = remember { LocalDate.now() }
     val todayIsoWeekday = today.dayOfWeek.value
 
-    val totalTonnage = state.sessionHistory.sumOf { it.totalVolumeKg }
+    val totalWorkingSetsAll = state.sessionHistory.sumOf { it.totalWorkingSets }
     val totalPrs = state.sessionHistory.sumOf { it.prCount }
 
     val aggregatedMuscleSets = remember(state.sessionHistory) {
@@ -248,7 +248,7 @@ fun DashboardScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", palette.primaryGlow)
+                                HyperPillTag("Tempo: ${summary.durationMinutes} min", palette.primaryGlow)
                                 HyperPillTag("Séries: ${summary.totalWorkingSets}", palette.secondary)
                                 HyperPillTag("PRs: ${summary.prCount}", HyperEmerald)
                             }
@@ -414,13 +414,13 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    HyperSquircleCard(modifier = Modifier.weight(1.12f)) {
+                    HyperSquircleCard(modifier = Modifier.weight(1.05f)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
+                            Text("SÉRIES VÁLIDAS", style = MaterialTheme.typography.labelSmall, color = palette.textMuted)
                             LottieStudioAnimation(
                                 assetPath = "lotties/flame.json",
                                 modifier = Modifier.size(26.dp)
@@ -428,12 +428,12 @@ fun DashboardScreen(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${(totalTonnage / 1000.0 * 10).roundToInt() / 10.0} t",
+                            text = "$totalWorkingSetsAll",
                             style = MaterialTheme.typography.displayLarge,
                             color = palette.textPrimary
                         )
                         Text(
-                            text = if (totalTonnage == 0.0) "Pronto para iniciar" else "${totalTonnage.roundToInt()} kg acumulados",
+                            text = if (totalWorkingSetsAll == 0) "Pronto para iniciar" else "Séries de trabalho concluídas",
                             style = MaterialTheme.typography.labelSmall,
                             color = palette.primaryGlow
                         )
@@ -712,18 +712,6 @@ fun DashboardScreen(
             }
         }
 
-        // 10. Volume Bar Chart
-        item {
-            HyperSquircleCard {
-                SectionHeader(
-                    title = "Evolução de Tonelagem",
-                    subtitle = "Volume total levantado nas suas sessões"
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                VolumeBarChart(sessions = state.sessionHistory)
-            }
-        }
-
         // 11. Hexagonal Muscle Balance Radar
         item {
             HyperSquircleCard {
@@ -846,7 +834,7 @@ fun DashboardScreen(
                                 color = palette.textSecondary
                             )
                         }
-                        HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", palette.secondary)
+                        HyperPillTag("${session.durationMinutes} min", palette.secondary)
                     }
                     if (session.highlightExercises.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))

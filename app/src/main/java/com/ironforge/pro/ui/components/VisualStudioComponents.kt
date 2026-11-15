@@ -132,20 +132,7 @@ fun AnimatedGifView(
     }
 }
 
-@DrawableRes
-fun resolveExerciseThumbRes(exercise: Exercise): Int {
-    return when (exercise.motionPattern) {
-        MotionPattern.BENCH_PRESS, MotionPattern.INCLINE_PRESS -> R.drawable.thumb_bench_press
-        MotionPattern.FLY_CROSSOVER, MotionPattern.REVERSE_FLY -> R.drawable.thumb_peck_deck
-        MotionPattern.TRICEP_PUSHDOWN, MotionPattern.OVERHEAD_TRICEP, MotionPattern.SKULLCRUSHER, MotionPattern.DIPS -> R.drawable.thumb_triceps_rope
-        MotionPattern.LEG_CURL, MotionPattern.RDL_HINGE, MotionPattern.DEADLIFT, MotionPattern.HIP_THRUST -> R.drawable.thumb_leg_curl
-        MotionPattern.SQUAT, MotionPattern.LUNGE_SPLIT, MotionPattern.LEG_PRESS, MotionPattern.LEG_EXTENSION, MotionPattern.CALF_RAISE -> R.drawable.thumb_squat_pro
-        MotionPattern.LAT_PULLDOWN, MotionPattern.PULL_UP, MotionPattern.ROW_HORIZONTAL, MotionPattern.STRAIGHT_ARM_PULL -> R.drawable.thumb_pull_pro
-        MotionPattern.OVERHEAD_PRESS, MotionPattern.LATERAL_RAISE -> R.drawable.thumb_shoulder_pro
-        MotionPattern.BICEP_CURL, MotionPattern.PREACHER_CURL -> R.drawable.thumb_bicep_pro
-        MotionPattern.CRUNCH_FLEXION, MotionPattern.LEG_RAISE, MotionPattern.AB_WHEEL -> R.drawable.thumb_core_pro
-    }
-}
+
 
 @DrawableRes
 fun resolveGoalIllustrationRes(goal: FitnessGoal, isMale: Boolean): Int {
@@ -160,23 +147,45 @@ fun resolveGoalIllustrationRes(goal: FitnessGoal, isMale: Boolean): Int {
 @Composable
 fun ExerciseVisualThumb(
     exercise: Exercise,
-    size: Dp = 52.dp,
+    size: Dp = 46.dp,
     modifier: Modifier = Modifier
 ) {
     val palette = LocalIronPalette.current
-    val resId = remember(exercise.id) { resolveExerciseThumbRes(exercise) }
     Surface(
         modifier = modifier.size(size),
         shape = RoundedCornerShape(14.dp),
         color = palette.tileElevated,
-        border = BorderStroke(1.dp, palette.hairline)
+        border = BorderStroke(1.dp, palette.primary.copy(alpha = 0.35f))
     ) {
-        Image(
-            painter = painterResource(id = resId),
-            contentDescription = exercise.name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            palette.primary.copy(alpha = 0.22f),
+                            palette.secondary.copy(alpha = 0.12f)
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = exercise.name,
+                    tint = palette.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = exercise.muscleGroup.shortName.take(5).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                    color = palette.textPrimary,
+                    fontSize = 8.sp,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
 

@@ -60,11 +60,7 @@ fun ActiveWorkoutScreen(
     val completedSetsAll = remember(state.activeExercises) {
         state.activeExercises.sumOf { ex -> ex.sets.count { it.completed } }
     }
-    val liveVolume = remember(state.activeExercises) {
-        state.activeExercises.sumOf { ex ->
-            ex.sets.filter { it.completed }.sumOf { it.weightKg * it.reps }
-        }
-    }
+
     val sessionProgress by animateFloatAsState(
         targetValue = (completedSetsAll.toFloat() / totalSetsAll.toFloat()).coerceIn(0f, 1f),
         label = "sessionProgress"
@@ -105,7 +101,7 @@ fun ActiveWorkoutScreen(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${(sessionProgress * 100).roundToInt()}% concluído  •  Volume: ${liveVolume.roundToInt()} kg",
+                        text = "$completedSetsAll de $totalSetsAll séries concluídas (${(sessionProgress * 100).roundToInt()}%)",
                         style = MaterialTheme.typography.labelSmall,
                         color = palette.primaryGlow
                     )

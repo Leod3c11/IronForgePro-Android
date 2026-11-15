@@ -329,7 +329,7 @@ fun CalendarScreen(
                                 }
                                 Text(rec.workoutTitle, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
                                 Text(
-                                    text = "Volume: ${rec.totalVolumeKg.roundToInt()} kg • ${rec.totalWorkingSets} séries válidas • ${rec.durationMinutes} min",
+                                    text = "${rec.totalWorkingSets} séries válidas concluídas • Duração: ${rec.durationMinutes} min",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = palette.textSecondary
                                 )
