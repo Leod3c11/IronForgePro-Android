@@ -1,5 +1,31 @@
 package com.ironforge.pro.model
 
+enum class ExperienceLevel(val label: String, val subtitle: String) {
+    BEGINNER("Iniciante", "0 a 12 meses de treino contínuo"),
+    INTERMEDIATE("Intermediário", "1 a 3 anos • Domina técnica básica"),
+    ADVANCED("Avançado", "3+ anos • Periodização & alta carga")
+}
+
+enum class FitnessGoal(val label: String, val kcalOffset: Double, val proteinPerKg: Double) {
+    LEAN_BULK("Bulking Limpo (Hipertrofia)", 350.0, 2.0),
+    RECOMP("Recomposição Corporal", 0.0, 2.1),
+    CUTTING_MODERATE("Cutting (Definição Muscular)", -450.0, 2.2),
+    STRENGTH("Força Bruta & Powerbuilding", 250.0, 1.9)
+}
+
+data class UserProfile(
+    val name: String = "Atleta",
+    val isMale: Boolean = true,
+    val age: Int = 26,
+    val weightKg: Double = 80.0,
+    val heightCm: Double = 178.0,
+    val bodyFatPct: Double = 13.5,
+    val experience: ExperienceLevel = ExperienceLevel.INTERMEDIATE,
+    val goal: FitnessGoal = FitnessGoal.LEAN_BULK,
+    val weeklyDaysGoal: Int = 4,
+    val selectedSplitId: String = "split_ppl_pro"
+)
+
 enum class MuscleGroup(
     val displayName: String,
     val shortName: String,

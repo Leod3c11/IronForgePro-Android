@@ -4,13 +4,44 @@ import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ironforge.pro.model.BodyMeasurementRecord
+import com.ironforge.pro.model.UserProfile
 import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.model.WorkoutSessionRecord
+import com.ironforge.pro.ui.theme.AppThemePreset
 
 class LocalStorageManager(context: Context) {
 
-    private val prefs = context.getSharedPreferences("ironforge_hyperos_v2", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("ironforge_expressive_v3", Context.MODE_PRIVATE)
     private val gson = Gson()
+
+    fun isOnboardingCompleted(): Boolean =
+        prefs.getBoolean("onboarding_completed", false)
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit().putBoolean("onboarding_completed", completed).apply()
+    }
+
+    fun loadUserProfile(): UserProfile {
+        val json = prefs.getString("user_profile", null) ?: return UserProfile()
+        return try {
+            gson.fromJson(json, UserProfile::class.java) ?: UserProfile()
+        } catch (e: Exception) {
+            UserProfile()
+        }
+    }
+
+    fun saveUserProfile(profile: UserProfile) {
+        prefs.edit().putString("user_profile", gson.toJson(profile)).apply()
+    }
+
+    fun loadThemePreset(): AppThemePreset {
+        val id = prefs.getString("theme_preset_id", AppThemePreset.HYPER_ORANGE.id) ?: AppThemePreset.HYPER_ORANGE.id
+        return AppThemePreset.fromId(id)
+    }
+
+    fun saveThemePreset(preset: AppThemePreset) {
+        prefs.edit().putString("theme_preset_id", preset.id).apply()
+    }
 
     fun loadSessionHistory(): List<WorkoutSessionRecord> {
         val json = prefs.getString("session_history", null)

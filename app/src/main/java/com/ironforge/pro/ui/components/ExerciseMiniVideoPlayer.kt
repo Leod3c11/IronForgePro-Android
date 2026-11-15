@@ -11,18 +11,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -44,11 +42,11 @@ fun ExerciseMiniVideoPlayer(
     compact: Boolean = false,
     onAttachVideoClick: (() -> Unit)? = null
 ) {
+    val palette = LocalIronPalette.current
     var isPlaying by remember { mutableStateOf(true) }
     var slowMotion by remember { mutableStateOf(false) }
     var useCustomMp4 by remember(customVideoUri) { mutableStateOf(customVideoUri != null) }
 
-    // Smooth continuous cycle [0f..1f]
     val cycleDuration = if (slowMotion) 5200 else 2800
     val infiniteTransition = rememberInfiniteTransition(label = "exerciseMotion")
     val animatedCycle by infiniteTransition.animateFloat(
@@ -68,17 +66,12 @@ fun ExerciseMiniVideoPlayer(
         pausedCycle
     }
 
-    // Biomechanical phase calculation:
-    // 0.00..0.45 = Eccentric (lowering/stretching)
-    // 0.45..0.55 = Stretch Pause
-    // 0.55..0.88 = Concentric (lifting/contracting)
-    // 0.88..1.00 = Peak Contraction
-    val (repFactor, phaseLabel, phaseColor) = remember(rawT) {
+    val (repFactor, phaseLabel, phaseColor) = remember(rawT, palette) {
         when {
             rawT < 0.45f -> {
                 val p = rawT / 0.45f
                 val smooth = (1f - cos(p * PI.toFloat())) / 2f
-                Triple(smooth, "EXCÊNTRICA", HyperCyan)
+                Triple(smooth, "EXCÊNTRICA", palette.secondary)
             }
             rawT < 0.55f -> {
                 Triple(1f, "ALONGAMENTO", HyperAmber)
@@ -86,7 +79,7 @@ fun ExerciseMiniVideoPlayer(
             rawT < 0.88f -> {
                 val p = (rawT - 0.55f) / 0.33f
                 val smooth = 1f - ((1f - cos(p * PI.toFloat())) / 2f)
-                Triple(smooth, "CONCÊNTRICA", HyperOrange)
+                Triple(smooth, "CONCÊNTRICA", palette.primary)
             }
             else -> {
                 Triple(0f, "PICO CONTR.", HyperEmerald)
@@ -100,7 +93,7 @@ fun ExerciseMiniVideoPlayer(
             .height(height),
         shape = RoundedCornerShape(20.dp),
         color = Color(0xFF090C12),
-        border = BorderStroke(1.dp, HyperHairline)
+        border = BorderStroke(1.dp, palette.hairline)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (useCustomMp4 && customVideoUri != null) {
@@ -118,19 +111,20 @@ fun ExerciseMiniVideoPlayer(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Native 60fps Biomechanical Execution Canvas
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawStudioBackdrop()
+                    drawStudioBackdrop(palette.primary, palette.secondary)
                     drawBiomechanicalExercise(
                         pattern = exercise.motionPattern,
                         equipment = exercise.equipment,
-                        t = repFactor, // 0f = contracted/top, 1f = stretched/bottom
-                        contractionGlow = 1f - repFactor
+                        t = repFactor,
+                        contractionGlow = 1f - repFactor,
+                        primaryAccent = palette.primary,
+                        secondaryAccent = palette.secondary
                     )
                 }
             }
 
-            // Top HUD Overlay (HyperOS Video Player Chrome)
+            // Top HUD Overlay
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,7 +137,6 @@ fun ExerciseMiniVideoPlayer(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Live REC/DEMO indicator dot
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -184,7 +177,6 @@ fun ExerciseMiniVideoPlayer(
                     }
                 }
 
-                // Right Controls: Speed + Play/Pause + MP4 Attach
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -192,13 +184,13 @@ fun ExerciseMiniVideoPlayer(
                     if (customVideoUri != null) {
                         SmallHudPill(
                             text = if (useCustomMp4) "3D Sim" else "MP4",
-                            accent = HyperCyan,
+                            accent = palette.secondary,
                             onClick = { useCustomMp4 = !useCustomMp4 }
                         )
                     } else if (onAttachVideoClick != null && !compact) {
                         SmallHudPill(
                             text = "+ MP4",
-                            accent = HyperCyan,
+                            accent = palette.secondary,
                             onClick = onAttachVideoClick
                         )
                     }
@@ -206,7 +198,7 @@ fun ExerciseMiniVideoPlayer(
                     if (!useCustomMp4) {
                         SmallHudPill(
                             text = if (slowMotion) "0.5x" else "1.0x",
-                            accent = if (slowMotion) HyperVolt else TextPrimary,
+                            accent = if (slowMotion) palette.tertiary else TextPrimary,
                             onClick = { slowMotion = !slowMotion }
                         )
 
@@ -221,7 +213,7 @@ fun ExerciseMiniVideoPlayer(
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = "Play/Pause",
-                                tint = HyperOrange,
+                                tint = palette.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -229,7 +221,6 @@ fun ExerciseMiniVideoPlayer(
                 }
             }
 
-            // Bottom Timeline Scrubber Bar
             if (!useCustomMp4) {
                 Column(
                     modifier = Modifier
@@ -250,7 +241,7 @@ fun ExerciseMiniVideoPlayer(
                         Text(
                             text = "Ativação: ${((1f - repFactor) * 100).toInt()}%",
                             style = MaterialTheme.typography.labelSmall,
-                            color = HyperOrangeGlow,
+                            color = palette.primaryGlow,
                             fontSize = 10.sp
                         )
                     }
@@ -267,7 +258,7 @@ fun ExerciseMiniVideoPlayer(
                                 .fillMaxWidth(rawT.coerceIn(0.02f, 1f))
                                 .fillMaxHeight()
                                 .background(
-                                    Brush.horizontalGradient(listOf(HyperCyan, HyperOrange))
+                                    Brush.horizontalGradient(listOf(palette.secondary, palette.primary))
                                 )
                         )
                     }
@@ -299,13 +290,12 @@ private fun SmallHudPill(
     }
 }
 
-private fun DrawScope.drawStudioBackdrop() {
-    // Radial spotlight behind athlete
+private fun DrawScope.drawStudioBackdrop(primary: Color, secondary: Color) {
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                HyperOrange.copy(alpha = 0.14f),
-                HyperCyan.copy(alpha = 0.05f),
+                primary.copy(alpha = 0.14f),
+                secondary.copy(alpha = 0.05f),
                 Color.Transparent
             ),
             center = Offset(size.width * 0.5f, size.height * 0.52f),
@@ -315,7 +305,6 @@ private fun DrawScope.drawStudioBackdrop() {
         radius = size.minDimension * 0.72f
     )
 
-    // Subtle perspective gym floor line
     val floorY = size.height * 0.80f
     drawLine(
         color = HyperHairline.copy(alpha = 0.7f),
@@ -328,29 +317,29 @@ private fun DrawScope.drawStudioBackdrop() {
 private fun DrawScope.drawBiomechanicalExercise(
     pattern: MotionPattern,
     equipment: EquipmentType,
-    t: Float, // 0f = top/contracted, 1f = bottom/stretched
-    contractionGlow: Float
+    t: Float,
+    contractionGlow: Float,
+    primaryAccent: Color,
+    secondaryAccent: Color
 ) {
     val cx = size.width * 0.50f
     val floorY = size.height * 0.80f
     val bodyColor = Color(0xFF8F9EB8)
     val jointColor = Color(0xFFD8E2F5)
     val machineColor = Color(0xFF3A465E)
-    val muscleGlow = HyperOrange.copy(alpha = 0.45f + 0.55f * contractionGlow)
+    val muscleGlow = primaryAccent.copy(alpha = 0.45f + 0.55f * contractionGlow)
     val strokeBody = 7.dp.toPx()
     val strokeLimb = 5.5.dp.toPx()
 
     when (pattern) {
         MotionPattern.BENCH_PRESS, MotionPattern.INCLINE_PRESS -> {
             val isIncline = pattern == MotionPattern.INCLINE_PRESS
-            // Bench
             val benchStart = Offset(cx - 55.dp.toPx(), floorY - 22.dp.toPx())
             val benchEnd = Offset(cx + 48.dp.toPx(), if (isIncline) floorY - 46.dp.toPx() else floorY - 22.dp.toPx())
             drawLine(machineColor, Offset(cx - 42.dp.toPx(), floorY), Offset(cx - 42.dp.toPx(), benchStart.y), 4.dp.toPx())
             drawLine(machineColor, Offset(cx + 32.dp.toPx(), floorY), Offset(cx + 32.dp.toPx(), benchEnd.y - 4.dp.toPx()), 4.dp.toPx())
             drawLine(machineColor, benchStart, benchEnd, 6.dp.toPx(), cap = StrokeCap.Round)
 
-            // Athlete lying
             val hip = Offset(cx - 22.dp.toPx(), benchStart.y - 5.dp.toPx())
             val shoulder = Offset(cx + 22.dp.toPx(), if (isIncline) benchEnd.y - 8.dp.toPx() else benchStart.y - 5.dp.toPx())
             val head = Offset(shoulder.x + 15.dp.toPx(), shoulder.y - (if (isIncline) 6.dp.toPx() else 0f))
@@ -361,24 +350,18 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, knee, hip, strokeLimb, cap = StrokeCap.Round)
             drawLine(bodyColor, hip, shoulder, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), head)
-
-            // Active Pectoral Muscle Highlight
             drawCircle(muscleGlow, (9f + 4f * contractionGlow).dp.toPx(), Offset(shoulder.x - 6.dp.toPx(), shoulder.y - 4.dp.toPx()))
 
-            // Animated Arms & Weight (t=0 top extended, t=1 chest level)
             val handY = shoulder.y - (44.dp.toPx() * (1f - 0.68f * t))
             val hand = Offset(shoulder.x - 2.dp.toPx(), handY)
             val elbow = Offset(shoulder.x + 12.dp.toPx() * t, (shoulder.y + handY) / 2f + 4.dp.toPx() * t)
             drawLine(bodyColor, shoulder, elbow, strokeLimb, cap = StrokeCap.Round)
             drawLine(jointColor, elbow, hand, strokeLimb, cap = StrokeCap.Round)
-
-            // Barbell or Dumbbell Plate
-            drawCircle(HyperCyan, 11.dp.toPx(), hand)
-            drawCircle(HyperOrange, 6.dp.toPx(), hand)
+            drawCircle(secondaryAccent, 11.dp.toPx(), hand)
+            drawCircle(primaryAccent, 6.dp.toPx(), hand)
         }
 
         MotionPattern.FLY_CROSSOVER, MotionPattern.REVERSE_FLY -> {
-            // Front view chest fly or rear delt fly
             val hip = Offset(cx, floorY - 38.dp.toPx())
             val chest = Offset(cx, floorY - 76.dp.toPx())
             val head = Offset(cx, chest.y - 16.dp.toPx())
@@ -387,29 +370,24 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, Offset(cx + 12.dp.toPx(), floorY), hip, strokeLimb, cap = StrokeCap.Round)
             drawLine(bodyColor, hip, chest, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), head)
-
-            // Active chest/shoulder glow
             drawCircle(muscleGlow, (11f + 4f * contractionGlow).dp.toPx(), chest)
 
-            // Sweeping arms: t=0 closed in front, t=1 wide open
             val spreadX = (10f + 42f * t).dp.toPx()
             val spreadY = chest.y + (8f - 10f * t).dp.toPx()
             val leftHand = Offset(cx - spreadX, spreadY)
             val rightHand = Offset(cx + spreadX, spreadY)
 
-            // Cable lines from top corners
             if (equipment == EquipmentType.CABLE) {
-                drawLine(HyperCyan.copy(alpha = 0.5f), Offset(cx - 72.dp.toPx(), 16.dp.toPx()), leftHand, 1.5.dp.toPx())
-                drawLine(HyperCyan.copy(alpha = 0.5f), Offset(cx + 72.dp.toPx(), 16.dp.toPx()), rightHand, 1.5.dp.toPx())
+                drawLine(secondaryAccent.copy(alpha = 0.5f), Offset(cx - 72.dp.toPx(), 16.dp.toPx()), leftHand, 1.5.dp.toPx())
+                drawLine(secondaryAccent.copy(alpha = 0.5f), Offset(cx + 72.dp.toPx(), 16.dp.toPx()), rightHand, 1.5.dp.toPx())
             }
             drawLine(jointColor, Offset(cx - 10.dp.toPx(), chest.y), leftHand, strokeLimb, cap = StrokeCap.Round)
             drawLine(jointColor, Offset(cx + 10.dp.toPx(), chest.y), rightHand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 5.dp.toPx(), leftHand)
-            drawCircle(HyperOrange, 5.dp.toPx(), rightHand)
+            drawCircle(primaryAccent, 5.dp.toPx(), leftHand)
+            drawCircle(primaryAccent, 5.dp.toPx(), rightHand)
         }
 
         MotionPattern.DIPS -> {
-            // Parallel bar
             drawLine(machineColor, Offset(cx - 35.dp.toPx(), floorY - 52.dp.toPx()), Offset(cx + 35.dp.toPx(), floorY - 52.dp.toPx()), 4.dp.toPx())
             val dropY = 22.dp.toPx() * t
             val hand = Offset(cx, floorY - 52.dp.toPx())
@@ -435,7 +413,6 @@ private fun DrawScope.drawBiomechanicalExercise(
             val shoulder = Offset(cx, currentHip.y - 38.dp.toPx())
 
             if (!isPullUp) {
-                // Seat
                 drawLine(machineColor, Offset(cx - 20.dp.toPx(), floorY - 28.dp.toPx()), Offset(cx + 20.dp.toPx(), floorY - 28.dp.toPx()), 5.dp.toPx())
                 drawLine(bodyColor, Offset(cx + 22.dp.toPx(), floorY), Offset(cx + 22.dp.toPx(), floorY - 28.dp.toPx()), strokeLimb)
             } else {
@@ -444,15 +421,13 @@ private fun DrawScope.drawBiomechanicalExercise(
 
             drawLine(bodyColor, currentHip, shoulder, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), Offset(cx, shoulder.y - 14.dp.toPx()))
-
-            // Glowing Lats (V-taper triangles)
             drawCircle(muscleGlow, (11f + 4f * contractionGlow).dp.toPx(), Offset(cx, shoulder.y + 12.dp.toPx()))
 
             val barY = if (isPullUp) barBaseY else (shoulder.y - 6.dp.toPx() - 36.dp.toPx() * t)
             if (!isPullUp) {
-                drawLine(HyperCyan.copy(alpha = 0.6f), Offset(cx, 8.dp.toPx()), Offset(cx, barY), 2.dp.toPx())
+                drawLine(secondaryAccent.copy(alpha = 0.6f), Offset(cx, 8.dp.toPx()), Offset(cx, barY), 2.dp.toPx())
             }
-            drawLine(HyperOrange, Offset(cx - 34.dp.toPx(), barY), Offset(cx + 34.dp.toPx(), barY), 4.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(primaryAccent, Offset(cx - 34.dp.toPx(), barY), Offset(cx + 34.dp.toPx(), barY), 4.dp.toPx(), cap = StrokeCap.Round)
 
             val lHand = Offset(cx - 26.dp.toPx(), barY)
             val rHand = Offset(cx + 26.dp.toPx(), barY)
@@ -465,7 +440,6 @@ private fun DrawScope.drawBiomechanicalExercise(
         }
 
         MotionPattern.ROW_HORIZONTAL -> {
-            // Seated or bent-over horizontal row
             val hip = Offset(cx - 18.dp.toPx(), floorY - 34.dp.toPx())
             val shoulder = Offset(cx - 6.dp.toPx(), hip.y - 36.dp.toPx())
             drawLine(bodyColor, Offset(cx + 24.dp.toPx(), floorY - 26.dp.toPx()), hip, strokeLimb, cap = StrokeCap.Round)
@@ -473,17 +447,16 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawCircle(jointColor, 7.dp.toPx(), Offset(shoulder.x, shoulder.y - 14.dp.toPx()))
             drawCircle(muscleGlow, (11f + 4f * contractionGlow).dp.toPx(), Offset(shoulder.x - 4.dp.toPx(), shoulder.y + 10.dp.toPx()))
 
-            // Pulley anchor on right
             val pulley = Offset(cx + 68.dp.toPx(), shoulder.y + 12.dp.toPx())
             drawCircle(machineColor, 6.dp.toPx(), pulley)
 
             val handX = shoulder.x + 8.dp.toPx() + 34.dp.toPx() * t
             val hand = Offset(handX, shoulder.y + 12.dp.toPx())
             val elbow = Offset(shoulder.x - 14.dp.toPx() * (1f - t) + 12.dp.toPx() * t, shoulder.y + 14.dp.toPx())
-            drawLine(HyperCyan.copy(alpha = 0.6f), pulley, hand, 2.dp.toPx())
+            drawLine(secondaryAccent.copy(alpha = 0.6f), pulley, hand, 2.dp.toPx())
             drawLine(bodyColor, shoulder, elbow, strokeLimb, cap = StrokeCap.Round)
             drawLine(jointColor, elbow, hand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 5.dp.toPx(), hand)
+            drawCircle(primaryAccent, 5.dp.toPx(), hand)
         }
 
         MotionPattern.STRAIGHT_ARM_PULL -> {
@@ -494,12 +467,12 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawCircle(jointColor, 7.dp.toPx(), Offset(shoulder.x + 2.dp.toPx(), shoulder.y - 14.dp.toPx()))
             drawCircle(muscleGlow, 10.dp.toPx(), Offset(shoulder.x - 4.dp.toPx(), shoulder.y + 14.dp.toPx()))
 
-            val angle = (-0.2f + 1.3f * (1f - t)).toDouble() // 0=down at hip, 1=overhead
+            val angle = (-0.2f + 1.3f * (1f - t)).toDouble()
             val armLen = 36.dp.toPx()
             val hand = Offset(shoulder.x + (cos(angle) * armLen).toFloat(), shoulder.y - (sin(angle) * armLen).toFloat())
-            drawLine(HyperCyan.copy(alpha = 0.5f), Offset(cx + 65.dp.toPx(), 18.dp.toPx()), hand, 1.8.dp.toPx())
+            drawLine(secondaryAccent.copy(alpha = 0.5f), Offset(cx + 65.dp.toPx(), 18.dp.toPx()), hand, 1.8.dp.toPx())
             drawLine(jointColor, shoulder, hand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 5.dp.toPx(), hand)
+            drawCircle(primaryAccent, 5.dp.toPx(), hand)
         }
 
         MotionPattern.OVERHEAD_PRESS -> {
@@ -516,7 +489,7 @@ private fun DrawScope.drawBiomechanicalExercise(
             val elbow = Offset(cx + 16.dp.toPx() * t, (shoulder.y + handY) / 2f + 6.dp.toPx() * t)
             drawLine(bodyColor, shoulder, elbow, strokeLimb)
             drawLine(jointColor, elbow, hand, strokeLimb)
-            drawCircle(HyperOrange, 7.dp.toPx(), hand)
+            drawCircle(primaryAccent, 7.dp.toPx(), hand)
         }
 
         MotionPattern.LATERAL_RAISE -> {
@@ -526,12 +499,10 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, Offset(cx + 10.dp.toPx(), floorY), hip, strokeLimb)
             drawLine(bodyColor, hip, shoulder, strokeBody)
             drawCircle(jointColor, 7.dp.toPx(), Offset(cx, shoulder.y - 14.dp.toPx()))
-
-            // Glowing lateral delts
             drawCircle(muscleGlow, 8.dp.toPx(), Offset(cx - 12.dp.toPx(), shoulder.y))
             drawCircle(muscleGlow, 8.dp.toPx(), Offset(cx + 12.dp.toPx(), shoulder.y))
 
-            val lift = 1f - t // 1 = shoulder height, 0 = down at sides
+            val lift = 1f - t
             val armLen = 34.dp.toPx()
             val angle = (0.15 + lift * 1.35)
             val dx = (sin(angle) * armLen).toFloat()
@@ -540,8 +511,8 @@ private fun DrawScope.drawBiomechanicalExercise(
             val rHand = Offset(cx + 10.dp.toPx() + dx, shoulder.y + dy)
             drawLine(jointColor, Offset(cx - 10.dp.toPx(), shoulder.y), lHand, strokeLimb, cap = StrokeCap.Round)
             drawLine(jointColor, Offset(cx + 10.dp.toPx(), shoulder.y), rHand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 5.dp.toPx(), lHand)
-            drawCircle(HyperOrange, 5.dp.toPx(), rHand)
+            drawCircle(primaryAccent, 5.dp.toPx(), lHand)
+            drawCircle(primaryAccent, 5.dp.toPx(), rHand)
         }
 
         MotionPattern.BICEP_CURL, MotionPattern.PREACHER_CURL -> {
@@ -552,16 +523,13 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, hip, shoulder, strokeBody)
             drawCircle(jointColor, 7.dp.toPx(), Offset(shoulder.x, shoulder.y - 14.dp.toPx()))
             drawLine(bodyColor, shoulder, elbow, strokeLimb)
-
-            // Glowing Biceps Peak
             drawCircle(muscleGlow, (7f + 4f * contractionGlow).dp.toPx(), Offset(shoulder.x + 5.dp.toPx(), shoulder.y + 12.dp.toPx()))
 
-            // Forearm curl: t=0 curled up, t=1 extended down
             val angle = (-1.1 + 2.3 * (1f - t))
             val forearmLen = 25.dp.toPx()
             val hand = Offset(elbow.x + (cos(angle) * forearmLen).toFloat(), elbow.y - (sin(angle) * forearmLen).toFloat())
             drawLine(jointColor, elbow, hand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 6.dp.toPx(), hand)
+            drawCircle(primaryAccent, 6.dp.toPx(), hand)
         }
 
         MotionPattern.TRICEP_PUSHDOWN, MotionPattern.OVERHEAD_TRICEP, MotionPattern.SKULLCRUSHER -> {
@@ -583,13 +551,12 @@ private fun DrawScope.drawBiomechanicalExercise(
             } else {
                 Offset(elbow.x + 6.dp.toPx() + 14.dp.toPx() * t, elbow.y + forearmLen * (1f - 0.85f * t))
             }
-            drawLine(HyperCyan.copy(alpha = 0.5f), Offset(cx + 42.dp.toPx(), 16.dp.toPx()), hand, 1.5.dp.toPx())
+            drawLine(secondaryAccent.copy(alpha = 0.5f), Offset(cx + 42.dp.toPx(), 16.dp.toPx()), hand, 1.5.dp.toPx())
             drawLine(jointColor, elbow, hand, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 5.5.dp.toPx(), hand)
+            drawCircle(primaryAccent, 5.5.dp.toPx(), hand)
         }
 
         MotionPattern.SQUAT, MotionPattern.LUNGE_SPLIT -> {
-            // t=0 standing tall, t=1 deep squat
             val foot = Offset(cx, floorY)
             val knee = Offset(cx + 16.dp.toPx() * t, floorY - 34.dp.toPx() + 6.dp.toPx() * t)
             val hip = Offset(cx - 26.dp.toPx() * t, floorY - 68.dp.toPx() + 32.dp.toPx() * t)
@@ -599,17 +566,12 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, knee, hip, strokeLimb, cap = StrokeCap.Round)
             drawLine(bodyColor, hip, shoulder, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), Offset(shoulder.x + 2.dp.toPx(), shoulder.y - 13.dp.toPx()))
-
-            // Glowing Quads & Glutes
             drawCircle(muscleGlow, (9f + 4f * contractionGlow).dp.toPx(), Offset((hip.x + knee.x) / 2f + 4.dp.toPx(), (hip.y + knee.y) / 2f))
-
-            // Barbell on traps
-            drawCircle(HyperCyan, 12.dp.toPx(), shoulder)
-            drawCircle(HyperOrange, 6.dp.toPx(), shoulder)
+            drawCircle(secondaryAccent, 12.dp.toPx(), shoulder)
+            drawCircle(primaryAccent, 6.dp.toPx(), shoulder)
         }
 
         MotionPattern.LEG_PRESS -> {
-            // 45-degree leg press sled
             val seat = Offset(cx - 32.dp.toPx(), floorY - 24.dp.toPx())
             val shoulder = Offset(cx - 48.dp.toPx(), floorY - 46.dp.toPx())
             drawLine(machineColor, shoulder, seat, 6.dp.toPx())
@@ -621,9 +583,7 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, seat, knee, strokeLimb, cap = StrokeCap.Round)
             drawLine(jointColor, knee, foot, strokeLimb, cap = StrokeCap.Round)
             drawCircle(muscleGlow, 10.dp.toPx(), Offset((seat.x + knee.x) / 2f, (seat.y + knee.y) / 2f - 4.dp.toPx()))
-
-            // Sled plate
-            drawLine(HyperOrange, Offset(foot.x - 8.dp.toPx(), foot.y - 14.dp.toPx()), Offset(foot.x + 10.dp.toPx(), foot.y + 12.dp.toPx()), 6.dp.toPx(), cap = StrokeCap.Round)
+            drawLine(primaryAccent, Offset(foot.x - 8.dp.toPx(), foot.y - 14.dp.toPx()), Offset(foot.x + 10.dp.toPx(), foot.y + 12.dp.toPx()), 6.dp.toPx(), cap = StrokeCap.Round)
         }
 
         MotionPattern.LEG_EXTENSION, MotionPattern.LEG_CURL -> {
@@ -641,18 +601,17 @@ private fun DrawScope.drawBiomechanicalExercise(
             val shinLen = 32.dp.toPx()
             val ankle = Offset(knee.x + (cos(angle) * shinLen).toFloat(), knee.y - (sin(angle) * shinLen).toFloat())
             drawLine(jointColor, knee, ankle, strokeLimb, cap = StrokeCap.Round)
-            drawCircle(HyperOrange, 6.dp.toPx(), ankle)
+            drawCircle(primaryAccent, 6.dp.toPx(), ankle)
 
             val glowPos = if (isExtension) Offset(cx + 2.dp.toPx(), hip.y - 5.dp.toPx()) else Offset(cx + 2.dp.toPx(), hip.y + 6.dp.toPx())
             drawCircle(muscleGlow, (9f + 3f * contractionGlow).dp.toPx(), glowPos)
         }
 
         MotionPattern.RDL_HINGE, MotionPattern.DEADLIFT -> {
-            // Hip hinge: t=0 upright, t=1 hinged forward
             val foot = Offset(cx, floorY)
             val knee = Offset(cx + 4.dp.toPx(), floorY - 34.dp.toPx())
             val hip = Offset(cx - 18.dp.toPx() * t, floorY - 68.dp.toPx() + 6.dp.toPx() * t)
-            val torsoAngle = 1.45 - 1.25 * t // radians from horizontal
+            val torsoAngle = 1.45 - 1.25 * t
             val torsoLen = 40.dp.toPx()
             val shoulder = Offset(hip.x + (cos(torsoAngle) * torsoLen).toFloat(), hip.y - (sin(torsoAngle) * torsoLen).toFloat())
 
@@ -660,19 +619,15 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, knee, hip, strokeLimb)
             drawLine(bodyColor, hip, shoulder, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), Offset(shoulder.x + 8.dp.toPx(), shoulder.y - 8.dp.toPx()))
-
-            // Glowing Hamstrings & Glutes
             drawCircle(muscleGlow, 9.dp.toPx(), Offset(hip.x - 4.dp.toPx(), hip.y + 14.dp.toPx()))
 
-            // Arms hanging vertically with barbell
             val bar = Offset(shoulder.x, shoulder.y + 34.dp.toPx())
             drawLine(jointColor, shoulder, bar, strokeLimb)
-            drawCircle(HyperCyan, 11.dp.toPx(), bar)
-            drawCircle(HyperOrange, 5.5.dp.toPx(), bar)
+            drawCircle(secondaryAccent, 11.dp.toPx(), bar)
+            drawCircle(primaryAccent, 5.5.dp.toPx(), bar)
         }
 
         MotionPattern.HIP_THRUST -> {
-            // Bench support on left
             val benchTop = Offset(cx - 32.dp.toPx(), floorY - 32.dp.toPx())
             drawLine(machineColor, Offset(cx - 42.dp.toPx(), floorY), benchTop, 6.dp.toPx())
             val foot = Offset(cx + 38.dp.toPx(), floorY)
@@ -683,11 +638,9 @@ private fun DrawScope.drawBiomechanicalExercise(
             drawLine(bodyColor, knee, hip, strokeLimb)
             drawLine(bodyColor, hip, benchTop, strokeBody, cap = StrokeCap.Round)
             drawCircle(jointColor, 7.dp.toPx(), Offset(benchTop.x - 10.dp.toPx(), benchTop.y - 6.dp.toPx()))
-
-            // Glowing Glutes + Barbell on hip
             drawCircle(muscleGlow, (10f + 4f * contractionGlow).dp.toPx(), Offset(hip.x, hip.y + 5.dp.toPx()))
-            drawCircle(HyperCyan, 11.dp.toPx(), Offset(hip.x, hip.y - 5.dp.toPx()))
-            drawCircle(HyperOrange, 5.5.dp.toPx(), Offset(hip.x, hip.y - 5.dp.toPx()))
+            drawCircle(secondaryAccent, 11.dp.toPx(), Offset(hip.x, hip.y - 5.dp.toPx()))
+            drawCircle(primaryAccent, 5.5.dp.toPx(), Offset(hip.x, hip.y - 5.dp.toPx()))
         }
 
         MotionPattern.CALF_RAISE -> {

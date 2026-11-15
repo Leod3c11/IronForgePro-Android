@@ -10,6 +10,9 @@ concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,9 +36,22 @@ jobs:
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: IronForgePro-debug
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+      - name: Rename APK
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          cp app/build/outputs/apk/debug/app-debug.apk "IronForgePro-${VERSION}.apk"
+          echo "APK_FILE=IronForgePro-${VERSION}.apk" >> "$GITHUB_ENV"
+          echo "APK_VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      # Release assets are served as the bare .apk (no .zip wrapper).
+      - name: Publish APK to Release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest "$APK_FILE" \
+            --prerelease \
+            --target "$GITHUB_SHA" \
+            --title "IronForge Pro ${APK_VERSION}" \
+            --notes "Debug APK built from commit ${GITHUB_SHA::7}."

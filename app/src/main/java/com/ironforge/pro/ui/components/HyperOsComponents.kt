@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,9 +36,6 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- * Xiaomi HyperOS 2.0 Continuous Squircle Card with Specular Top Edge
- */
 @Composable
 fun HyperSquircleCard(
     modifier: Modifier = Modifier,
@@ -48,6 +44,7 @@ fun HyperSquircleCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val palette = LocalIronPalette.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -57,9 +54,9 @@ fun HyperSquircleCard(
     )
 
     val borderBrush = if (accentGlow) {
-        Brush.verticalGradient(listOf(HyperOrange, HyperCyan.copy(alpha = 0.55f)))
+        Brush.verticalGradient(listOf(palette.primary, palette.secondary.copy(alpha = 0.55f)))
     } else {
-        Brush.verticalGradient(listOf(HyperSpecularTop, HyperHairline))
+        Brush.verticalGradient(listOf(HyperSpecularTop, palette.hairline))
     }
 
     Surface(
@@ -89,9 +86,6 @@ fun HyperSquircleCard(
     }
 }
 
-/**
- * Xiaomi HyperOS Dynamic Island / Live Activity Pill
- */
 @Composable
 fun HyperDynamicIsland(
     isTimerRunning: Boolean,
@@ -101,6 +95,7 @@ fun HyperDynamicIsland(
     onAdjustTimer: (Int) -> Unit,
     onSkipTimer: () -> Unit
 ) {
+    val palette = LocalIronPalette.current
     val progress = if (totalSeconds > 0) remainingSeconds.toFloat() / totalSeconds.toFloat() else 0f
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
@@ -121,7 +116,7 @@ fun HyperDynamicIsland(
         color = Color(0xFF06080C),
         border = BorderStroke(
             width = 1.2.dp,
-            color = if (showExpandedTimer) HyperOrange else HyperHairline
+            color = if (showExpandedTimer) palette.primary else palette.hairline
         )
     ) {
         if (showExpandedTimer) {
@@ -141,14 +136,14 @@ fun HyperDynamicIsland(
                         Canvas(modifier = Modifier.fillMaxSize()) {
                             val sw = 4.5.dp.toPx()
                             drawArc(
-                                color = HyperTileElevated,
+                                color = palette.tileElevated,
                                 startAngle = -90f,
                                 sweepAngle = 360f,
                                 useCenter = false,
                                 style = Stroke(width = sw, cap = StrokeCap.Round)
                             )
                             drawArc(
-                                color = HyperOrange,
+                                color = palette.primary,
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
@@ -158,7 +153,7 @@ fun HyperDynamicIsland(
                         Text(
                             text = restStr,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                            color = HyperOrangeGlow,
+                            color = palette.primaryGlow,
                             fontSize = 11.sp
                         )
                     }
@@ -167,7 +162,7 @@ fun HyperDynamicIsland(
                         Text(
                             text = "ILHA DINÂMICA • DESCANSO",
                             style = MaterialTheme.typography.labelSmall,
-                            color = HyperCyan,
+                            color = palette.secondary,
                             fontSize = 10.sp
                         )
                         Text(
@@ -179,9 +174,9 @@ fun HyperDynamicIsland(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    IslandChipButton("-15s", TextPrimary) { onAdjustTimer(-15) }
-                    IslandChipButton("+15s", HyperCyan) { onAdjustTimer(15) }
-                    IslandChipButton("OK", HyperOrange, filled = true) { onSkipTimer() }
+                    IslandChipButton("-15s", TextPrimary, palette.onPrimaryAccent) { onAdjustTimer(-15) }
+                    IslandChipButton("+15s", palette.secondary, palette.onPrimaryAccent) { onAdjustTimer(15) }
+                    IslandChipButton("OK", palette.primary, palette.onPrimaryAccent, filled = true) { onSkipTimer() }
                 }
             }
         } else {
@@ -196,7 +191,7 @@ fun HyperDynamicIsland(
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = null,
-                        tint = HyperOrange,
+                        tint = palette.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -208,7 +203,7 @@ fun HyperDynamicIsland(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(60, 90, 120).forEach { sec ->
-                        IslandChipButton("${sec}s", HyperCyan) { onAdjustTimer(sec) }
+                        IslandChipButton("${sec}s", palette.secondary, palette.onPrimaryAccent) { onAdjustTimer(sec) }
                     }
                 }
             }
@@ -220,6 +215,7 @@ fun HyperDynamicIsland(
 private fun IslandChipButton(
     text: String,
     accent: Color,
+    onFilledText: Color,
     filled: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -234,15 +230,12 @@ private fun IslandChipButton(
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-            color = if (filled) TextPrimary else accent,
+            color = if (filled) onFilledText else accent,
             fontSize = 11.sp
         )
     }
 }
 
-/**
- * Xiaomi HyperOS Floating Translucent Pill Dock
- */
 @Composable
 fun HyperFloatingDock(
     items: List<Pair<String, ImageVector>>,
@@ -250,6 +243,7 @@ fun HyperFloatingDock(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalIronPalette.current
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -259,19 +253,18 @@ fun HyperFloatingDock(
         Surface(
             shape = CircleShape,
             color = HyperGlassOverlay,
-            border = BorderStroke(1.dp, Brush.verticalGradient(listOf(HyperSpecularTop, HyperHairline))),
+            border = BorderStroke(1.dp, Brush.verticalGradient(listOf(HyperSpecularTop, palette.hairline))),
             shadowElevation = 12.dp
         ) {
             Row(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 items.forEachIndexed { index, (label, icon) ->
                     val selected = index == selectedIndex
-                    val bgColor = if (selected) HyperOrange else Color.Transparent
-                    val contentColor = if (selected) TextPrimary else TextSecondary
+                    val bgColor = if (selected) palette.primary else Color.Transparent
+                    val contentColor = if (selected) palette.onPrimaryAccent else TextSecondary
 
                     Row(
                         modifier = Modifier
@@ -340,12 +333,12 @@ fun SectionHeader(
 @Composable
 fun HyperPillTag(
     text: String,
-    accent: Color = HyperCyan
+    accent: Color = LocalIronPalette.current.secondary
 ) {
     Box(
         modifier = Modifier
             .clip(CircleShape)
-            .background(accent.copy(alpha = 0.15f))
+            .background(accent.copy(alpha = 0.16f))
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(
@@ -356,11 +349,9 @@ fun HyperPillTag(
     }
 }
 
-/**
- * Olympic Barbell Plate Visualizer (Per Side)
- */
 @Composable
 fun OlympicPlateVisualizer(totalWeightKg: Double) {
+    val palette = LocalIronPalette.current
     val plates = remember(totalWeightKg) {
         IronForgeViewModel.calculatePlatesPerSide(totalWeightKg, 20.0)
     }
@@ -375,14 +366,12 @@ fun OlympicPlateVisualizer(totalWeightKg: Double) {
                 .height(84.dp)
         ) {
             val cy = size.height / 2f
-            // Olympic shaft
             drawRoundRect(
                 color = Color(0xFF9FB0CC),
                 topLeft = Offset(16.dp.toPx(), cy - 4.dp.toPx()),
                 size = Size(size.width - 32.dp.toPx(), 8.dp.toPx()),
                 cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
             )
-            // Center sleeve collar
             val sleeveStart = size.width * 0.28f
             drawRoundRect(
                 color = Color(0xFFD5E0F2),
@@ -395,11 +384,11 @@ fun OlympicPlateVisualizer(totalWeightKg: Double) {
             plates.forEach { plateKg ->
                 val (pColor, pHeightDp) = when (plateKg) {
                     25.0 -> HyperCrimson to 68f
-                    20.0 -> HyperCyan to 64f
+                    20.0 -> palette.secondary to 64f
                     15.0 -> HyperAmber to 56f
                     10.0 -> HyperEmerald to 48f
                     5.0 -> TextPrimary to 38f
-                    2.5 -> HyperOrange to 30f
+                    2.5 -> palette.primary to 30f
                     else -> HyperViolet to 24f
                 }
                 val pWidth = 11.dp.toPx()
@@ -424,7 +413,7 @@ fun OlympicPlateVisualizer(totalWeightKg: Double) {
         Text(
             text = summaryText,
             style = MaterialTheme.typography.labelLarge,
-            color = HyperOrangeGlow
+            color = palette.primaryGlow
         )
     }
 }
@@ -434,6 +423,7 @@ fun VolumeBarChart(
     sessions: List<WorkoutSessionRecord>,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalIronPalette.current
     val recent = sessions.take(6).reversed()
     if (recent.isEmpty()) return
     val maxVol = (recent.maxOfOrNull { it.totalVolumeKg } ?: 10000.0).coerceAtLeast(1000.0)
@@ -453,7 +443,7 @@ fun VolumeBarChart(
             for (i in 1..3) {
                 val y = size.height * (i / 4f)
                 drawLine(
-                    color = HyperHairline.copy(alpha = 0.55f),
+                    color = palette.hairline.copy(alpha = 0.55f),
                     start = Offset(0f, y),
                     end = Offset(size.width, y),
                     strokeWidth = 1.dp.toPx()
@@ -468,7 +458,7 @@ fun VolumeBarChart(
 
                 drawRoundRect(
                     brush = Brush.verticalGradient(
-                        colors = listOf(HyperOrange, HyperCyan.copy(alpha = 0.8f)),
+                        colors = listOf(palette.primary, palette.secondary.copy(alpha = 0.8f)),
                         startY = top,
                         endY = size.height
                     ),
@@ -490,7 +480,7 @@ fun VolumeBarChart(
                     Text(
                         text = "${(session.totalVolumeKg / 1000.0 * 10).toInt() / 10.0}t",
                         style = MaterialTheme.typography.labelSmall,
-                        color = HyperOrangeGlow
+                        color = palette.primaryGlow
                     )
                     Text(
                         text = session.dateFormatted,
@@ -508,6 +498,7 @@ fun MuscleBalanceRadarChart(
     muscleSets: Map<String, Int>,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalIronPalette.current
     val axes = listOf("Peitoral", "Costas", "Ombros", "Braços", "Quadríceps", "Posterior")
     val values = listOf(
         (muscleSets["Peitoral"] ?: 10).toFloat(),
@@ -546,7 +537,7 @@ fun MuscleBalanceRadarChart(
                     path.close()
                     drawPath(
                         path = path,
-                        color = HyperHairline.copy(alpha = 0.7f),
+                        color = palette.hairline.copy(alpha = 0.7f),
                         style = Stroke(width = 1.dp.toPx())
                     )
                 }
@@ -556,7 +547,7 @@ fun MuscleBalanceRadarChart(
                     val x = center.x + (radius * cos(angle)).toFloat()
                     val y = center.y + (radius * sin(angle)).toFloat()
                     drawLine(
-                        color = HyperHairline.copy(alpha = 0.6f),
+                        color = palette.hairline.copy(alpha = 0.6f),
                         start = center,
                         end = Offset(x, y),
                         strokeWidth = 1.dp.toPx()
@@ -576,11 +567,11 @@ fun MuscleBalanceRadarChart(
 
                 drawPath(
                     path = dataPath,
-                    color = HyperOrange.copy(alpha = 0.24f)
+                    color = palette.primary.copy(alpha = 0.24f)
                 )
                 drawPath(
                     path = dataPath,
-                    color = HyperOrange,
+                    color = palette.primary,
                     style = Stroke(width = 2.2.dp.toPx())
                 )
 
@@ -591,7 +582,7 @@ fun MuscleBalanceRadarChart(
                     val x = center.x + (r * cos(angle)).toFloat()
                     val y = center.y + (r * sin(angle)).toFloat()
                     drawCircle(
-                        color = HyperCyan,
+                        color = palette.secondary,
                         radius = 4.dp.toPx(),
                         center = Offset(x, y)
                     )
@@ -604,7 +595,7 @@ fun MuscleBalanceRadarChart(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             axes.take(3).forEachIndexed { idx, label ->
-                HyperPillTag("$label: ${values[idx].toInt()}s", HyperOrangeGlow)
+                HyperPillTag("$label: ${values[idx].toInt()}s", palette.primaryGlow)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -613,7 +604,7 @@ fun MuscleBalanceRadarChart(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             axes.drop(3).forEachIndexed { idx, label ->
-                HyperPillTag("$label: ${values[idx + 3].toInt()}s", HyperCyan)
+                HyperPillTag("$label: ${values[idx + 3].toInt()}s", palette.secondary)
             }
         }
     }

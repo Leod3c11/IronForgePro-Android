@@ -34,8 +34,11 @@ fun WorkoutsScreen(
     onSaveCustomWorkout: (String, String, List<String>) -> Unit,
     onDeleteCustomWorkout: (String) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     val allSplits = ExerciseRepository.defaultSplits
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var selectedTabIndex by remember {
+        mutableIntStateOf(if (state.customWorkouts.isNotEmpty()) allSplits.size else 0)
+    }
     var showBuilderDialog by remember { mutableStateOf(false) }
     var previewExercise by remember { mutableStateOf<Exercise?>(null) }
 
@@ -53,13 +56,13 @@ fun WorkoutsScreen(
                 trailing = {
                     Button(
                         onClick = { showBuilderDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                         shape = CircleShape,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Add, contentDescription = null, tint = palette.onPrimaryAccent, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Criar Ficha", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                        Text("Criar Ficha", color = palette.onPrimaryAccent, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
                     }
                 }
             )
@@ -80,8 +83,8 @@ fun WorkoutsScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = HyperOrange,
-                            selectedLabelColor = TextPrimary,
+                            selectedContainerColor = palette.primary,
+                            selectedLabelColor = palette.onPrimaryAccent,
                             containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
@@ -99,7 +102,7 @@ fun WorkoutsScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = HyperCyan,
+                            selectedContainerColor = palette.secondary,
                             selectedLabelColor = HyperBgDark,
                             containerColor = HyperCardDark,
                             labelColor = TextSecondary
@@ -119,8 +122,8 @@ fun WorkoutsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        HyperPillTag("${activeSplit.frequencyPerWeek}x / SEMANA", HyperOrangeGlow)
-                        HyperPillTag(activeSplit.level, HyperCyan)
+                        HyperPillTag("${activeSplit.frequencyPerWeek}x / SEMANA", palette.primaryGlow)
+                        HyperPillTag(activeSplit.level, palette.secondary)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
@@ -207,7 +210,7 @@ fun WorkoutsScreen(
             shape = RoundedCornerShape(26.dp),
             title = {
                 Column {
-                    HyperPillTag(ex.muscleGroup.displayName, HyperOrangeGlow)
+                    HyperPillTag(ex.muscleGroup.displayName, palette.primaryGlow)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(ex.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
@@ -229,10 +232,10 @@ fun WorkoutsScreen(
             confirmButton = {
                 Button(
                     onClick = { previewExercise = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                     shape = CircleShape
                 ) {
-                    Text("Fechar", color = TextPrimary, fontWeight = FontWeight.Bold)
+                    Text("Fechar", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -246,6 +249,7 @@ private fun WorkoutDayCard(
     onDelete: (() -> Unit)? = null,
     onPreviewExercise: (Exercise) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     HyperSquircleCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -253,8 +257,8 @@ private fun WorkoutDayCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HyperPillTag(day.dayLabel, HyperOrangeGlow)
-                HyperPillTag("~${day.estimatedMinutes} min", HyperCyan)
+                HyperPillTag(day.dayLabel, palette.primaryGlow)
+                HyperPillTag("~${day.estimatedMinutes} min", palette.secondary)
             }
             if (onDelete != null) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
@@ -276,7 +280,7 @@ private fun WorkoutDayCard(
         )
 
         Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(color = HyperHairline.copy(alpha = 0.6f))
+        HorizontalDivider(color = palette.hairline.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.height(10.dp))
 
         day.exercises.forEachIndexed { idx, planned ->
@@ -297,7 +301,7 @@ private fun WorkoutDayCard(
                         Icon(
                             imageVector = Icons.Default.PlayCircleFilled,
                             contentDescription = "Ver Mini Vídeo",
-                            tint = HyperCyan,
+                            tint = palette.secondary,
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -317,7 +321,7 @@ private fun WorkoutDayCard(
                     Text(
                         text = "${planned.targetSets} × ${planned.targetReps}",
                         style = MaterialTheme.typography.labelLarge,
-                        color = HyperOrangeGlow
+                        color = palette.primaryGlow
                     )
                 }
             }
@@ -329,14 +333,14 @@ private fun WorkoutDayCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+            colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
             shape = CircleShape
         ) {
-            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = TextPrimary)
+            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = palette.onPrimaryAccent)
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "INICIAR TREINO AGORA",
-                color = TextPrimary,
+                color = palette.onPrimaryAccent,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 0.5.sp
             )
@@ -349,6 +353,7 @@ private fun CustomWorkoutBuilderDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, List<String>) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     var title by remember { mutableStateOf("") }
     var focus by remember { mutableStateOf("") }
     var search by remember { mutableStateOf("") }
@@ -417,7 +422,7 @@ private fun CustomWorkoutBuilderDialog(
                                 onCheckedChange = {
                                     if (it) selectedIds.add(ex.id) else selectedIds.remove(ex.id)
                                 },
-                                colors = CheckboxDefaults.colors(checkedColor = HyperOrange, checkmarkColor = TextPrimary)
+                                colors = CheckboxDefaults.colors(checkedColor = palette.primary, checkmarkColor = palette.onPrimaryAccent)
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(ex.name, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
@@ -432,10 +437,10 @@ private fun CustomWorkoutBuilderDialog(
             Button(
                 onClick = { onSave(title, focus, selectedIds.toList()) },
                 enabled = title.isNotBlank() && selectedIds.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                 shape = CircleShape
             ) {
-                Text("Salvar Ficha", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text("Salvar Ficha", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

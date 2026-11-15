@@ -1,6 +1,8 @@
 package com.ironforge.pro.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,9 +36,13 @@ fun DashboardScreen(
     onStartWorkoutDay: (WorkoutDay) -> Unit,
     onStartEmptyWorkout: () -> Unit,
     onDismissSummary: () -> Unit,
+    onSelectTheme: (AppThemePreset) -> Unit,
+    onReopenOnboarding: () -> Unit,
     onAddMeasurement: (Double, Double, Double, Double, Double, Double, Double) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     var showMeasureDialog by remember { mutableStateOf(false) }
+    var showThemeStudioDialog by remember { mutableStateOf(false) }
 
     val totalTonnage = state.sessionHistory.sumOf { it.totalVolumeKg }
     val totalPrs = state.sessionHistory.sumOf { it.prCount }
@@ -50,7 +57,6 @@ fun DashboardScreen(
         map
     }
 
-    // Dynamic Muscle Recovery Readiness (%) based on recent sessions
     val muscleReadinessList = remember(state.sessionHistory) {
         val now = System.currentTimeMillis()
         MuscleGroup.entries.map { muscle ->
@@ -77,63 +83,79 @@ fun DashboardScreen(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // HyperOS Top App Bar
+        // Personalized HyperOS Top App Bar + Android 17 Theme Studio Button
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "IRONFORGE",
+                            text = "Olá, ${state.userProfile.name}",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = TextPrimary
+                            color = TextPrimary,
+                            maxLines = 1
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .background(
-                                    Brush.horizontalGradient(listOf(HyperOrange, HyperOrangeGlow))
+                                    Brush.horizontalGradient(listOf(palette.primary, palette.secondary))
                                 )
-                                .padding(horizontal = 9.dp, vertical = 3.dp)
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "HyperOS",
+                                text = "PRO",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                color = TextPrimary,
+                                color = palette.onPrimaryAccent,
                                 fontSize = 10.sp
                             )
                         }
                     }
                     Text(
-                        text = "Central de Performance & Biomecânica",
+                        text = "${state.userProfile.goal.label} • ${state.userProfile.weightKg} kg",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
                     )
                 }
 
-                Button(
-                    onClick = onStartEmptyWorkout,
-                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
-                    shape = CircleShape,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = null,
-                        tint = TextPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Treino Livre",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 13.sp
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Android 17 Theme Studio Button
+                    FilledIconButton(
+                        onClick = { showThemeStudioDialog = true },
+                        modifier = Modifier.size(42.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = HyperTileElevated)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = "Temas Android 17",
+                            tint = palette.primary
+                        )
+                    }
+
+                    Button(
+                        onClick = onStartEmptyWorkout,
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = palette.onPrimaryAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Treinar",
+                            color = palette.onPrimaryAccent,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }
@@ -178,15 +200,15 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", HyperOrangeGlow)
-                        HyperPillTag("Séries: ${summary.totalWorkingSets}", HyperCyan)
+                        HyperPillTag("Volume: ${summary.totalVolumeKg.roundToInt()} kg", palette.primaryGlow)
+                        HyperPillTag("Séries: ${summary.totalWorkingSets}", palette.secondary)
                         HyperPillTag("PRs: ${summary.prCount}", HyperEmerald)
                     }
                 }
             }
         }
 
-        // HyperOS Control Center 2x2 Bento Grid
+        // 2x2 Bento Grid
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -203,7 +225,7 @@ fun DashboardScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text("TONELAGEM TOTAL", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = HyperOrange, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -214,7 +236,7 @@ fun DashboardScreen(
                         Text(
                             text = "${totalTonnage.roundToInt()} kg acumulados",
                             style = MaterialTheme.typography.labelSmall,
-                            color = HyperOrangeGlow
+                            color = palette.primaryGlow
                         )
                     }
 
@@ -251,13 +273,13 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("TREINOS", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = HyperCyan, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = palette.secondary, modifier = Modifier.size(15.dp))
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "${state.sessionHistory.size} sessões",
                             style = MaterialTheme.typography.titleLarge,
-                            color = HyperCyan
+                            color = palette.secondary
                         )
                     }
 
@@ -267,20 +289,20 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("RECORDES (PR)", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = HyperVolt, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = palette.tertiary, modifier = Modifier.size(15.dp))
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "$totalPrs marcas",
                             style = MaterialTheme.typography.titleLarge,
-                            color = HyperVolt
+                            color = palette.tertiary
                         )
                     }
                 }
             }
         }
 
-        // Muscle Recovery Readiness Strip (HyperOS Health Widget)
+        // Muscle Recovery Readiness Strip
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -292,7 +314,7 @@ fun DashboardScreen(
                     items(muscleReadinessList) { (muscle, pct) ->
                         val color = when {
                             pct >= 90 -> HyperEmerald
-                            pct >= 65 -> HyperCyan
+                            pct >= 65 -> palette.secondary
                             else -> HyperAmber
                         }
                         Column(
@@ -319,10 +341,13 @@ fun DashboardScreen(
             }
         }
 
-        // Featured Next Workout with Live Mini-Video Preview
+        // Next Recommended Session (Prioritizes User's Custom Workout if created during Onboarding!)
         item {
-            val nextWorkout = ExerciseRepository.defaultSplits.first().days.first()
+            val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == state.userProfile.selectedSplitId }
+                ?: ExerciseRepository.defaultSplits.first()
+            val nextWorkout = state.customWorkouts.firstOrNull() ?: chosenSplit.days.first()
             val leadExercise = ExerciseRepository.getExerciseById(nextWorkout.exercises.first().exerciseId)
+
             HyperSquircleCard(accentGlow = true) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -330,7 +355,7 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        HyperPillTag("TREINO RECOMENDADO • ${nextWorkout.estimatedMinutes} MIN", HyperOrangeGlow)
+                        HyperPillTag("SUA ROTINA • ${nextWorkout.estimatedMinutes} MIN", palette.primaryGlow)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = nextWorkout.title,
@@ -347,12 +372,12 @@ fun DashboardScreen(
                     FilledIconButton(
                         onClick = { onStartWorkoutDay(nextWorkout) },
                         modifier = Modifier.size(52.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = HyperOrange)
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Iniciar",
-                            tint = TextPrimary,
+                            tint = palette.onPrimaryAccent,
                             modifier = Modifier.size(30.dp)
                         )
                     }
@@ -418,7 +443,7 @@ fun DashboardScreen(
                             Text(
                                 text = "#${idx + 1}",
                                 style = MaterialTheme.typography.labelLarge,
-                                color = HyperOrange
+                                color = palette.primary
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
@@ -430,7 +455,7 @@ fun DashboardScreen(
                         HyperPillTag("${entry.value.roundToInt()} kg", HyperEmerald)
                     }
                     if (idx < topPrs.lastIndex) {
-                        HorizontalDivider(color = HyperHairline.copy(alpha = 0.5f))
+                        HorizontalDivider(color = palette.hairline.copy(alpha = 0.5f))
                     }
                 }
             }
@@ -445,9 +470,9 @@ fun DashboardScreen(
                     subtitle = if (latest != null) "Última aferição em ${latest.dateFormatted}" else "Acompanhe sua evolução física",
                     trailing = {
                         TextButton(onClick = { showMeasureDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = HyperOrange, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Registrar", color = HyperOrange, fontWeight = FontWeight.Bold)
+                            Text("Registrar", color = palette.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 )
@@ -504,7 +529,7 @@ fun DashboardScreen(
                             color = TextSecondary
                         )
                     }
-                    HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", HyperCyan)
+                    HyperPillTag("${session.totalVolumeKg.roundToInt()} kg", palette.secondary)
                 }
                 if (session.highlightExercises.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -516,6 +541,82 @@ fun DashboardScreen(
                 }
             }
         }
+    }
+
+    // Android 17 Theme Studio & Profile Modal
+    if (showThemeStudioDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeStudioDialog = false },
+            containerColor = HyperCardDark,
+            shape = RoundedCornerShape(28.dp),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Palette, contentDescription = null, tint = palette.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Temas Android 17 & Perfil", color = TextPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(AppThemePreset.entries) { preset ->
+                        val selected = state.themePreset == preset
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelectTheme(preset) },
+                            shape = RoundedCornerShape(18.dp),
+                            color = if (selected) HyperTileElevated else HyperBgDark,
+                            border = BorderStroke(if (selected) 1.6.dp else 1.dp, if (selected) palette.primary else HyperHairline)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(preset.title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text(preset.subtitle, color = TextSecondary, fontSize = 11.sp)
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(preset.primaryHex)))
+                                    Box(modifier = Modifier.size(16.dp).clip(CircleShape).background(Color(preset.secondaryHex)))
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        OutlinedButton(
+                            onClick = {
+                                showThemeStudioDialog = false
+                                onReopenOnboarding()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.PersonOutline, contentDescription = null, tint = palette.secondary)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Refazer Cadastro & Treino Inicial", color = palette.secondary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showThemeStudioDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                    shape = CircleShape
+                ) {
+                    Text("Aplicar", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 
     if (showMeasureDialog) {
@@ -551,6 +652,7 @@ private fun BodyMeasurementDialog(
     onDismiss: () -> Unit,
     onSave: (Double, Double, Double, Double, Double, Double, Double) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     var weight by remember { mutableStateOf((initial?.weightKg ?: 80.0).toString()) }
     var bf by remember { mutableStateOf((initial?.bodyFatPct ?: 13.5).toString()) }
     var chest by remember { mutableStateOf((initial?.chestCm ?: 105.0).toString()) }
@@ -594,10 +696,10 @@ private fun BodyMeasurementDialog(
                         calf.toDoubleOrNull() ?: 39.0
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                 shape = CircleShape
             ) {
-                Text("Salvar Medidas", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text("Salvar Medidas", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

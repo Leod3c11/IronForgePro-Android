@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.ironforge.pro.data.ExerciseRepository
 import com.ironforge.pro.data.LocalStorageManager
 import com.ironforge.pro.model.*
+import com.ironforge.pro.ui.theme.AppThemePreset
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,10 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 data class IronForgeUiState(
+    val isOnboardingCompleted: Boolean = false,
+    val userProfile: UserProfile = UserProfile(),
+    val themePreset: AppThemePreset = AppThemePreset.HYPER_ORANGE,
+
     val sessionHistory: List<WorkoutSessionRecord> = emptyList(),
     val exercisePrs: Map<String, Double> = emptyMap(),
     val customWorkouts: List<WorkoutDay> = emptyList(),
@@ -79,29 +84,113 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     private val storage = LocalStorageManager(application.applicationContext)
 
     private val _uiState = MutableStateFlow(
-        IronForgeUiState(
-            sessionHistory = storage.loadSessionHistory(),
-            exercisePrs = storage.loadExercisePrs(),
-            customWorkouts = storage.loadCustomWorkouts(),
-            customVideoUris = storage.loadCustomVideoUris(),
-            bodyMeasurements = storage.loadBodyMeasurements()
-        )
+        run {
+            val savedProfile = storage.loadUserProfile()
+            IronForgeUiState(
+                isOnboardingCompleted = storage.isOnboardingCompleted(),
+                userProfile = savedProfile,
+                themePreset = storage.loadThemePreset(),
+                sessionHistory = storage.loadSessionHistory(),
+                exercisePrs = storage.loadExercisePrs(),
+                customWorkouts = storage.loadCustomWorkouts(),
+                customVideoUris = storage.loadCustomVideoUris(),
+                bodyMeasurements = storage.loadBodyMeasurements(),
+                userWeightKg = savedProfile.weightKg.toInt().toString(),
+                userHeightCm = savedProfile.heightCm.toInt().toString(),
+                userAge = savedProfile.age.toString(),
+                isMale = savedProfile.isMale
+            )
+        }
     )
     val uiState: StateFlow<IronForgeUiState> = _uiState.asStateFlow()
 
     private var timerJob: Job? = null
     private var workoutClockJob: Job? = null
 
+    fun setThemePreset(preset: AppThemePreset) {
+        storage.saveThemePreset(preset)
+        _uiState.update { it.copy(themePreset = preset) }
+    }
+
+    fun reopenOnboarding() {
+        _uiState.update { it.copy(isOnboardingCompleted = false) }
+    }
+
+    fun completeOnboarding(
+        profile: UserProfile,
+        chosenTheme: AppThemePreset,
+        customWorkoutTitle: String?,
+        customWorkoutExerciseIds: List<String>
+    ) {
+        storage.saveUserProfile(profile)
+        storage.saveThemePreset(chosenTheme)
+        storage.setOnboardingCompleted(true)
+
+        val dateFmt = SimpleDateFormat("dd/MM", Locale("pt", "BR")).format(Date())
+        val initialMeasure = BodyMeasurementRecord(
+            id = "onboard_${UUID.randomUUID()}",
+            dateFormatted = dateFmt,
+            weightKg = profile.weightKg,
+            bodyFatPct = profile.bodyFatPct,
+            chestCm = 104.0,
+            armCm = 39.5,
+            waistCm = 80.0,
+            thighCm = 60.0,
+            calfCm = 39.0
+        )
+        val updatedMeasures = _uiState.value.bodyMeasurements + initialMeasure
+        storage.saveBodyMeasurements(updatedMeasures)
+
+        var updatedCustomWorkouts = _uiState.value.customWorkouts
+        if (!customWorkoutTitle.isNullOrBlank() && customWorkoutExerciseIds.isNotEmpty()) {
+            val planned = customWorkoutExerciseIds.map { id ->
+                val ex = ExerciseRepository.getExerciseById(id)
+                PlannedExercise(
+                    exerciseId = id,
+                    targetSets = 3,
+                    targetReps = ex?.recommendedReps ?: "8–12",
+                    targetRir = 1,
+                    restSeconds = ex?.restSeconds ?: 90
+                )
+            }
+            val newDay = WorkoutDay(
+                id = "custom_${UUID.randomUUID()}",
+                dayLabel = "MEU TREINO",
+                title = customWorkoutTitle.trim(),
+                focusSummary = "Criado na configuração inicial • ${profile.goal.label}",
+                estimatedMinutes = planned.size * 11,
+                exercises = planned
+            )
+            updatedCustomWorkouts = listOf(newDay) + updatedCustomWorkouts
+            storage.saveCustomWorkouts(updatedCustomWorkouts)
+        }
+
+        val goalIdx = when (profile.goal) {
+            FitnessGoal.LEAN_BULK -> 0
+            FitnessGoal.RECOMP -> 1
+            FitnessGoal.CUTTING_MODERATE -> 2
+            FitnessGoal.STRENGTH -> 0
+        }
+
+        _uiState.update {
+            it.copy(
+                isOnboardingCompleted = true,
+                userProfile = profile,
+                themePreset = chosenTheme,
+                customWorkouts = updatedCustomWorkouts,
+                bodyMeasurements = updatedMeasures,
+                userWeightKg = profile.weightKg.toInt().toString(),
+                userHeightCm = profile.heightCm.toInt().toString(),
+                userAge = profile.age.toString(),
+                isMale = profile.isMale,
+                nutritionGoalIndex = goalIdx
+            )
+        }
+    }
+
     fun attachCustomVideoUri(exerciseId: String, uriString: String) {
         val updated = _uiState.value.customVideoUris.toMutableMap()
         updated[exerciseId] = uriString
-        storage.saveCustomVideoUris(updated)
-        _uiState.update { it.copy(customVideoUris = updated) }
-    }
-
-    fun removeCustomVideoUri(exerciseId: String) {
-        val updated = _uiState.value.customVideoUris.toMutableMap()
-        updated.remove(exerciseId)
         storage.saveCustomVideoUris(updated)
         _uiState.update { it.copy(customVideoUris = updated) }
     }
@@ -151,7 +240,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         startWorkoutClock()
     }
 
-    fun startEmptyWorkout(title: String = "Treino Livre HyperOS") {
+    fun startEmptyWorkout(title: String = "Treino Livre Personalizado") {
         val defaultEx = ExerciseRepository.allExercises.take(3).map { ex ->
             ActiveExerciseSession(
                 exercise = ex,

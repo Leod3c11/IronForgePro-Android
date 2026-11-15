@@ -38,6 +38,7 @@ fun ActiveWorkoutScreen(
     state: IronForgeUiState,
     viewModel: IronForgeViewModel
 ) {
+    val palette = LocalIronPalette.current
     var showAddExerciseDialog by remember { mutableStateOf(false) }
     var swapTargetIndex by remember { mutableStateOf<Int?>(null) }
     var plateInspectWeight by remember { mutableStateOf<Double?>(null) }
@@ -57,7 +58,6 @@ fun ActiveWorkoutScreen(
             .fillMaxSize()
             .background(HyperBgDark)
     ) {
-        // HyperOS Top Control Header + Dynamic Island
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -85,7 +85,7 @@ fun ActiveWorkoutScreen(
                     Text(
                         text = "Volume: ${liveVolume.roundToInt()} kg  •  Séries concluídas: $completedSetsCount",
                         style = MaterialTheme.typography.labelSmall,
-                        color = HyperOrangeGlow
+                        color = palette.primaryGlow
                     )
                 }
                 Button(
@@ -98,7 +98,6 @@ fun ActiveWorkoutScreen(
                 }
             }
 
-            // Xiaomi HyperOS Dynamic Island Live Activity Pill
             HyperDynamicIsland(
                 isTimerRunning = state.isRestTimerRunning,
                 remainingSeconds = state.restRemainingSeconds,
@@ -140,12 +139,11 @@ fun ActiveWorkoutScreen(
                             Text(
                                 text = "${sessionEx.exercise.muscleGroup.displayName} • Alvo: ${sessionEx.targetReps} • ${sessionEx.restSeconds}s",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = HyperCyan
+                                color = palette.secondary
                             )
                         }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            // Toggle Inline Mini Video Demonstration
                             IconButton(
                                 onClick = { viewModel.toggleInlineVideoInWorkout(sessionEx.exercise.id) },
                                 modifier = Modifier.size(34.dp)
@@ -153,11 +151,10 @@ fun ActiveWorkoutScreen(
                                 Icon(
                                     imageVector = if (isVideoExpanded) Icons.Default.VideocamOff else Icons.Default.OndemandVideo,
                                     contentDescription = "Mini Vídeo Execução",
-                                    tint = if (isVideoExpanded) HyperOrange else HyperCyan,
+                                    tint = if (isVideoExpanded) palette.primary else palette.secondary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
-                            // Swap Exercise
                             IconButton(
                                 onClick = { swapTargetIndex = exIndex },
                                 modifier = Modifier.size(34.dp)
@@ -172,7 +169,6 @@ fun ActiveWorkoutScreen(
                         }
                     }
 
-                    // Expandable Live Biomechanical Mini-Video Player
                     if (isVideoExpanded) {
                         Spacer(modifier = Modifier.height(10.dp))
                         ExerciseMiniVideoPlayer(
@@ -185,7 +181,6 @@ fun ActiveWorkoutScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Table Header
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -202,8 +197,8 @@ fun ActiveWorkoutScreen(
                     sessionEx.sets.forEachIndexed { setIndex, setLog ->
                         val typeColor = when (setLog.setType) {
                             SetType.WARMUP -> TextMuted
-                            SetType.FEEDER -> HyperCyan
-                            SetType.WORKING -> HyperOrange
+                            SetType.FEEDER -> palette.secondary
+                            SetType.WORKING -> palette.primary
                             SetType.TOP_SET -> HyperAmber
                             SetType.DROP_SET -> HyperViolet
                         }
@@ -240,7 +235,6 @@ fun ActiveWorkoutScreen(
                                 )
                             }
 
-                            // Weight Stepper (Tap number to open Plate Calculator!)
                             Row(
                                 modifier = Modifier.weight(1f),
                                 horizontalArrangement = Arrangement.Center,
@@ -262,7 +256,6 @@ fun ActiveWorkoutScreen(
                                 }
                             }
 
-                            // Reps Stepper
                             Row(
                                 modifier = Modifier.weight(0.85f),
                                 horizontalArrangement = Arrangement.Center,
@@ -323,8 +316,8 @@ fun ActiveWorkoutScreen(
                             onClick = { viewModel.addSetToExercise(exIndex) },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = HyperOrange, modifier = Modifier.size(16.dp))
-                            Text("Adicionar Série", color = HyperOrange, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+                            Text("Adicionar Série", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -338,9 +331,9 @@ fun ActiveWorkoutScreen(
                         .height(48.dp),
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = HyperCyan)
+                    Icon(Icons.Default.Add, contentDescription = null, tint = palette.secondary)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Adicionar Exercício à Sessão", color = HyperCyan, fontWeight = FontWeight.Bold)
+                    Text("Adicionar Exercício à Sessão", color = palette.secondary, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -350,14 +343,14 @@ fun ActiveWorkoutScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = TextPrimary)
+                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = palette.onPrimaryAccent)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "CONCLUIR E SALVAR TREINO",
-                        color = TextPrimary,
+                        color = palette.onPrimaryAccent,
                         fontWeight = FontWeight.Black,
                         fontSize = 14.sp
                     )
@@ -408,10 +401,10 @@ fun ActiveWorkoutScreen(
             confirmButton = {
                 Button(
                     onClick = { plateInspectWeight = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                     shape = CircleShape
                 ) {
-                    Text("Fechar", color = TextPrimary, fontWeight = FontWeight.Bold)
+                    Text("Fechar", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -438,7 +431,7 @@ fun ActiveWorkoutScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showCancelConfirm = false }) {
-                    Text("Continuar Treinando", color = HyperOrange)
+                    Text("Continuar Treinando", color = palette.primary)
                 }
             }
         )
@@ -447,6 +440,7 @@ fun ActiveWorkoutScreen(
 
 @Composable
 private fun SmallStepButton(label: String, onClick: () -> Unit) {
+    val palette = LocalIronPalette.current
     Box(
         modifier = Modifier
             .size(24.dp)
@@ -457,7 +451,7 @@ private fun SmallStepButton(label: String, onClick: () -> Unit) {
     ) {
         Text(
             text = label,
-            color = HyperOrangeGlow,
+            color = palette.primaryGlow,
             fontWeight = FontWeight.Black,
             fontSize = 14.sp
         )
@@ -470,6 +464,7 @@ private fun ExercisePickerModal(
     onDismiss: () -> Unit,
     onSelect: (Exercise) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     var query by remember { mutableStateOf("") }
     val list = remember(query) {
         ExerciseRepository.allExercises.filter {
@@ -505,11 +500,11 @@ private fun ExercisePickerModal(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(ex.name, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                Text(ex.muscleGroup.displayName, color = HyperCyan, fontSize = 11.sp)
+                                Text(ex.muscleGroup.displayName, color = palette.secondary, fontSize = 11.sp)
                             }
-                            Icon(Icons.Default.AddCircle, contentDescription = null, tint = HyperOrange)
+                            Icon(Icons.Default.AddCircle, contentDescription = null, tint = palette.primary)
                         }
-                        HorizontalDivider(color = HyperHairline.copy(alpha = 0.4f))
+                        HorizontalDivider(color = palette.hairline.copy(alpha = 0.4f))
                     }
                 }
             }

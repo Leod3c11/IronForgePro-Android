@@ -10,8 +10,8 @@ val IronTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Black,
-        fontSize = 36.sp,
-        lineHeight = 42.sp,
+        fontSize = 35.sp,
+        lineHeight = 41.sp,
         letterSpacing = (-0.8).sp
     ),
     headlineMedium = TextStyle(

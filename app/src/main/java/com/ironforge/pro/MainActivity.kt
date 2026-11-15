@@ -38,9 +38,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(HyperBgDark.toArgb())
         )
         setContent {
-            IronForgeTheme {
-                IronForgeAppRoot()
-            }
+            IronForgeAppRoot()
         }
     }
 }
@@ -54,68 +52,80 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
         MainNavTab.entries.map { it.label to it.icon }
     }
 
-    if (state.isWorkoutActive) {
-        Scaffold(
-            containerColor = HyperBgDark
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                ActiveWorkoutScreen(state = state, viewModel = viewModel)
+    IronForgeTheme(preset = state.themePreset) {
+        if (!state.isOnboardingCompleted) {
+            OnboardingScreen(
+                initialProfile = state.userProfile,
+                currentTheme = state.themePreset,
+                onPreviewTheme = { viewModel.setThemePreset(it) },
+                onComplete = { profile, theme, customTitle, customIds ->
+                    viewModel.completeOnboarding(profile, theme, customTitle, customIds)
+                }
+            )
+        } else if (state.isWorkoutActive) {
+            Scaffold(
+                containerColor = HyperBgDark
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    ActiveWorkoutScreen(state = state, viewModel = viewModel)
+                }
             }
-        }
-    } else {
-        Scaffold(
-            containerColor = HyperBgDark
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerPadding.calculateTopPadding())
-            ) {
-                when (MainNavTab.entries[currentTabIndex]) {
-                    MainNavTab.DASHBOARD -> DashboardScreen(
-                        state = state,
-                        onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
-                        onStartEmptyWorkout = { viewModel.startEmptyWorkout() },
-                        onDismissSummary = { viewModel.dismissSummaryBanner() },
-                        onAddMeasurement = { w, bf, ch, arm, waist, thigh, calf ->
-                            viewModel.addBodyMeasurement(w, bf, ch, arm, waist, thigh, calf)
-                        }
-                    )
-                    MainNavTab.WORKOUTS -> WorkoutsScreen(
-                        state = state,
-                        onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
-                        onSaveCustomWorkout = { title, focus, ids ->
-                            viewModel.saveCustomWorkoutDay(title, focus, ids)
-                        },
-                        onDeleteCustomWorkout = { viewModel.deleteCustomWorkout(it) }
-                    )
-                    MainNavTab.ENCYCLOPEDIA -> EncyclopediaScreen(
-                        state = state,
-                        onSearchChange = { viewModel.updateSearchQuery(it) },
-                        onSelectMuscle = { viewModel.selectMuscleFilter(it) },
-                        onSelectEquipment = { viewModel.selectEquipmentFilter(it) },
-                        onInspectExercise = { viewModel.inspectExercise(it) },
-                        onAttachVideoUri = { exId, uri -> viewModel.attachCustomVideoUri(exId, uri) }
-                    )
-                    MainNavTab.SCIENCE -> ScienceLabScreen(
-                        state = state,
-                        viewModel = viewModel
+        } else {
+            Scaffold(
+                containerColor = HyperBgDark
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = innerPadding.calculateTopPadding())
+                ) {
+                    when (MainNavTab.entries[currentTabIndex]) {
+                        MainNavTab.DASHBOARD -> DashboardScreen(
+                            state = state,
+                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
+                            onStartEmptyWorkout = { viewModel.startEmptyWorkout() },
+                            onDismissSummary = { viewModel.dismissSummaryBanner() },
+                            onSelectTheme = { viewModel.setThemePreset(it) },
+                            onReopenOnboarding = { viewModel.reopenOnboarding() },
+                            onAddMeasurement = { w, bf, ch, arm, waist, thigh, calf ->
+                                viewModel.addBodyMeasurement(w, bf, ch, arm, waist, thigh, calf)
+                            }
+                        )
+                        MainNavTab.WORKOUTS -> WorkoutsScreen(
+                            state = state,
+                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) },
+                            onSaveCustomWorkout = { title, focus, ids ->
+                                viewModel.saveCustomWorkoutDay(title, focus, ids)
+                            },
+                            onDeleteCustomWorkout = { viewModel.deleteCustomWorkout(it) }
+                        )
+                        MainNavTab.ENCYCLOPEDIA -> EncyclopediaScreen(
+                            state = state,
+                            onSearchChange = { viewModel.updateSearchQuery(it) },
+                            onSelectMuscle = { viewModel.selectMuscleFilter(it) },
+                            onSelectEquipment = { viewModel.selectEquipmentFilter(it) },
+                            onInspectExercise = { viewModel.inspectExercise(it) },
+                            onAttachVideoUri = { exId, uri -> viewModel.attachCustomVideoUri(exId, uri) }
+                        )
+                        MainNavTab.SCIENCE -> ScienceLabScreen(
+                            state = state,
+                            viewModel = viewModel
+                        )
+                    }
+
+                    HyperFloatingDock(
+                        items = dockItems,
+                        selectedIndex = currentTabIndex,
+                        onSelect = { currentTabIndex = it },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
                     )
                 }
-
-                // Xiaomi HyperOS Floating Pill Bottom Navigation Dock
-                HyperFloatingDock(
-                    items = dockItems,
-                    selectedIndex = currentTabIndex,
-                    onSelect = { currentTabIndex = it },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                )
             }
         }
     }

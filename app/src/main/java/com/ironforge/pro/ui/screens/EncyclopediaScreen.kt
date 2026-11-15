@@ -43,6 +43,7 @@ fun EncyclopediaScreen(
     onInspectExercise: (Exercise?) -> Unit,
     onAttachVideoUri: (String, String) -> Unit
 ) {
+    val palette = LocalIronPalette.current
     val context = LocalContext.current
     var pendingVideoExerciseId by remember { mutableStateOf<String?>(null) }
 
@@ -99,7 +100,7 @@ fun EncyclopediaScreen(
                 onValueChange = onSearchChange,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Buscar exercício, músculo alvo ou equipamento...", color = TextMuted) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = HyperOrange) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = palette.primary) },
                 trailingIcon = {
                     if (state.searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchChange("") }) {
@@ -121,8 +122,8 @@ fun EncyclopediaScreen(
                         shape = CircleShape,
                         label = { Text("Todos Músculos") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = HyperOrange,
-                            selectedLabelColor = TextPrimary,
+                            selectedContainerColor = palette.primary,
+                            selectedLabelColor = palette.onPrimaryAccent,
                             containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
@@ -137,8 +138,8 @@ fun EncyclopediaScreen(
                         shape = CircleShape,
                         label = { Text(muscle.displayName) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = HyperOrange,
-                            selectedLabelColor = TextPrimary,
+                            selectedContainerColor = palette.primary,
+                            selectedLabelColor = palette.onPrimaryAccent,
                             containerColor = HyperCardDark,
                             labelColor = TextSecondary
                         )
@@ -158,7 +159,7 @@ fun EncyclopediaScreen(
                         shape = CircleShape,
                         label = { Text(eq.label, fontSize = 12.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = HyperCyan,
+                            selectedContainerColor = palette.secondary,
                             selectedLabelColor = HyperBgDark,
                             containerColor = HyperCardDark,
                             labelColor = TextSecondary
@@ -178,12 +179,12 @@ fun EncyclopediaScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        HyperPillTag(exercise.muscleGroup.displayName, HyperOrangeGlow)
-                        HyperPillTag(exercise.equipment.label, HyperCyan)
+                        HyperPillTag(exercise.muscleGroup.displayName, palette.primaryGlow)
+                        HyperPillTag(exercise.equipment.label, palette.secondary)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Detalhes", style = MaterialTheme.typography.labelSmall, color = HyperOrangeGlow)
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = HyperOrangeGlow, modifier = Modifier.size(18.dp))
+                        Text("Detalhes", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = palette.primaryGlow, modifier = Modifier.size(18.dp))
                     }
                 }
 
@@ -201,7 +202,6 @@ fun EncyclopediaScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Embedded Live Mini-Video Execution Loop
                 ExerciseMiniVideoPlayer(
                     exercise = exercise,
                     customVideoUri = state.customVideoUris[exercise.id],
@@ -247,6 +247,7 @@ private fun ExerciseDetailDialog(
     onAttachMp4: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val palette = LocalIronPalette.current
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = HyperCardDark,
@@ -254,8 +255,8 @@ private fun ExerciseDetailDialog(
         title = {
             Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HyperPillTag(exercise.muscleGroup.displayName, HyperOrangeGlow)
-                    HyperPillTag(exercise.mechanics.label, HyperCyan)
+                    HyperPillTag(exercise.muscleGroup.displayName, palette.primaryGlow)
+                    HyperPillTag(exercise.mechanics.label, palette.secondary)
                 }
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
@@ -273,7 +274,6 @@ private fun ExerciseDetailDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Full Studio Mini-Video Demonstration Player
                 ExerciseMiniVideoPlayer(
                     exercise = exercise,
                     customVideoUri = customVideoUri,
@@ -290,7 +290,7 @@ private fun ExerciseDetailDialog(
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("MÚSCULO ALVO PRINCIPAL", style = MaterialTheme.typography.labelSmall, color = HyperOrangeGlow)
+                        Text("MÚSCULO ALVO PRINCIPAL", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
                         Text(exercise.primaryTarget, style = MaterialTheme.typography.bodyLarge, color = TextPrimary, fontWeight = FontWeight.SemiBold)
                         if (exercise.synergists.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
@@ -319,14 +319,14 @@ private fun ExerciseDetailDialog(
                     Text(
                         text = "Marcos Semanais (${m.displayName}): MEV ${m.mevSets}s • MAV ${m.mavSets}s • MRV ${m.mrvSets}s • Recuperação ~${m.recoveryHours}h",
                         style = MaterialTheme.typography.labelSmall,
-                        color = HyperCyan
+                        color = palette.secondary
                     )
                 }
 
-                Text("EXECUÇÃO BIOMECÂNICA PASSO A PASSO", style = MaterialTheme.typography.labelLarge, color = HyperOrangeGlow)
+                Text("EXECUÇÃO BIOMECÂNICA PASSO A PASSO", style = MaterialTheme.typography.labelLarge, color = palette.primaryGlow)
                 exercise.executionSteps.forEachIndexed { idx, step ->
                     Row(verticalAlignment = Alignment.Top) {
-                        Text("${idx + 1}. ", color = HyperOrange, fontWeight = FontWeight.Black, fontSize = 13.sp)
+                        Text("${idx + 1}. ", color = palette.primary, fontWeight = FontWeight.Black, fontSize = 13.sp)
                         Text(step, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
@@ -351,10 +351,10 @@ private fun ExerciseDetailDialog(
         confirmButton = {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = HyperOrange),
+                colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                 shape = CircleShape
             ) {
-                Text("Entendido", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text("Entendido", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
             }
         }
     )
@@ -362,6 +362,7 @@ private fun ExerciseDetailDialog(
 
 @Composable
 private fun ParamChip(label: String, value: String) {
+    val palette = LocalIronPalette.current
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
@@ -370,6 +371,6 @@ private fun ParamChip(label: String, value: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = TextMuted)
-        Text(value, style = MaterialTheme.typography.labelLarge, color = HyperOrangeGlow)
+        Text(value, style = MaterialTheme.typography.labelLarge, color = palette.primaryGlow)
     }
 }

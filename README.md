@@ -1,20 +1,17 @@
-# 🏋️ IronForge Pro 2.0 — HyperOS Edition
+# 🏋️ IronForge Pro 3.0 — HyperOS & Android 17 Expressive Edition
 
-Aplicativo nativo Android (**Kotlin + Jetpack Compose**) com design inspirado no **Xiaomi HyperOS 2.0** (*Squircles contínuos, Bento Grid Widgets, Ilha Dinâmica HyperOS, Dock Flutuante Translúcido e Mini Vídeos Biomecânicos em 60fps para cada exercício*).
+Aplicativo nativo Android (**Kotlin + Jetpack Compose**) com **Wizard de Cadastro Inicial**, **Motor de Temas Dinâmicos estilo Android 17 (Material You Expressive)**, **Mini Vídeos Biomecânicos 60fps** e **Interface Xiaomi HyperOS 2.0**.
 
 ---
 
-## ✨ Novidades da Versão 2.0 (HyperOS Edition)
+## ✨ Novidades da Versão 3.0
 
-1. **Mini Vídeos Biomecânicos de Execução em Cada Exercício**
-   - Player interativo integrado nos cards e detalhes de cada exercício com **animação cinemática 60fps**, destaque luminoso do músculo alvo ativo, indicador de fase (*Excêntrica • Pausa • Concêntrica • Pico*), controle de velocidade (**0.5x Câmera Lenta / 1.0x Normal**), Play/Pause e scrubber manual.
-   - Suporte para **importar vídeo MP4 da sua galeria** em qualquer exercício.
+1. **Configuração Inicial / Cadastro Guiado (4 Etapas)**
+   - **Etapa 1 — Perfil & Biometria:** Nome do atleta, sexo, idade, peso (kg), altura (cm), % de gordura, nível de experiência e objetivo físico.
+   - **Etapa 2 — Estúdio de Temas Android 17:** Escolha ao vivo entre **Wallpaper Dinâmico (Material You)** ou **6 paletas Expressive** com pré-visualização instantânea.
+   - **Etapa 3 — Montagem de Treino:** Selecione uma divisão científica pronta (*PPL Pro 6x*, *Upper/Lower 4x*, *ABCDE 5x*) **OU monte sua própria ficha personalizada** escolhendo seus exercícios antes mesmo de entrar na tela inicial.
+   - **Etapa 4 — Calibração Fisiológica:** Resumo completo com TMB, GET, calorias diárias, macronutrientes e plano de treino configurado.
 
-2. **Interface Xiaomi HyperOS 2.0**
-   - **Ilha Dinâmica HyperOS (Dynamic Pill):** Pílula interativa no topo da tela exibindo status ao vivo da sessão, cronômetro de descanso com anel circular e controle rápido.
-   - **Bento Grid & Control Center Tiles:** Cards *squircle* de `24dp` com gradientes especulares, números tabulares de alto impacto e micro-interações de toque (*spring scale*).
-   - **Dock Flutuante Translúcido:** Barra de navegação inferior flutuante estilo HyperOS.
-
-3. **Prontidão Muscular & Calculadora de Anilhas**
-   - **Medidor de Prontidão & Recuperação (%)** por grupamento muscular.
-   - **Calculadora Visual de Anilhas Olímpicas** integrada ao treino ativo e ao Laboratório de Ciência.
+2. **Motor de Temas Dinâmicos Estilo Android 17**
+   - Suporte nativo a **`dynamicDarkColorScheme`** (extrai automaticamente as cores do papel de parede do seu Android) + 6 temas curados (*HyperOS Solar Orange*, *Android 17 Cyber Volt*, *Iris Violet*, *Emerald Mint*, *Crimson Titanium* e *Cobalt Ocean*).
+   - Botão **Estúdio de Temas & Perfil** na tela inicial para trocar de tema em tempo real a qualquer momento.
