@@ -29,6 +29,7 @@ import com.ironforge.pro.model.WorkoutDay
 import com.ironforge.pro.ui.components.*
 import com.ironforge.pro.ui.theme.*
 import com.ironforge.pro.viewmodel.IronForgeUiState
+import java.time.LocalDate
 import kotlin.math.roundToInt
 
 @Composable
@@ -39,11 +40,15 @@ fun DashboardScreen(
     onDismissSummary: () -> Unit,
     onSelectTheme: (AppThemePreset) -> Unit,
     onReopenOnboarding: () -> Unit,
+    onOpenCalendar: () -> Unit,
     onAddMeasurement: (Double, Double, Double, Double, Double, Double, Double) -> Unit
 ) {
     val palette = LocalIronPalette.current
     var showMeasureDialog by remember { mutableStateOf(false) }
     var showThemeStudioDialog by remember { mutableStateOf(false) }
+
+    val today = remember { LocalDate.now() }
+    val todayIsoWeekday = today.dayOfWeek.value // 1=Mon .. 7=Sun
 
     val totalTonnage = state.sessionHistory.sumOf { it.totalVolumeKg }
     val totalPrs = state.sessionHistory.sumOf { it.prCount }
@@ -77,9 +82,21 @@ fun DashboardScreen(
         muscleReadinessList.map { it.second }.average().roundToInt()
     }
 
-    val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == state.userProfile.selectedSplitId }
-        ?: ExerciseRepository.defaultSplits.first()
-    val nextWorkout = state.customWorkouts.firstOrNull() ?: chosenSplit.days.first()
+    fun findWorkoutById(id: String?): WorkoutDay? {
+        if (id.isNullOrBlank()) return null
+        state.customWorkouts.find { it.id == id }?.let { return it }
+        ExerciseRepository.defaultSplits.forEach { split ->
+            split.days.find { it.id == id }?.let { return it }
+        }
+        return null
+    }
+
+    val todayScheduledWorkout = remember(state.weeklySchedule, state.customWorkouts, todayIsoWeekday) {
+        findWorkoutById(state.weeklySchedule[todayIsoWeekday])
+    }
+    val fallbackWorkout = state.customWorkouts.firstOrNull()
+        ?: ExerciseRepository.defaultSplits.first().days.first()
+    val heroWorkout = todayScheduledWorkout ?: fallbackWorkout
 
     LazyColumn(
         modifier = Modifier
@@ -212,9 +229,86 @@ fun DashboardScreen(
             }
         }
 
-        // Next Recommended Session (Always ready for the user's first workout!)
+        // Weekly Calendar Strip Widget (Linked directly to CalendarScreen)
         item {
-            val leadExercise = ExerciseRepository.getExerciseById(nextWorkout.exercises.first().exerciseId)
+            HyperSquircleCard(onClick = onOpenCalendar) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = palette.primary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Sua Semana de Treinos", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Abrir Agenda", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = palette.primaryGlow, modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                val weekLabels = listOf("SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    for (isoDay in 1..7) {
+                        val isTodayCell = isoDay == todayIsoWeekday
+                        val wDay = findWorkoutById(state.weeklySchedule[isoDay])
+                        val tag = when {
+                            wDay == null -> "OFF"
+                            wDay.title.contains("Push", ignoreCase = true) -> "PUSH"
+                            wDay.title.contains("Pull", ignoreCase = true) -> "PULL"
+                            wDay.title.contains("Legs", ignoreCase = true) -> "LEGS"
+                            wDay.title.contains("Upper", ignoreCase = true) -> "UP"
+                            wDay.title.contains("Lower", ignoreCase = true) -> "LOW"
+                            else -> "TRN"
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isTodayCell) palette.primary else HyperTileElevated
+                                )
+                                .padding(vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = weekLabels[isoDay - 1],
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (isTodayCell) palette.onPrimaryAccent else TextMuted,
+                                fontSize = 9.sp
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = tag,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                color = when {
+                                    isTodayCell -> palette.onPrimaryAccent
+                                    wDay != null -> palette.primaryGlow
+                                    else -> TextSecondary
+                                },
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Today's Scheduled Workout Hero Card
+        item {
+            val leadExercise = ExerciseRepository.getExerciseById(heroWorkout.exercises.first().exerciseId)
+            val badgeText = if (todayScheduledWorkout != null) {
+                "TREINO DE HOJE • ${heroWorkout.estimatedMinutes} MIN"
+            } else {
+                "HOJE É DESCANSO • PRÓXIMO TREINO"
+            }
 
             HyperSquircleCard(accentGlow = true) {
                 Row(
@@ -223,22 +317,22 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        HyperPillTag("SUA ROTINA ATIVA • ${nextWorkout.estimatedMinutes} MIN", palette.primaryGlow)
+                        HyperPillTag(badgeText, palette.primaryGlow)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = nextWorkout.title,
+                            text = heroWorkout.title,
                             style = MaterialTheme.typography.titleLarge,
                             color = TextPrimary
                         )
                         Text(
-                            text = "${nextWorkout.exercises.size} exercícios • ${nextWorkout.focusSummary}",
+                            text = "${heroWorkout.exercises.size} exercícios • ${heroWorkout.focusSummary}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     FilledIconButton(
-                        onClick = { onStartWorkoutDay(nextWorkout) },
+                        onClick = { onStartWorkoutDay(heroWorkout) },
                         modifier = Modifier.size(52.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = palette.primary)
                     ) {
@@ -262,7 +356,7 @@ fun DashboardScreen(
             }
         }
 
-        // 2x2 Bento Grid (100% Real User Metrics — starts at 0 until user trains!)
+        // 2x2 Bento Grid (100% Real User Metrics)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -353,7 +447,7 @@ fun DashboardScreen(
             }
         }
 
-        // Anthropometry & Body Measurements (Shows user's exact onboarding weight & BF, "—" until circumferences are added)
+        // Anthropometry & Body Measurements
         item {
             val latest = state.bodyMeasurements.lastOrNull()
             HyperSquircleCard {
@@ -458,7 +552,7 @@ fun DashboardScreen(
             }
         }
 
-        // Personal Records (Clean empty state until user logs sets)
+        // Personal Records
         item {
             HyperSquircleCard {
                 SectionHeader(
@@ -540,7 +634,7 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Inicie sua rotina acima ou crie uma ficha na aba Treinos para começar a registrar sua evolução.",
+                            text = "Inicie sua rotina acima ou toque na Agenda para visualizar os treinos da semana.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary,
                             textAlign = TextAlign.Center
@@ -583,7 +677,6 @@ fun DashboardScreen(
         }
     }
 
-    // Android 17 Theme Studio & Profile Modal
     if (showThemeStudioDialog) {
         AlertDialog(
             onDismissRequest = { showThemeStudioDialog = false },

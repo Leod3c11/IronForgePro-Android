@@ -25,8 +25,9 @@ import com.ironforge.pro.viewmodel.IronForgeViewModel
 
 enum class MainNavTab(val label: String, val icon: ImageVector) {
     DASHBOARD("Home", Icons.Default.Insights),
+    CALENDAR("Agenda", Icons.Default.CalendarMonth),
     WORKOUTS("Treinos", Icons.Default.FitnessCenter),
-    ENCYCLOPEDIA("Vídeos & Guia", Icons.Default.OndemandVideo),
+    ENCYCLOPEDIA("Vídeos", Icons.Default.OndemandVideo),
     SCIENCE("Ciência", Icons.Default.Science)
 }
 
@@ -91,9 +92,15 @@ fun IronForgeAppRoot(viewModel: IronForgeViewModel = viewModel()) {
                             onDismissSummary = { viewModel.dismissSummaryBanner() },
                             onSelectTheme = { viewModel.setThemePreset(it) },
                             onReopenOnboarding = { viewModel.reopenOnboarding() },
+                            onOpenCalendar = { currentTabIndex = 1 },
                             onAddMeasurement = { w, bf, ch, arm, waist, thigh, calf ->
                                 viewModel.addBodyMeasurement(w, bf, ch, arm, waist, thigh, calf)
                             }
+                        )
+                        MainNavTab.CALENDAR -> CalendarScreen(
+                            state = state,
+                            viewModel = viewModel,
+                            onStartWorkoutDay = { viewModel.startWorkoutFromDay(it) }
                         )
                         MainNavTab.WORKOUTS -> WorkoutsScreen(
                             state = state,

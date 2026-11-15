@@ -90,12 +90,12 @@ enum class MotionPattern(val biomechLabel: String) {
     DEADLIFT("Levantamento Terra")
 }
 
-enum class SetType(val code: String, val label: String) {
-    WARMUP("W", "Aquecimento"),
-    FEEDER("F", "Preparatória"),
-    WORKING("T", "Trabalho"),
-    TOP_SET("TOP", "Top Set"),
-    DROP_SET("DROP", "Drop-Set")
+enum class SetType(val code: String, val label: String, val educationalHint: String) {
+    WARMUP("W", "Aquecimento", "Carga leve (~50%) para lubrificar articulações e preparar o sistema nervoso sem gerar fadiga."),
+    FEEDER("F", "Preparatória", "Série intermediária (~75%) com poucas reps para sentir a carga antes da série principal."),
+    WORKING("T", "Trabalho", "Série válida de hipertrofia: execute com amplitude total deixando 1 a 2 reps na reserva (RIR 1–2)."),
+    TOP_SET("TOP", "Top Set", "Série mais pesada do exercício: busque progressão de carga ou repetições com técnica impecável."),
+    DROP_SET("DROP", "Drop-Set", "Ao atingir a falha, reduza a carga em 20–25% imediatamente e continue sem descanso.")
 }
 
 data class Exercise(
@@ -166,6 +166,7 @@ data class WorkoutSessionRecord(
     val id: String,
     val workoutTitle: String,
     val dateFormatted: String,
+    val isoDate: String = "",
     val timestamp: Long,
     val durationMinutes: Int,
     val totalVolumeKg: Double,

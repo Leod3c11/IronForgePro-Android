@@ -1,12 +1,14 @@
 package com.ironforge.pro.ui.screens
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,9 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.data.ExerciseRepository
@@ -26,6 +30,7 @@ import com.ironforge.pro.model.Exercise
 import com.ironforge.pro.model.SetType
 import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
 import com.ironforge.pro.ui.components.HyperDynamicIsland
+import com.ironforge.pro.ui.components.HyperPillTag
 import com.ironforge.pro.ui.components.HyperSquircleCard
 import com.ironforge.pro.ui.components.OlympicPlateVisualizer
 import com.ironforge.pro.ui.theme.*
@@ -43,25 +48,37 @@ fun ActiveWorkoutScreen(
     var swapTargetIndex by remember { mutableStateOf<Int?>(null) }
     var plateInspectWeight by remember { mutableStateOf<Double?>(null) }
     var showCancelConfirm by remember { mutableStateOf(false) }
+    var coachTabIndex by remember { mutableIntStateOf(0) } // 0=Execução, 1=Biomecânica, 2=Erros, 3=RIR/Esforço
 
+    val totalSetsAll = remember(state.activeExercises) {
+        state.activeExercises.sumOf { it.sets.size }.coerceAtLeast(1)
+    }
+    val completedSetsAll = remember(state.activeExercises) {
+        state.activeExercises.sumOf { ex -> ex.sets.count { it.completed } }
+    }
     val liveVolume = remember(state.activeExercises) {
         state.activeExercises.sumOf { ex ->
             ex.sets.filter { it.completed }.sumOf { it.weightKg * it.reps }
         }
     }
-    val completedSetsCount = remember(state.activeExercises) {
-        state.activeExercises.sumOf { ex -> ex.sets.count { it.completed } }
-    }
+    val sessionProgress by animateFloatAsState(
+        targetValue = (completedSetsAll.toFloat() / totalSetsAll.toFloat()).coerceIn(0f, 1f),
+        label = "sessionProgress"
+    )
+
+    val safeExIndex = state.activeExerciseIndex.coerceIn(0, (state.activeExercises.size - 1).coerceAtLeast(0))
+    val currentSessionEx = state.activeExercises.getOrNull(safeExIndex)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(HyperBgDark)
     ) {
+        // Top Session Bar + Overall Progress + HyperOS Dynamic Island
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -69,7 +86,7 @@ fun ActiveWorkoutScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { showCancelConfirm = true }) {
+                IconButton(onClick = { showCancelConfirm = true }, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.Close, contentDescription = "Cancelar", tint = HyperCrimson)
                 }
                 Column(
@@ -80,10 +97,11 @@ fun ActiveWorkoutScreen(
                         text = state.activeWorkoutTitle,
                         style = MaterialTheme.typography.titleMedium,
                         color = TextPrimary,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Volume: ${liveVolume.roundToInt()} kg  •  Séries concluídas: $completedSetsCount",
+                        text = "${(sessionProgress * 100).roundToInt()}% concluído  •  Volume: ${liveVolume.roundToInt()} kg",
                         style = MaterialTheme.typography.labelSmall,
                         color = palette.primaryGlow
                     )
@@ -98,6 +116,23 @@ fun ActiveWorkoutScreen(
                 }
             }
 
+            // Overall Session Progress Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .clip(CircleShape)
+                    .background(HyperTileElevated)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(sessionProgress)
+                        .fillMaxHeight()
+                        .background(Brush.horizontalGradient(listOf(palette.secondary, palette.primary)))
+                )
+            }
+
+            // Xiaomi HyperOS Dynamic Island Rest Timer
             HyperDynamicIsland(
                 isTimerRunning = state.isRestTimerRunning,
                 remainingSeconds = state.restRemainingSeconds,
@@ -114,250 +149,526 @@ fun ActiveWorkoutScreen(
             )
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            itemsIndexed(state.activeExercises) { exIndex, sessionEx ->
-                val isVideoExpanded = state.expandedVideoExerciseIds.contains(sessionEx.exercise.id)
+        if (currentSessionEx != null) {
+            val exercise = currentSessionEx.exercise
+            val safeSetIndex = state.focusedSetIndex.coerceIn(0, (currentSessionEx.sets.size - 1).coerceAtLeast(0))
+            val focusedSet = currentSessionEx.sets[safeSetIndex]
+            val currentPr = state.exercisePrs[exercise.id] ?: 0.0
+            val liveEst1Rm = IronForgeViewModel.estimate1RM(focusedSet.weightKg, focusedSet.reps)
+            val willBeatPr = focusedSet.setType != SetType.WARMUP && liveEst1Rm > currentPr && liveEst1Rm > 0.0
 
-                HyperSquircleCard(
-                    modifier = Modifier.animateContentSize()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 1. Horizontal Exercise Stage Carousel
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = sessionEx.exercise.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "${sessionEx.exercise.muscleGroup.displayName} • Alvo: ${sessionEx.targetReps} • ${sessionEx.restSeconds}s",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = palette.secondary
-                            )
-                        }
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            IconButton(
-                                onClick = { viewModel.toggleInlineVideoInWorkout(sessionEx.exercise.id) },
-                                modifier = Modifier.size(34.dp)
+                        items(state.activeExercises.size) { idx ->
+                            val itemEx = state.activeExercises[idx]
+                            val isCurrent = idx == safeExIndex
+                            val allDone = itemEx.sets.all { it.completed }
+                            val bg = when {
+                                isCurrent -> palette.primary
+                                allDone -> HyperEmerald.copy(alpha = 0.18f)
+                                else -> HyperCardDark
+                            }
+                            val fg = when {
+                                isCurrent -> palette.onPrimaryAccent
+                                allDone -> HyperEmerald
+                                else -> TextSecondary
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(bg)
+                                    .clickable { viewModel.selectActiveExercise(idx) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Icon(
-                                    imageVector = if (isVideoExpanded) Icons.Default.VideocamOff else Icons.Default.OndemandVideo,
-                                    contentDescription = "Mini Vídeo Execução",
-                                    tint = if (isVideoExpanded) palette.primary else palette.secondary,
-                                    modifier = Modifier.size(20.dp)
+                                if (allDone) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = fg, modifier = Modifier.size(15.dp))
+                                } else {
+                                    Text("${idx + 1}", fontWeight = FontWeight.Black, color = fg, fontSize = 12.sp)
+                                }
+                                Text(
+                                    text = itemEx.exercise.name.take(18),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = fg,
+                                    fontSize = 12.sp,
+                                    maxLines = 1
                                 )
                             }
+                        }
+
+                        item {
+                            AssistChip(
+                                onClick = { showAddExerciseDialog = true },
+                                shape = CircleShape,
+                                label = { Text("+ Exercício", color = palette.secondary, fontSize = 12.sp) }
+                            )
+                        }
+                    }
+                }
+
+                // 2. Hero Biomechanical Stage + Educational Coach Drawer
+                item {
+                    HyperSquircleCard(
+                        modifier = Modifier.animateContentSize(),
+                        accentGlow = true
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    HyperPillTag("EXERCÍCIO ${safeExIndex + 1}/${state.activeExercises.size}", palette.primaryGlow)
+                                    HyperPillTag(exercise.muscleGroup.shortName, palette.secondary)
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = exercise.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    text = "Alvo: ${exercise.primaryTarget}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
+
                             IconButton(
-                                onClick = { swapTargetIndex = exIndex },
-                                modifier = Modifier.size(34.dp)
+                                onClick = { swapTargetIndex = safeExIndex },
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(HyperTileElevated)
+                                    .size(38.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SwapHoriz,
-                                    contentDescription = "Trocar Exercício",
-                                    tint = TextSecondary,
+                                    contentDescription = "Substituir Exercício",
+                                    tint = palette.secondary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Live 60fps Biomechanical Execution Video
+                        ExerciseMiniVideoPlayer(
+                            exercise = exercise,
+                            customVideoUri = state.customVideoUris[exercise.id],
+                            height = 175.dp,
+                            compact = false
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Interactive 4-Tab Educational Coach
+                        val coachTabs = listOf("Execução", "Biomecânica", "Evitar Erros", "Guia RIR")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            coachTabs.forEachIndexed { idx, label ->
+                                val selected = coachTabIndex == idx
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(CircleShape)
+                                        .background(if (selected) palette.primary else HyperTileElevated)
+                                        .clickable { coachTabIndex = idx }
+                                        .padding(vertical = 7.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (selected) palette.onPrimaryAccent else TextSecondary,
+                                        fontSize = 10.sp,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Educational Coach Content Box
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(HyperTileElevated)
+                                .padding(12.dp)
+                        ) {
+                            when (coachTabIndex) {
+                                0 -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("PASSO A PASSO DA EXECUÇÃO:", style = MaterialTheme.typography.labelSmall, color = palette.primaryGlow)
+                                        exercise.executionSteps.forEachIndexed { i, step ->
+                                            Row(verticalAlignment = Alignment.Top) {
+                                                Text("${i + 1}. ", color = palette.primary, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                                Text(step, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
+                                    }
+                                }
+                                1 -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("BIOMECÂNICA & SINERGISTAS:", style = MaterialTheme.typography.labelSmall, color = HyperEmerald)
+                                        Text(
+                                            text = "Cadência Ideal (TUT): ${exercise.tempoTUT} • Faixa: ${exercise.recommendedReps} • Descanso: ${exercise.restSeconds}s",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = palette.secondary
+                                        )
+                                        if (exercise.synergists.isNotEmpty()) {
+                                            Text("Sinergistas: ${exercise.synergists.joinToString(", ")}", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                                        }
+                                        exercise.biomechanicsTips.forEach { tip ->
+                                            Text("• $tip", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                                        }
+                                    }
+                                }
+                                2 -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("ERROS COMUNS A EVITAR:", style = MaterialTheme.typography.labelSmall, color = HyperCrimson)
+                                        exercise.commonMistakes.forEach { err ->
+                                            Text("✕ $err", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                                        }
+                                    }
+                                }
+                                3 -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("COMO DOSAR O ESFORÇO (RIR / RPE):", style = MaterialTheme.typography.labelSmall, color = HyperAmber)
+                                        Text(
+                                            text = "• RIR 2 (RPE 8): Encerre a série quando sentir que faria no máximo mais 2 repetições limpas. Ideal para compostos.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            text = "• RIR 0–1 (RPE 9–10): Próximo ou até a falha concêntrica. Recomendado na última série de isoladores.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = TextSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. Dynamic Interactive Set Focus Card (Current Active Set Controller)
+                item {
+                    HyperSquircleCard(
+                        modifier = Modifier.animateContentSize(),
+                        containerColor = HyperCardDark,
+                        accentGlow = willBeatPr
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "SÉRIE ATUAL ${focusedSet.setNumber} DE ${currentSessionEx.sets.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = palette.secondary
+                                )
+                                Text(
+                                    text = focusedSet.setType.label,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = TextPrimary
+                                )
+                            }
+
+                            if (willBeatPr) {
+                                HyperPillTag("NOVO PR! (${liveEst1Rm.roundToInt()}kg)", HyperEmerald)
+                            } else {
+                                HyperPillTag("1RM Est.: ${liveEst1Rm.roundToInt()} kg", palette.primaryGlow)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Interactive Set Type Selector Pills + Live Physiological Explanation
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            SetType.entries.forEach { sType ->
+                                val isSel = focusedSet.setType == sType
+                                val badgeColor = when (sType) {
+                                    SetType.WARMUP -> TextSecondary
+                                    SetType.FEEDER -> palette.secondary
+                                    SetType.WORKING -> palette.primary
+                                    SetType.TOP_SET -> HyperAmber
+                                    SetType.DROP_SET -> HyperViolet
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSel) badgeColor else HyperTileElevated)
+                                        .clickable {
+                                            viewModel.updateSetData(safeExIndex, safeSetIndex, setType = sType)
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = sType.code,
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Black),
+                                        color = if (isSel) HyperBgDark else badgeColor,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Educational Hint Banner for Selected Set Type
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(HyperTileElevated)
+                                .padding(10.dp)
+                        ) {
+                            Text(
+                                text = "💡 ${focusedSet.setType.educationalHint}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Ergonomic Load & Reps Stepper Controllers
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Load Control Box
+                            Column(
+                                modifier = Modifier
+                                    .weight(1.1f)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(HyperTileElevated)
+                                    .padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("CARGA (KG)", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    BigRoundControl("-") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, weightKg = focusedSet.weightKg - 2.5)
+                                    }
+                                    Text(
+                                        text = if (focusedSet.weightKg % 1.0 == 0.0) "${focusedSet.weightKg.toInt()}" else "${focusedSet.weightKg}",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = TextPrimary,
+                                        modifier = Modifier.clickable { plateInspectWeight = focusedSet.weightKg }
+                                    )
+                                    BigRoundControl("+") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, weightKg = focusedSet.weightKg + 2.5)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    MiniMicroButton("-1kg") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, weightKg = focusedSet.weightKg - 1.0)
+                                    }
+                                    MiniMicroButton("+1kg") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, weightKg = focusedSet.weightKg + 1.0)
+                                    }
+                                    MiniMicroButton("Anilhas") {
+                                        plateInspectWeight = focusedSet.weightKg
+                                    }
+                                }
+                            }
+
+                            // Reps Control Box
+                            Column(
+                                modifier = Modifier
+                                    .weight(0.9f)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(HyperTileElevated)
+                                    .padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text("REPETIÇÕES", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    BigRoundControl("-") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, reps = focusedSet.reps - 1)
+                                    }
+                                    Text(
+                                        text = "${focusedSet.reps}",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = palette.primaryGlow
+                                    )
+                                    BigRoundControl("+") {
+                                        viewModel.updateSetData(safeExIndex, safeSetIndex, reps = focusedSet.reps + 1)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Alvo: ${currentSessionEx.targetReps}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = palette.secondary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Interactive Effort / RIR Selector
+                        Text("PERCEPÇÃO DE ESFORÇO (REPS NA RESERVA):", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        val rirOptions = listOf(
+                            Triple(7.0, "RIR 3 • Leve", palette.secondary),
+                            Triple(8.0, "RIR 2 • Ideal", HyperEmerald),
+                            Triple(9.0, "RIR 1 • Intenso", palette.primary),
+                            Triple(10.0, "RIR 0 • Falha", HyperCrimson)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            rirOptions.forEach { (rpeVal, label, accent) ->
+                                val selected = focusedSet.rpe == rpeVal
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(CircleShape)
+                                        .background(if (selected) accent else HyperTileElevated)
+                                        .clickable {
+                                            viewModel.updateSetData(safeExIndex, safeSetIndex, rpe = rpeVal)
+                                        }
+                                        .padding(vertical = 7.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (selected) HyperBgDark else TextSecondary,
+                                        fontSize = 10.sp,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Giant Primary Action CTA Button
+                        Button(
+                            onClick = { viewModel.toggleSetCompleted(safeExIndex, safeSetIndex) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (focusedSet.completed) HyperEmerald else palette.primary
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Icon(
+                                imageVector = if (focusedSet.completed) Icons.Default.CheckCircle else Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = if (focusedSet.completed) HyperBgDark else palette.onPrimaryAccent
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (focusedSet.completed) {
+                                    "SÉRIE ${focusedSet.setNumber} CONCLUÍDA ✓"
+                                } else {
+                                    "CONCLUIR SÉRIE ${focusedSet.setNumber} • DESCANSAR ${currentSessionEx.restSeconds}s"
+                                },
+                                color = if (focusedSet.completed) HyperBgDark else palette.onPrimaryAccent,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+
+                // 4. All Sets Timeline for Current Exercise
+                item {
+                    HyperSquircleCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Séries deste Exercício (${currentSessionEx.sets.count { it.completed }}/${currentSessionEx.sets.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = TextPrimary
+                            )
+                            TextButton(onClick = { viewModel.addSetToExercise(safeExIndex) }) {
+                                Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+                                Text("Nova Série", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        currentSessionEx.sets.forEachIndexed { sIdx, sLog ->
+                            val isFocused = sIdx == safeSetIndex
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        when {
+                                            isFocused -> palette.primary.copy(alpha = 0.16f)
+                                            sLog.completed -> HyperEmerald.copy(alpha = 0.12f)
+                                            else -> HyperTileElevated
+                                        }
+                                    )
+                                    .clickable { viewModel.focusSet(safeExIndex, sIdx) }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    HyperPillTag(sLog.setType.code, if (sLog.completed) HyperEmerald else palette.primaryGlow)
+                                    Text(
+                                        text = "Série ${sLog.setNumber}: ${sLog.weightKg.toInt()} kg × ${sLog.reps} reps",
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                        color = TextPrimary
+                                    )
+                                }
+
+                                Icon(
+                                    imageVector = if (sLog.completed) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (sLog.completed) HyperEmerald else TextMuted,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
                     }
-
-                    if (isVideoExpanded) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        ExerciseMiniVideoPlayer(
-                            exercise = sessionEx.exercise,
-                            customVideoUri = state.customVideoUris[sessionEx.exercise.id],
-                            height = 155.dp,
-                            compact = true
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("TIPO", style = MaterialTheme.typography.labelSmall, color = TextMuted, modifier = Modifier.width(46.dp))
-                        Text("CARGA (KG)", style = MaterialTheme.typography.labelSmall, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                        Text("REPS", style = MaterialTheme.typography.labelSmall, color = TextMuted, modifier = Modifier.weight(0.85f), textAlign = TextAlign.Center)
-                        Text("1RM", style = MaterialTheme.typography.labelSmall, color = TextMuted, modifier = Modifier.width(46.dp), textAlign = TextAlign.Center)
-                        Text("OK", style = MaterialTheme.typography.labelSmall, color = TextMuted, modifier = Modifier.width(40.dp), textAlign = TextAlign.Center)
-                    }
-
-                    sessionEx.sets.forEachIndexed { setIndex, setLog ->
-                        val typeColor = when (setLog.setType) {
-                            SetType.WARMUP -> TextMuted
-                            SetType.FEEDER -> palette.secondary
-                            SetType.WORKING -> palette.primary
-                            SetType.TOP_SET -> HyperAmber
-                            SetType.DROP_SET -> HyperViolet
-                        }
-                        val est1Rm = IronForgeViewModel.estimate1RM(setLog.weightKg, setLog.reps).roundToInt()
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(
-                                    if (setLog.completed) HyperEmerald.copy(alpha = 0.14f) else HyperTileElevated
-                                )
-                                .padding(horizontal = 6.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(44.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(typeColor.copy(alpha = 0.18f))
-                                    .clickable {
-                                        val values = SetType.entries
-                                        val nextType = values[(setLog.setType.ordinal + 1) % values.size]
-                                        viewModel.updateSetData(exIndex, setIndex, setType = nextType)
-                                    }
-                                    .padding(vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = setLog.setType.code,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
-                                    color = typeColor
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SmallStepButton("-") {
-                                    viewModel.updateSetData(exIndex, setIndex, weightKg = setLog.weightKg - 2.5)
-                                }
-                                Text(
-                                    text = if (setLog.weightKg % 1.0 == 0.0) "${setLog.weightKg.toInt()}" else "${setLog.weightKg}",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = TextPrimary,
-                                    modifier = Modifier
-                                        .clickable { plateInspectWeight = setLog.weightKg }
-                                        .padding(horizontal = 6.dp)
-                                )
-                                SmallStepButton("+") {
-                                    viewModel.updateSetData(exIndex, setIndex, weightKg = setLog.weightKg + 2.5)
-                                }
-                            }
-
-                            Row(
-                                modifier = Modifier.weight(0.85f),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SmallStepButton("-") {
-                                    viewModel.updateSetData(exIndex, setIndex, reps = setLog.reps - 1)
-                                }
-                                Text(
-                                    text = "${setLog.reps}",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = TextPrimary,
-                                    modifier = Modifier.padding(horizontal = 6.dp)
-                                )
-                                SmallStepButton("+") {
-                                    viewModel.updateSetData(exIndex, setIndex, reps = setLog.reps + 1)
-                                }
-                            }
-
-                            Box(modifier = Modifier.width(46.dp), contentAlignment = Alignment.Center) {
-                                if (setLog.isPr) {
-                                    Text("PR!", style = MaterialTheme.typography.labelSmall, color = HyperEmerald, fontWeight = FontWeight.Black)
-                                } else {
-                                    Text("${est1Rm}k", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                                }
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (setLog.completed) HyperEmerald else HyperCardDark)
-                                    .clickable { viewModel.toggleSetCompleted(exIndex, setIndex) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Concluir série",
-                                    tint = if (setLog.completed) HyperBgDark else TextMuted,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Toque na carga para ver anilhas",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextMuted
-                        )
-                        TextButton(
-                            onClick = { viewModel.addSetToExercise(exIndex) },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
-                            Text("Adicionar Série", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        }
-                    }
                 }
             }
-
-            item {
-                OutlinedButton(
-                    onClick = { showAddExerciseDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = palette.secondary)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Adicionar Exercício à Sessão", color = palette.secondary, fontWeight = FontWeight.Bold)
-                }
-            }
-
-            item {
-                Button(
-                    onClick = { viewModel.finishAndSaveWorkout() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.EmojiEvents, contentDescription = null, tint = palette.onPrimaryAccent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "CONCLUIR E SALVAR TREINO",
-                        color = palette.onPrimaryAccent,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
 
@@ -439,11 +750,11 @@ fun ActiveWorkoutScreen(
 }
 
 @Composable
-private fun SmallStepButton(label: String, onClick: () -> Unit) {
+private fun BigRoundControl(label: String, onClick: () -> Unit) {
     val palette = LocalIronPalette.current
     Box(
         modifier = Modifier
-            .size(24.dp)
+            .size(34.dp)
             .clip(CircleShape)
             .background(HyperCardDark)
             .clickable(onClick = onClick),
@@ -453,7 +764,27 @@ private fun SmallStepButton(label: String, onClick: () -> Unit) {
             text = label,
             color = palette.primaryGlow,
             fontWeight = FontWeight.Black,
-            fontSize = 14.sp
+            fontSize = 18.sp
+        )
+    }
+}
+
+@Composable
+private fun MiniMicroButton(label: String, onClick: () -> Unit) {
+    val palette = LocalIronPalette.current
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(HyperCardDark)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = palette.secondary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.sp
         )
     }
 }

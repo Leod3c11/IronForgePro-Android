@@ -1,0 +1,604 @@
+package com.ironforge.pro.ui.screens
+
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ironforge.pro.data.ExerciseRepository
+import com.ironforge.pro.model.Exercise
+import com.ironforge.pro.model.WorkoutDay
+import com.ironforge.pro.ui.components.ExerciseMiniVideoPlayer
+import com.ironforge.pro.ui.components.HyperPillTag
+import com.ironforge.pro.ui.components.HyperSquircleCard
+import com.ironforge.pro.ui.components.SectionHeader
+import com.ironforge.pro.ui.theme.*
+import com.ironforge.pro.viewmodel.IronForgeUiState
+import com.ironforge.pro.viewmodel.IronForgeViewModel
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlin.math.roundToInt
+
+@Composable
+fun CalendarScreen(
+    state: IronForgeUiState,
+    viewModel: IronForgeViewModel,
+    onStartWorkoutDay: (WorkoutDay) -> Unit
+) {
+    val palette = LocalIronPalette.current
+    val today = remember { LocalDate.now() }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var selectedDate by remember { mutableStateOf(today) }
+    var showAssignDialog by remember { mutableStateOf(false) }
+    var previewExercise by remember { mutableStateOf<Exercise?>(null) }
+
+    val monthTitle = remember(currentMonth) {
+        val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("pt", "BR"))
+        currentMonth.format(formatter).replaceFirstChar { it.uppercase() }
+    }
+
+    // Build calendar grid cells (Monday = 1 .. Sunday = 7)
+    val calendarCells = remember(currentMonth) {
+        val firstOfMonth = currentMonth.atDay(1)
+        val leadingEmpty = firstOfMonth.dayOfWeek.value - 1 // 0 for Mon, 6 for Sun
+        val daysInMonth = currentMonth.lengthOfMonth()
+        val cells = mutableListOf<LocalDate?>()
+        repeat(leadingEmpty) { cells.add(null) }
+        for (dayNum in 1..daysInMonth) {
+            cells.add(currentMonth.atDay(dayNum))
+        }
+        while (cells.size % 7 != 0) {
+            cells.add(null)
+        }
+        cells.chunked(7)
+    }
+
+    val completedByIsoDate = remember(state.sessionHistory) {
+        state.sessionHistory.groupBy { it.isoDate }
+    }
+
+    val selectedIso = selectedDate.toString() // yyyy-MM-dd
+    val selectedWeekdayIso = selectedDate.dayOfWeek.value // 1..7
+    val scheduledWorkoutId = state.weeklySchedule[selectedWeekdayIso]
+    val scheduledWorkout = remember(scheduledWorkoutId, state.customWorkouts) {
+        viewModel.resolveWorkoutDayById(scheduledWorkoutId)
+    }
+    val completedSessionsOnSelectedDate = completedByIsoDate[selectedIso].orEmpty()
+
+    val selectedDateFormatted = remember(selectedDate) {
+        val fmt = DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("pt", "BR"))
+        selectedDate.format(fmt).replaceFirstChar { it.uppercase() }
+    }
+
+    val weekdayFullName = remember(selectedWeekdayIso) {
+        when (selectedWeekdayIso) {
+            1 -> "Segunda-feira"
+            2 -> "Terça-feira"
+            3 -> "Quarta-feira"
+            4 -> "Quinta-feira"
+            5 -> "Sexta-feira"
+            6 -> "Sábado"
+            else -> "Domingo"
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(HyperBgDark),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item {
+            SectionHeader(
+                title = "Agenda de Treinos",
+                subtitle = "Toque em qualquer dia para abrir o treino programado",
+                trailing = {
+                    if (selectedDate != today) {
+                        TextButton(onClick = {
+                            currentMonth = YearMonth.now()
+                            selectedDate = today
+                        }) {
+                            Text("Hoje", color = palette.primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            )
+        }
+
+        // Monthly Calendar Card
+        item {
+            HyperSquircleCard(accentGlow = true) {
+                // Month Switcher Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { currentMonth = currentMonth.minusMonths(1) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mês Anterior", tint = TextPrimary)
+                    }
+
+                    Text(
+                        text = monthTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = TextPrimary
+                    )
+
+                    IconButton(
+                        onClick = { currentMonth = currentMonth.plusMonths(1) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Próximo Mês", tint = TextPrimary)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Weekday Column Headers
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    listOf("SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM").forEach { dayName ->
+                        Text(
+                            text = dayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Calendar Weeks Grid
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    calendarCells.forEach { week ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            week.forEach { date ->
+                                if (date == null) {
+                                    Box(modifier = Modifier.weight(1f).height(52.dp))
+                                } else {
+                                    val isSelected = date == selectedDate
+                                    val isToday = date == today
+                                    val dayWId = state.weeklySchedule[date.dayOfWeek.value]
+                                    val dayWorkout = viewModel.resolveWorkoutDayById(dayWId)
+                                    val isCompleted = completedByIsoDate.containsKey(date.toString())
+
+                                    val cellBg = when {
+                                        isSelected -> palette.primary
+                                        isToday -> HyperTileElevated
+                                        else -> Color(0xFF10141D)
+                                    }
+                                    val numColor = if (isSelected) palette.onPrimaryAccent else TextPrimary
+
+                                    val shortTag = when {
+                                        isCompleted -> "FEITO"
+                                        dayWorkout == null -> "OFF"
+                                        dayWorkout.title.contains("Push", ignoreCase = true) -> "PUSH"
+                                        dayWorkout.title.contains("Pull", ignoreCase = true) -> "PULL"
+                                        dayWorkout.title.contains("Legs", ignoreCase = true) -> "LEGS"
+                                        dayWorkout.title.contains("Upper", ignoreCase = true) -> "UPPER"
+                                        dayWorkout.title.contains("Lower", ignoreCase = true) -> "LOWER"
+                                        dayWorkout.title.contains("Peito", ignoreCase = true) -> "PEITO"
+                                        dayWorkout.title.contains("Costas", ignoreCase = true) -> "COSTAS"
+                                        dayWorkout.title.contains("Ombro", ignoreCase = true) -> "OMBRO"
+                                        dayWorkout.title.contains("Braço", ignoreCase = true) -> "BRAÇO"
+                                        dayWorkout.title.contains("Perna", ignoreCase = true) -> "PERNA"
+                                        else -> "TREINO"
+                                    }
+
+                                    val tagColor = when {
+                                        isSelected -> palette.onPrimaryAccent
+                                        isCompleted -> HyperEmerald
+                                        dayWorkout != null -> palette.primaryGlow
+                                        else -> TextMuted
+                                    }
+
+                                    Surface(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(54.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .clickable { selectedDate = date },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = cellBg,
+                                        border = if (isToday && !isSelected) {
+                                            BorderStroke(1.3.dp, palette.primary)
+                                        } else null
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(vertical = 4.dp, horizontal = 2.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = date.dayOfMonth.toString(),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = numColor,
+                                                fontSize = 13.sp
+                                            )
+                                            Text(
+                                                text = shortTag,
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                color = tagColor,
+                                                fontSize = 8.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Clip
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    LegendDot("Treino Programado", palette.primaryGlow)
+                    LegendDot("Concluído", HyperEmerald)
+                    LegendDot("Descanso (OFF)", TextMuted)
+                }
+            }
+        }
+
+        // Selected Day Detailed Drawer Card
+        item {
+            HyperSquircleCard(
+                modifier = Modifier.animateContentSize(),
+                accentGlow = scheduledWorkout != null || completedSessionsOnSelectedDate.isNotEmpty()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = selectedDateFormatted,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Programação recorrente de $weekdayFullName",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+
+                    TextButton(onClick = { showAssignDialog = true }) {
+                        Icon(Icons.Default.EditCalendar, contentDescription = null, tint = palette.secondary, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Alterar", color = palette.secondary, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                // Completed Workout Banner if trained on this date
+                if (completedSessionsOnSelectedDate.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    completedSessionsOnSelectedDate.forEach { rec ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(HyperEmerald.copy(alpha = 0.14f))
+                                .padding(12.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = HyperEmerald, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "TREINO CONCLUÍDO NESTE DIA",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = HyperEmerald
+                                    )
+                                }
+                                Text(rec.workoutTitle, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                                Text(
+                                    text = "Volume: ${rec.totalVolumeKg.roundToInt()} kg • ${rec.totalWorkingSets} séries válidas • ${rec.durationMinutes} min",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = palette.hairline.copy(alpha = 0.6f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (scheduledWorkout != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        HyperPillTag(scheduledWorkout.dayLabel, palette.primaryGlow)
+                        HyperPillTag("~${scheduledWorkout.estimatedMinutes} min", palette.secondary)
+                        HyperPillTag("${scheduledWorkout.exercises.size} exercícios", HyperEmerald)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = scheduledWorkout.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = scheduledWorkout.focusSummary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // List all exercises for this calendar day with 1-tap mini-video preview
+                    scheduledWorkout.exercises.forEachIndexed { idx, planned ->
+                        val ex = ExerciseRepository.getExerciseById(planned.exerciseId)
+                        if (ex != null) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(HyperTileElevated)
+                                    .clickable { previewExercise = ex }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PlayCircleFilled,
+                                        contentDescription = "Ver Mini Vídeo",
+                                        tint = palette.secondary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "${idx + 1}. ${ex.name}",
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                            color = TextPrimary
+                                        )
+                                        Text(
+                                            text = "${ex.muscleGroup.displayName} • RIR ${planned.targetRir} • Descanso ${planned.restSeconds}s",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = TextMuted
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "${planned.targetSets} × ${planned.targetReps}",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = palette.primaryGlow
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Button(
+                        onClick = { onStartWorkoutDay(scheduledWorkout) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = palette.onPrimaryAccent)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "INICIAR TREINO DESTE DIA",
+                            color = palette.onPrimaryAccent,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 14.sp
+                        )
+                    }
+                } else {
+                    // Rest & Recovery Day View
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(HyperTileElevated)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SelfImprovement,
+                            contentDescription = null,
+                            tint = palette.secondary,
+                            modifier = Modifier.size(38.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Dia de Descanso & Supercompensação",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "A síntese proteica miofibrilar e a restauração do sistema nervoso central atingem o pico nas 24h–48h pós-treino. Hidrate-se e bata sua meta de proteínas.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { showAssignDialog = true },
+                            shape = CircleShape
+                        ) {
+                            Text("Agendar Treino para $weekdayFullName", color = palette.primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Dialog to Reassign Weekday Workout
+    if (showAssignDialog) {
+        val availableDays = remember(state.customWorkouts) { viewModel.allAvailableWorkoutDays() }
+        AlertDialog(
+            onDismissRequest = { showAssignDialog = false },
+            containerColor = HyperCardDark,
+            shape = RoundedCornerShape(26.dp),
+            title = {
+                Text("Treino de $weekdayFullName", color = TextPrimary, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 380.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.assignWorkoutToWeekday(selectedWeekdayIso, null)
+                                    showAssignDialog = false
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (scheduledWorkoutId == null) palette.primary.copy(alpha = 0.18f) else HyperTileElevated
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Hotel, contentDescription = null, tint = palette.secondary)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("Dia de Descanso (OFF)", color = TextPrimary, fontWeight = FontWeight.Bold)
+                                    Text("Recuperação muscular e SNC", color = TextSecondary, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    items(availableDays) { wDay ->
+                        val isSel = scheduledWorkoutId == wDay.id
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.assignWorkoutToWeekday(selectedWeekdayIso, wDay.id)
+                                    showAssignDialog = false
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isSel) palette.primary.copy(alpha = 0.22f) else HyperTileElevated
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(wDay.title, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("${wDay.exercises.size} exercícios • ${wDay.focusSummary}", color = TextSecondary, fontSize = 11.sp)
+                                }
+                                if (isSel) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAssignDialog = false }) {
+                    Text("Fechar", color = TextSecondary)
+                }
+            }
+        )
+    }
+
+    // Mini Video Preview Modal on Exercise Tap
+    if (previewExercise != null) {
+        val ex = previewExercise!!
+        AlertDialog(
+            onDismissRequest = { previewExercise = null },
+            containerColor = HyperCardDark,
+            shape = RoundedCornerShape(26.dp),
+            title = {
+                Column {
+                    HyperPillTag(ex.muscleGroup.displayName, palette.primaryGlow)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(ex.name, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ExerciseMiniVideoPlayer(
+                        exercise = ex,
+                        customVideoUri = state.customVideoUris[ex.id],
+                        height = 190.dp
+                    )
+                    Text(
+                        text = ex.executionSteps.joinToString("\n• ", prefix = "• "),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { previewExercise = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
+                    shape = CircleShape
+                ) {
+                    Text("Entendido", color = palette.onPrimaryAccent, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun LegendDot(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary, fontSize = 10.sp)
+    }
+}

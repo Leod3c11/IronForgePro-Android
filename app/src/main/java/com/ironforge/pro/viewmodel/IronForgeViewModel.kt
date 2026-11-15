@@ -30,16 +30,21 @@ data class IronForgeUiState(
     val userProfile: UserProfile = UserProfile(),
     val themePreset: AppThemePreset = AppThemePreset.HYPER_ORANGE,
 
+    // Key: 1 (Mon) .. 7 (Sun) -> WorkoutDay.id or null (Rest Day)
+    val weeklySchedule: Map<Int, String?> = emptyMap(),
+
     val sessionHistory: List<WorkoutSessionRecord> = emptyList(),
     val exercisePrs: Map<String, Double> = emptyMap(),
     val customWorkouts: List<WorkoutDay> = emptyList(),
     val customVideoUris: Map<String, String> = emptyMap(),
     val bodyMeasurements: List<BodyMeasurementRecord> = emptyList(),
 
-    // Active Workout Session
+    // Active Guided Workout Session
     val isWorkoutActive: Boolean = false,
     val activeWorkoutTitle: String = "",
     val activeExercises: List<ActiveExerciseSession> = emptyList(),
+    val activeExerciseIndex: Int = 0,
+    val focusedSetIndex: Int = 0,
     val workoutElapsedSeconds: Int = 0,
     val lastFinishedSession: WorkoutSessionRecord? = null,
     val expandedVideoExerciseIds: Set<String> = emptySet(),
@@ -86,13 +91,19 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     private val _uiState = MutableStateFlow(
         run {
             val savedProfile = storage.loadUserProfile()
+            val savedCustom = storage.loadCustomWorkouts()
+            var savedSchedule = storage.loadWeeklySchedule()
+            if (savedSchedule.isEmpty()) {
+                savedSchedule = buildDefaultWeeklySchedule(savedProfile.selectedSplitId, savedCustom.firstOrNull())
+            }
             IronForgeUiState(
                 isOnboardingCompleted = storage.isOnboardingCompleted(),
                 userProfile = savedProfile,
                 themePreset = storage.loadThemePreset(),
+                weeklySchedule = savedSchedule,
                 sessionHistory = storage.loadSessionHistory(),
                 exercisePrs = storage.loadExercisePrs(),
-                customWorkouts = storage.loadCustomWorkouts(),
+                customWorkouts = savedCustom,
                 customVideoUris = storage.loadCustomVideoUris(),
                 bodyMeasurements = storage.loadBodyMeasurements(),
                 userWeightKg = savedProfile.weightKg.toInt().toString(),
@@ -106,6 +117,39 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var timerJob: Job? = null
     private var workoutClockJob: Job? = null
+
+    fun resolveWorkoutDayById(dayId: String?): WorkoutDay? {
+        if (dayId.isNullOrBlank()) return null
+        _uiState.value.customWorkouts.find { it.id == dayId }?.let { return it }
+        ExerciseRepository.defaultSplits.forEach { split ->
+            split.days.find { it.id == dayId }?.let { return it }
+        }
+        return null
+    }
+
+    fun allAvailableWorkoutDays(): List<WorkoutDay> {
+        val list = mutableListOf<WorkoutDay>()
+        list.addAll(_uiState.value.customWorkouts)
+        ExerciseRepository.defaultSplits.forEach { split ->
+            list.addAll(split.days)
+        }
+        return list
+    }
+
+    fun assignWorkoutToWeekday(isoDayOfWeek: Int, workoutDayId: String?) {
+        val updated = _uiState.value.weeklySchedule.toMutableMap()
+        updated[isoDayOfWeek.coerceIn(1, 7)] = workoutDayId
+        storage.saveWeeklySchedule(updated)
+        _uiState.update { it.copy(weeklySchedule = updated) }
+    }
+
+    fun applySplitToWeeklyCalendar(splitId: String) {
+        val schedule = buildDefaultWeeklySchedule(splitId, null)
+        storage.saveWeeklySchedule(schedule)
+        val updatedProfile = _uiState.value.userProfile.copy(selectedSplitId = splitId)
+        storage.saveUserProfile(updatedProfile)
+        _uiState.update { it.copy(weeklySchedule = schedule, userProfile = updatedProfile) }
+    }
 
     fun setThemePreset(preset: AppThemePreset) {
         storage.saveThemePreset(preset)
@@ -126,7 +170,6 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         storage.saveThemePreset(chosenTheme)
         storage.setOnboardingCompleted(true)
 
-        // Save ONLY the user's real biometric data entered in Onboarding (no invented circumferences)
         val dateFmt = SimpleDateFormat("dd/MM", Locale("pt", "BR")).format(Date())
         val initialMeasure = BodyMeasurementRecord(
             id = "onboard_${UUID.randomUUID()}",
@@ -143,6 +186,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
         storage.saveBodyMeasurements(updatedMeasures)
 
         var updatedCustomWorkouts = _uiState.value.customWorkouts
+        var createdCustomDay: WorkoutDay? = null
         if (!customWorkoutTitle.isNullOrBlank() && customWorkoutExerciseIds.isNotEmpty()) {
             val planned = customWorkoutExerciseIds.map { id ->
                 val ex = ExerciseRepository.getExerciseById(id)
@@ -162,9 +206,14 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 estimatedMinutes = planned.size * 11,
                 exercises = planned
             )
+            createdCustomDay = newDay
             updatedCustomWorkouts = listOf(newDay) + updatedCustomWorkouts
             storage.saveCustomWorkouts(updatedCustomWorkouts)
         }
+
+        // Auto-populate the entire weekly calendar based on user's chosen split or custom workout!
+        val autoSchedule = buildDefaultWeeklySchedule(profile.selectedSplitId, createdCustomDay)
+        storage.saveWeeklySchedule(autoSchedule)
 
         val goalIdx = when (profile.goal) {
             FitnessGoal.LEAN_BULK -> 0
@@ -178,6 +227,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 isOnboardingCompleted = true,
                 userProfile = profile,
                 themePreset = chosenTheme,
+                weeklySchedule = autoSchedule,
                 customWorkouts = updatedCustomWorkouts,
                 bodyMeasurements = updatedMeasures,
                 userWeightKg = profile.weightKg.toInt().toString(),
@@ -201,6 +251,25 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             val current = s.expandedVideoExerciseIds
             val next = if (current.contains(exerciseId)) current - exerciseId else current + exerciseId
             s.copy(expandedVideoExerciseIds = next)
+        }
+    }
+
+    // ==================== GUIDED WORKOUT NAVIGATION ====================
+    fun selectActiveExercise(index: Int) {
+        _uiState.update { s ->
+            val safeIdx = index.coerceIn(0, (s.activeExercises.size - 1).coerceAtLeast(0))
+            val ex = s.activeExercises.getOrNull(safeIdx)
+            val firstIncomplete = ex?.sets?.indexOfFirst { !it.completed }?.takeIf { it >= 0 } ?: 0
+            s.copy(activeExerciseIndex = safeIdx, focusedSetIndex = firstIncomplete)
+        }
+    }
+
+    fun focusSet(exerciseIndex: Int, setIndex: Int) {
+        _uiState.update { s ->
+            s.copy(
+                activeExerciseIndex = exerciseIndex.coerceIn(0, (s.activeExercises.size - 1).coerceAtLeast(0)),
+                focusedSetIndex = setIndex.coerceAtLeast(0)
+            )
         }
     }
 
@@ -256,6 +325,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 isWorkoutActive = true,
                 activeWorkoutTitle = day.title,
                 activeExercises = activeList,
+                activeExerciseIndex = 0,
+                focusedSetIndex = 0,
                 workoutElapsedSeconds = 0,
                 lastFinishedSession = null,
                 expandedVideoExerciseIds = emptySet()
@@ -283,6 +354,8 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                 isWorkoutActive = true,
                 activeWorkoutTitle = title,
                 activeExercises = defaultEx,
+                activeExerciseIndex = 0,
+                focusedSetIndex = 0,
                 workoutElapsedSeconds = 0,
                 lastFinishedSession = null,
                 expandedVideoExerciseIds = emptySet()
@@ -312,7 +385,12 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             }
         )
         _uiState.update {
-            it.copy(activeExercises = it.activeExercises + newSessionEx)
+            val newList = it.activeExercises + newSessionEx
+            it.copy(
+                activeExercises = newList,
+                activeExerciseIndex = newList.lastIndex,
+                focusedSetIndex = 0
+            )
         }
     }
 
@@ -328,17 +406,19 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                     sets = old.sets.map { s -> s.copy(weightKg = suggestedWeight, completed = false, isPr = false) }
                 )
             }
-            state.copy(activeExercises = updated)
+            state.copy(activeExercises = updated, focusedSetIndex = 0)
         }
     }
 
     fun addSetToExercise(exerciseIndex: Int) {
         _uiState.update { state ->
+            var newSetIdx = 0
             val updated = state.activeExercises.mapIndexed { idx, item ->
                 if (idx != exerciseIndex) item
                 else {
                     val lastSet = item.sets.lastOrNull()
                     val nextNum = item.sets.size + 1
+                    newSetIdx = item.sets.size
                     val newSet = ActiveSetLog(
                         setNumber = nextNum,
                         setType = SetType.WORKING,
@@ -350,7 +430,7 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                     item.copy(sets = item.sets + newSet)
                 }
             }
-            state.copy(activeExercises = updated)
+            state.copy(activeExercises = updated, focusedSetIndex = newSetIdx)
         }
     }
 
@@ -388,6 +468,9 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
 
         _uiState.update { state ->
             val currentPrs = state.exercisePrs
+            var nextExIdx = state.activeExerciseIndex
+            var nextSetIdx = state.focusedSetIndex
+
             val updated = state.activeExercises.mapIndexed { idx, item ->
                 if (idx != exerciseIndex) item
                 else {
@@ -405,10 +488,23 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
                             set.copy(completed = nowCompleted, isPr = isNewPr)
                         }
                     }
+                    if (idx == exerciseIndex) {
+                        val nextIncompleteInEx = newSets.indexOfFirst { !it.completed }
+                        if (nextIncompleteInEx >= 0) {
+                            nextSetIdx = nextIncompleteInEx
+                        } else if (exerciseIndex + 1 < state.activeExercises.size) {
+                            nextExIdx = exerciseIndex + 1
+                            nextSetIdx = 0
+                        }
+                    }
                     item.copy(sets = newSets)
                 }
             }
-            state.copy(activeExercises = updated)
+            state.copy(
+                activeExercises = updated,
+                activeExerciseIndex = nextExIdx,
+                focusedSetIndex = nextSetIdx
+            )
         }
 
         if (shouldStartTimer) {
@@ -455,13 +551,16 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
 
-        val dateFmt = SimpleDateFormat("dd/MM", Locale("pt", "BR")).format(Date())
+        val now = Date()
+        val dateFmt = SimpleDateFormat("dd/MM", Locale("pt", "BR")).format(now)
+        val isoFmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(now)
         val durationMin = (state.workoutElapsedSeconds / 60).coerceAtLeast(1)
 
         val record = WorkoutSessionRecord(
             id = UUID.randomUUID().toString(),
             workoutTitle = state.activeWorkoutTitle,
             dateFormatted = dateFmt,
+            isoDate = isoFmt,
             timestamp = System.currentTimeMillis(),
             durationMinutes = durationMin,
             totalVolumeKg = totalVolume,
@@ -680,6 +779,70 @@ class IronForgeViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        fun buildDefaultWeeklySchedule(splitId: String, customDay: WorkoutDay?): Map<Int, String?> {
+            if (customDay != null) {
+                return mapOf(
+                    1 to customDay.id, // Segunda
+                    2 to null,         // Terça (Descanso)
+                    3 to customDay.id, // Quarta
+                    4 to null,         // Quinta (Descanso)
+                    5 to customDay.id, // Sexta
+                    6 to null,         // Sábado
+                    7 to null          // Domingo
+                )
+            }
+            val split = ExerciseRepository.defaultSplits.find { it.id == splitId }
+                ?: ExerciseRepository.defaultSplits.first()
+            val d = split.days
+            return when (split.id) {
+                "split_ppl_pro" -> mapOf(
+                    1 to d.getOrNull(0)?.id, // Seg: Push A
+                    2 to d.getOrNull(1)?.id, // Ter: Pull A
+                    3 to d.getOrNull(2)?.id, // Qua: Legs A
+                    4 to d.getOrNull(0)?.id, // Qui: Push
+                    5 to d.getOrNull(1)?.id, // Sex: Pull
+                    6 to d.getOrNull(3)?.id, // Sáb: Legs B
+                    7 to null                // Dom: Descanso
+                )
+                "split_upper_lower" -> mapOf(
+                    1 to d.getOrNull(0)?.id, // Seg: Upper 1
+                    2 to d.getOrNull(1)?.id, // Ter: Lower 1
+                    3 to null,               // Qua: Descanso
+                    4 to d.getOrNull(2)?.id, // Qui: Upper 2
+                    5 to d.getOrNull(3)?.id, // Sex: Lower 2
+                    6 to null,               // Sáb: Descanso
+                    7 to null                // Dom: Descanso
+                )
+                "split_abcde_classic" -> mapOf(
+                    1 to d.getOrNull(0)?.id, // Seg: Treino A
+                    2 to d.getOrNull(1)?.id, // Ter: Treino B
+                    3 to d.getOrNull(2)?.id, // Qua: Treino C
+                    4 to d.getOrNull(3)?.id, // Qui: Treino D
+                    5 to d.getOrNull(4)?.id, // Sex: Treino E
+                    6 to null,               // Sáb: Descanso
+                    7 to null                // Dom: Descanso
+                )
+                "split_arnold" -> mapOf(
+                    1 to d.getOrNull(0)?.id, // Seg: Peito & Costas
+                    2 to d.getOrNull(1)?.id, // Ter: Ombros & Braços
+                    3 to d.getOrNull(2)?.id, // Qua: Pernas & Core
+                    4 to d.getOrNull(0)?.id, // Qui: Peito & Costas
+                    5 to d.getOrNull(1)?.id, // Sex: Ombros & Braços
+                    6 to d.getOrNull(2)?.id, // Sáb: Pernas & Core
+                    7 to null                // Dom: Descanso
+                )
+                else -> mapOf(
+                    1 to d.getOrNull(0)?.id, // Seg: Full Body A
+                    2 to null,               // Ter: Descanso
+                    3 to d.getOrNull(1)?.id, // Qua: Full Body B
+                    4 to null,               // Qui: Descanso
+                    5 to d.getOrNull(0)?.id, // Sex: Full Body A
+                    6 to null,               // Sáb: Descanso
+                    7 to null                // Dom: Descanso
+                )
+            }
+        }
+
         fun estimate1RM(weightKg: Double, reps: Int): Double {
             if (weightKg <= 0.0) return 0.0
             if (reps <= 1) return weightKg
