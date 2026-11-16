@@ -343,9 +343,9 @@ fun OnboardingScreen(
                                             Spacer(modifier = Modifier.height(3.dp))
                                             Text(
                                                 text = when (goal) {
-                                                    FitnessGoal.HYPERTROPHY -> "Ganho máximo de massa muscular com progressão de carga"
-                                                    FitnessGoal.FAT_LOSS -> "Definição muscular preservando força e massa magra"
-                                                    FitnessGoal.RECOMPOSITION -> "Queima de gordura simultânea ao ganho de tônus"
+                                                    FitnessGoal.LEAN_BULK -> "Ganho máximo de massa muscular com progressão de carga"
+                                                    FitnessGoal.CUTTING_MODERATE -> "Definição muscular preservando força e massa magra"
+                                                    FitnessGoal.RECOMP -> "Queima de gordura simultânea ao ganho de tônus"
                                                     FitnessGoal.STRENGTH -> "Força bruta nos levantamentos básicos e potência"
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
@@ -823,7 +823,7 @@ fun OnboardingScreen(
                             isMale = isMale,
                             age = ageFloat.roundToInt().coerceIn(14, 90),
                             weightKg = ((weightFloat * 10).roundToInt() / 10.0).coerceIn(35.0, 220.0),
-                            heightCm = heightFloat.roundToInt().coerceIn(120, 230),
+                            heightCm = heightFloat.roundToInt().coerceIn(120, 230).toDouble(),
                             bodyFatPct = ((bfFloat * 10).roundToInt() / 10.0).coerceIn(3.0, 50.0),
                             experience = selectedExp,
                             goal = selectedGoal,
