@@ -6,6 +6,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color as AndroidColor
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.webkit.JavascriptInterface
+import android.webkit.WebResourceError
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -23,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,7 +52,29 @@ import com.ironforge.pro.ui.theme.LocalIronPalette
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+/**
+ * Ponte JS -> Kotlin: o iframe do YouTube envia eventos via postMessage e a página os repassa aqui.
+ * Os callbacks chegam em thread de background, então são reenviados para a main thread.
+ */
+private class YouTubeEmbedBridge(
+    private val onError: (Int) -> Unit,
+    private val onAlive: () -> Unit
+) {
+    private val main = Handler(Looper.getMainLooper())
+
+    @JavascriptInterface
+    fun onPlayerError(code: Int) {
+        main.post { onError(code) }
+    }
+
+    @JavascriptInterface
+    fun onPlayerAlive() {
+        main.post { onAlive() }
+    }
+}
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -80,6 +108,24 @@ fun ExerciseMiniVideoPlayer(
     var inlinePlayerActive by remember(exercise.id) { mutableStateOf(false) }
     var useCustomMp4 by remember(exercise.id, customVideoUri) { mutableStateOf(customVideoUri != null) }
 
+    // Estado do embed: 0 = sem erro, >0 = código de erro do YouTube, -1 = falha de rede/WebView
+    var embedError by remember(exercise.id) { mutableIntStateOf(0) }
+    var embedAlive by remember(exercise.id) { mutableStateOf(false) }
+    var showSlowHint by remember(exercise.id) { mutableStateOf(false) }
+    var reloadKey by remember(exercise.id) { mutableIntStateOf(0) }
+
+    // O YouTube exige que o embed identifique o app via Referer: https://<applicationId>.
+    // (O build debug usa o sufixo ".debug"; removemos para usar sempre o ID base do app.)
+    val appReferer = remember { "https://" + context.packageName.removeSuffix(".debug") }
+
+    // Se o player não der sinal de vida em alguns segundos, mostra um atalho (sem esconder o vídeo).
+    LaunchedEffect(inlinePlayerActive, reloadKey) {
+        if (inlinePlayerActive) {
+            delay(7000)
+            if (!embedAlive && embedError == 0) showSlowHint = true
+        }
+    }
+
     fun openExternalYouTube() {
         runCatching {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoDemo.watchUrl)).apply {
@@ -89,13 +135,12 @@ fun ExerciseMiniVideoPlayer(
         }
     }
 
-    val embedHtml = remember(videoDemo.youtubeVideoId) {
+    val embedHtml = remember(videoDemo.youtubeVideoId, appReferer) {
         """
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-          <meta name="referrer" content="strict-origin-when-cross-origin">
           <style>
             * { margin:0; padding:0; box-sizing:border-box; background:#070A10; }
             html, body { width:100%; height:100%; overflow:hidden; }
@@ -103,12 +148,30 @@ fun ExerciseMiniVideoPlayer(
           </style>
         </head>
         <body>
-          <iframe
-            src="https://www.youtube.com/embed/${videoDemo.youtubeVideoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&origin=https://www.youtube.com"
+          <iframe id="yt"
+            src="https://www.youtube.com/embed/${videoDemo.youtubeVideoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=$appReferer&widget_referrer=$appReferer"
             referrerpolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen>
           </iframe>
+          <script>
+            var f = document.getElementById('yt');
+            function listen() {
+              try { f.contentWindow.postMessage(JSON.stringify({event:'listening', id:1, channel:'widget'}), '*'); } catch (e) {}
+            }
+            f.addEventListener('load', function () { listen(); setTimeout(listen, 600); setTimeout(listen, 1800); });
+            window.addEventListener('message', function (e) {
+              var d = e.data;
+              if (typeof d !== 'string') { try { d = JSON.stringify(d); } catch (x) { return; } }
+              if (d.indexOf('"onError"') > -1) {
+                var m = d.match(/"info"\s*:\s*(\d+)/);
+                IronBridge.onPlayerError(m ? parseInt(m[1]) : -1);
+              } else if (d.indexOf('onReady') > -1 || d.indexOf('onStateChange') > -1 ||
+                         d.indexOf('initialDelivery') > -1 || d.indexOf('infoDelivery') > -1) {
+                IronBridge.onPlayerAlive();
+              }
+            });
+          </script>
         </body>
         </html>
         """.trimIndent()
@@ -144,52 +207,69 @@ fun ExerciseMiniVideoPlayer(
                 }
 
                 inlinePlayerActive -> {
-                    AndroidView(
-                        factory = { ctx ->
-                            WebView(ctx).apply {
-                                setBackgroundColor(AndroidColor.parseColor("#070A10"))
-                                settings.apply {
-                                    javaScriptEnabled = true
-                                    domStorageEnabled = true
-                                    mediaPlaybackRequiresUserGesture = false
-                                    loadWithOverviewMode = true
-                                    useWideViewPort = true
-                                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                                    userAgentString =
-                                        "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
-                                }
-                                webChromeClient = WebChromeClient()
-                                webViewClient = object : WebViewClient() {
-                                    override fun shouldOverrideUrlLoading(
-                                        view: WebView?,
-                                        request: WebResourceRequest?
-                                    ): Boolean {
-                                        val urlStr = request?.url?.toString() ?: return false
-                                        if (urlStr.contains("watch?v=") || urlStr.contains("youtu.be/")) {
-                                            openExternalYouTube()
-                                            return true
-                                        }
-                                        return false
+                    key(reloadKey) {
+                        AndroidView(
+                            factory = { ctx ->
+                                WebView(ctx).apply {
+                                    setBackgroundColor(AndroidColor.parseColor("#070A10"))
+                                    settings.apply {
+                                        javaScriptEnabled = true
+                                        domStorageEnabled = true
+                                        mediaPlaybackRequiresUserGesture = false
+                                        loadWithOverviewMode = true
+                                        useWideViewPort = true
+                                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     }
+                                    addJavascriptInterface(
+                                        YouTubeEmbedBridge(
+                                            onError = { code -> embedError = if (code == 0) -1 else code },
+                                            onAlive = { embedAlive = true; showSlowHint = false }
+                                        ),
+                                        "IronBridge"
+                                    )
+                                    webChromeClient = WebChromeClient()
+                                    webViewClient = object : WebViewClient() {
+                                        override fun shouldOverrideUrlLoading(
+                                            view: WebView?,
+                                            request: WebResourceRequest?
+                                        ): Boolean {
+                                            val urlStr = request?.url?.toString() ?: return false
+                                            if (urlStr.contains("watch?v=") || urlStr.contains("youtu.be/")) {
+                                                openExternalYouTube()
+                                                return true
+                                            }
+                                            return false
+                                        }
+
+                                        override fun onReceivedError(
+                                            view: WebView?,
+                                            request: WebResourceRequest?,
+                                            error: WebResourceError?
+                                        ) {
+                                            if (request?.isForMainFrame == true) embedError = -1
+                                        }
+                                    }
+                                    // baseUrl = https://<applicationId> faz o WebView enviar esse Referer ao YouTube.
+                                    loadDataWithBaseURL(
+                                        appReferer,
+                                        embedHtml,
+                                        "text/html",
+                                        "UTF-8",
+                                        null
+                                    )
                                 }
-                                loadDataWithBaseURL(
-                                    "https://www.youtube.com",
-                                    embedHtml,
-                                    "text/html",
-                                    "UTF-8",
-                                    "https://www.youtube.com"
-                                )
-                            }
-                        },
-                        onRelease = { wv ->
-                            runCatching {
-                                wv.stopLoading()
-                                wv.loadUrl("about:blank")
-                                wv.destroy()
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
+                            },
+                            onRelease = { wv ->
+                                runCatching {
+                                    wv.stopLoading()
+                                    wv.removeJavascriptInterface("IronBridge")
+                                    wv.loadUrl("about:blank")
+                                    wv.destroy()
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
 
                 else -> {
@@ -286,6 +366,82 @@ fun ExerciseMiniVideoPlayer(
                                 .align(Alignment.BottomStart)
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
+                    }
+                }
+            }
+
+            // Falha do embed: nunca deixar um quadro preto, sempre oferecer o caminho alternativo
+            if (inlinePlayerActive && !useCustomMp4 && embedError != 0) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(listOf(Color(0xFF0B1220), Color(0xFF070A10)))
+                        )
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = when (embedError) {
+                            101, 150 -> "O dono do vídeo não permite reprodução dentro de apps."
+                            153 -> "O YouTube recusou a reprodução dentro do app (erro 153)."
+                            -1 -> "Sem conexão para carregar o vídeo."
+                            else -> "Não foi possível reproduzir aqui (erro $embedError)."
+                        },
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color(0xFFFF0000))
+                                .clickable { openExternalYouTube() }
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Assistir no YouTube", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color(0xE6111622))
+                                .clickable {
+                                    embedError = 0
+                                    embedAlive = false
+                                    showSlowHint = false
+                                    reloadKey += 1
+                                }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, tint = palette.primaryGlow, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Tentar de novo", color = palette.primaryGlow, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            } else if (inlinePlayerActive && !useCustomMp4 && showSlowHint && !embedAlive) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 10.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xE6111622))
+                        .clickable { openExternalYouTube() }
+                        .padding(horizontal = 12.dp, vertical = 7.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Não carregou? Abrir no YouTube", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
