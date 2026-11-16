@@ -7,6 +7,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,9 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironforge.pro.R
@@ -47,14 +50,12 @@ fun OnboardingScreen(
 
     var name by remember { mutableStateOf(if (initialProfile.name == "Atleta") "" else initialProfile.name) }
     var isMale by remember { mutableStateOf(initialProfile.isMale) }
-    var ageInput by remember { mutableStateOf(initialProfile.age.toString()) }
-    var weightInput by remember { mutableStateOf(initialProfile.weightKg.toString()) }
-    var heightInput by remember { mutableStateOf(initialProfile.heightCm.toString()) }
-    var bfInput by remember { mutableStateOf(initialProfile.bodyFatPct.toString()) }
+    var ageFloat by remember { mutableFloatStateOf(initialProfile.age.toFloat().coerceIn(16f, 75f)) }
+    var weightFloat by remember { mutableFloatStateOf(initialProfile.weightKg.toFloat().coerceIn(40f, 160f)) }
+    var heightFloat by remember { mutableFloatStateOf(initialProfile.heightCm.toFloat().coerceIn(140f, 215f)) }
+    var bfFloat by remember { mutableFloatStateOf(initialProfile.bodyFatPct.toFloat().coerceIn(5f, 42f)) }
     var selectedExp by remember { mutableStateOf(initialProfile.experience) }
     var selectedGoal by remember { mutableStateOf(initialProfile.goal) }
-
-    var themeStyleFilter by remember { mutableStateOf<ThemeSurfaceStyle?>(null) }
 
     var workoutMode by remember { mutableIntStateOf(0) }
     var selectedSplitId by remember { mutableStateOf(ExerciseRepository.defaultSplits.first().id) }
@@ -72,12 +73,7 @@ fun OnboardingScreen(
         )
     }
 
-    val stepTitles = listOf(
-        "1. Cadastro & Biometria",
-        "2. Temas AMOLED & Claros",
-        "3. Monte seu Treino",
-        "4. Calibração Final"
-    )
+    val totalSteps = 4
 
     Column(
         modifier = Modifier
@@ -85,311 +81,331 @@ fun OnboardingScreen(
             .background(palette.bg)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // BeFit-Inspired Top Navigation & Smooth Segmented Progress Bar
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.linearGradient(listOf(palette.primary, palette.secondary))),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LottieStudioAnimation(
-                        assetPath = "lotties/launch_logo.json",
-                        modifier = Modifier.size(34.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text(
-                        text = "CONFIGURAÇÃO INICIAL",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = palette.primaryGlow
-                    )
-                    Text(
-                        text = stepTitles[step],
-                        style = MaterialTheme.typography.titleLarge,
-                        color = palette.textPrimary
-                    )
-                }
-            }
-
-            HyperPillTag("Etapa ${step + 1}/4", palette.secondary)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            for (i in 0..3) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(5.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (i <= step) palette.primary else palette.tileElevated
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (step > 0) {
+                    Surface(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clickable { step -= 1 },
+                        shape = CircleShape,
+                        color = palette.tileElevated,
+                        border = BorderStroke(1.dp, palette.hairline)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Voltar",
+                                tint = palette.textPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Brush.linearGradient(listOf(palette.primary, palette.secondary))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FitnessCenter,
+                                contentDescription = null,
+                                tint = palette.onPrimaryAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "IRONFORGE PRO",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                            color = palette.textPrimary,
+                            letterSpacing = 1.sp
                         )
+                    }
+                }
+
+                Text(
+                    text = "PASSO ${step + 1} DE $totalSteps",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                    color = palette.primaryGlow,
+                    letterSpacing = 1.sp
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Clean BeFit Segmented Progress Pill Track
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (i in 0 until totalSteps) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (i <= step) {
+                                    Brush.horizontalGradient(listOf(palette.primary, palette.secondary))
+                                } else {
+                                    Brush.horizontalGradient(listOf(palette.tileElevated, palette.tileElevated))
+                                }
+                            )
+                    )
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Box(modifier = Modifier.weight(1f)) {
+        // Main Step Content
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 20.dp)
+        ) {
             AnimatedContent(
                 targetState = step,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "onboardingStep"
+                label = "befitOnboardingStep"
             ) { currentStep ->
                 when (currentStep) {
+                    // =========================================================================
+                    // STEP 0: BEFIT HERO ENTRANCE + VISUAL GENDER SELECTION + ATHLETE NAME
+                    // =========================================================================
                     0 -> {
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(bottom = 20.dp)
                         ) {
                             item {
-                                WelcomeCoachVideoCard(height = 156.dp)
-                            }
-
-                            item {
-                                HyperSquircleCard(accentGlow = true) {
-                                    Text("Identificação do Atleta", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Text("Esses dados calibram suas calorias, macros e cargas iniciais.", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    OutlinedTextField(
-                                        value = name,
-                                        onValueChange = { name = it },
-                                        label = { Text("Seu Nome ou Apelido") },
-                                        placeholder = { Text("Ex.: Leonardo") },
-                                        singleLine = true,
-                                        modifier = Modifier.fillMaxWidth()
+                                Column {
+                                    Text(
+                                        text = "Vamos personalizar seu plano de treino",
+                                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                                        color = palette.textPrimary
                                     )
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text("Sexo Biológico:", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        FilterChip(
-                                            selected = isMale,
-                                            onClick = { isMale = true },
-                                            shape = CircleShape,
-                                            label = { Text("Masculino") }
-                                        )
-                                        FilterChip(
-                                            selected = !isMale,
-                                            onClick = { isMale = false },
-                                            shape = CircleShape,
-                                            label = { Text("Feminino") }
-                                        )
-                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Biomecânica adaptada ao seu perfil fisiológico e metas reais.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = palette.textSecondary
+                                    )
                                 }
                             }
 
+                            // Hero Studio Video Card (BeFit Entrance Video)
                             item {
-                                HyperSquircleCard {
-                                    Text("Medidas Corporais Atuais", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(
-                                            value = ageInput,
-                                            onValueChange = { ageInput = it },
-                                            label = { Text("Idade") },
-                                            singleLine = true,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        OutlinedTextField(
-                                            value = weightInput,
-                                            onValueChange = { weightInput = it },
-                                            label = { Text("Peso (kg)") },
-                                            singleLine = true,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        OutlinedTextField(
-                                            value = heightInput,
-                                            onValueChange = { heightInput = it },
-                                            label = { Text("Altura (cm)") },
-                                            singleLine = true,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        OutlinedTextField(
-                                            value = bfInput,
-                                            onValueChange = { bfInput = it },
-                                            label = { Text("% Gordura (Est.)") },
-                                            singleLine = true,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
+                                EmbeddedStudioVideoCard(
+                                    rawResId = R.raw.befit_welcome_pt,
+                                    badge = "TREINO INTELIGENTE",
+                                    title = "Ciência & Alta Performance",
+                                    subtitle = "Execuções reais em vídeo e periodização automática",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    height = 172.dp,
+                                    initialPlaying = true
+                                )
+                            }
+
+                            // Visual Gender Selection Cards (Inspired by BeFit Gender Screen)
+                            item {
+                                Text(
+                                    text = "Selecione seu perfil biológico",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = palette.textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    GenderVisualCard(
+                                        title = "Masculino",
+                                        subtitle = "Foco força & densidade",
+                                        imageRes = R.drawable.visual_goal_bulk_male,
+                                        selected = isMale,
+                                        onClick = { isMale = true },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    GenderVisualCard(
+                                        title = "Feminino",
+                                        subtitle = "Foco definição & glúteos",
+                                        imageRes = R.drawable.visual_goal_recomp_female,
+                                        selected = !isMale,
+                                        onClick = { isMale = false },
+                                        modifier = Modifier.weight(1f)
+                                    )
                                 }
                             }
 
+                            // Clean Name Card
                             item {
-                                HyperSquircleCard {
-                                    Text("Nível de Experiência", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    ExperienceLevel.entries.forEach { lvl ->
-                                        val selected = selectedExp == lvl
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                                .clip(RoundedCornerShape(14.dp))
-                                                .background(if (selected) palette.primary.copy(alpha = 0.16f) else palette.tileElevated)
-                                                .clickable { selectedExp = lvl }
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            RadioButton(selected = selected, onClick = { selectedExp = lvl })
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Column {
-                                                Text(lvl.label, color = palette.textPrimary, fontWeight = FontWeight.Bold)
-                                                Text(lvl.subtitle, color = palette.textSecondary, fontSize = 12.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            item {
-                                HyperSquircleCard {
-                                    Text("Objetivo Principal", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    FitnessGoal.entries.forEach { goal ->
-                                        val selected = selectedGoal == goal
-                                        val goalImgRes = resolveGoalIllustrationRes(goal, isMale)
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(if (selected) palette.primary.copy(alpha = 0.18f) else palette.tileElevated)
-                                                .clickable { selectedGoal = goal }
-                                                .padding(10.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Image(
-                                                painter = painterResource(id = goalImgRes),
-                                                contentDescription = goal.label,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier
-                                                    .size(54.dp)
-                                                    .clip(RoundedCornerShape(12.dp))
-                                            )
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Text(
-                                                text = goal.label,
-                                                color = palette.textPrimary,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            RadioButton(selected = selected, onClick = { selectedGoal = goal })
-                                        }
+                                Surface(
+                                    shape = RoundedCornerShape(22.dp),
+                                    color = palette.card,
+                                    border = BorderStroke(1.dp, palette.hairline)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = "Como devemos te chamar?",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            color = palette.textPrimary
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        OutlinedTextField(
+                                            value = name,
+                                            onValueChange = { name = it },
+                                            placeholder = { Text("Digite seu nome ou apelido", color = palette.textMuted) },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.Person, contentDescription = null, tint = palette.primary)
+                                            },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(16.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
                                     }
                                 }
                             }
                         }
                     }
 
+                    // =========================================================================
+                    // STEP 1: VISUAL GOAL CARDS (BEFIT STYLE) + EXPERIENCE LEVEL
+                    // =========================================================================
                     1 -> {
-                        val filteredThemes = remember(themeStyleFilter) {
-                            AppThemePreset.entries.filter { themeStyleFilter == null || it.style == themeStyleFilter }
-                        }
-
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(bottom = 20.dp)
                         ) {
                             item {
-                                HyperSquircleCard(accentGlow = true) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Palette, contentDescription = null, tint = palette.primary)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Temas AMOLED, Claros & Android 17", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
-                                    }
+                                Column {
+                                    Text(
+                                        text = "Qual é o seu objetivo principal?",
+                                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                                        color = palette.textPrimary
+                                    )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Escolha entre Preto Puro AMOLED (#000000), Tons Claros suaves ou Dark Titanium com pré-visualização instantânea.",
+                                        text = "Ajustamos volume semanal, descanso e superávit/déficit calórico.",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = palette.textSecondary
                                     )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        item {
-                                            FilterChip(
-                                                selected = themeStyleFilter == null,
-                                                onClick = { themeStyleFilter = null },
-                                                shape = CircleShape,
-                                                label = { Text("Todos (10)") }
-                                            )
-                                        }
-                                        items(ThemeSurfaceStyle.entries) { st ->
-                                            FilterChip(
-                                                selected = themeStyleFilter == st,
-                                                onClick = { themeStyleFilter = if (themeStyleFilter == st) null else st },
-                                                shape = CircleShape,
-                                                label = { Text(st.label) }
-                                            )
-                                        }
-                                    }
                                 }
                             }
 
-                            items(filteredThemes) { preset ->
-                                val isSelected = currentTheme == preset
+                            items(FitnessGoal.entries) { goal ->
+                                val selected = selectedGoal == goal
+                                val goalImgRes = resolveGoalIllustrationRes(goal, isMale)
                                 Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { onPreviewTheme(preset) },
+                                        .clickable { selectedGoal = goal },
                                     shape = RoundedCornerShape(22.dp),
-                                    color = if (isSelected) palette.tileElevated else palette.card,
+                                    color = if (selected) palette.tileElevated else palette.card,
                                     border = BorderStroke(
-                                        width = if (isSelected) 2.dp else 1.dp,
-                                        color = if (isSelected) palette.primary else palette.hairline
+                                        width = if (selected) 2.dp else 1.dp,
+                                        color = if (selected) palette.primary else palette.hairline
                                     )
                                 ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(14.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                            .padding(12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        Image(
+                                            painter = painterResource(id = goalImgRes),
+                                            contentDescription = goal.label,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(72.dp)
+                                                .clip(RoundedCornerShape(16.dp))
+                                        )
+                                        Spacer(modifier = Modifier.width(14.dp))
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    text = preset.title,
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    color = palette.textPrimary
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                HyperPillTag(preset.style.label, palette.secondary)
-                                            }
                                             Text(
-                                                text = preset.subtitle,
-                                                style = MaterialTheme.typography.bodyMedium,
+                                                text = goal.label,
+                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                                color = palette.textPrimary
+                                            )
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            Text(
+                                                text = when (goal) {
+                                                    FitnessGoal.HYPERTROPHY -> "Ganho máximo de massa muscular com progressão de carga"
+                                                    FitnessGoal.FAT_LOSS -> "Definição muscular preservando força e massa magra"
+                                                    FitnessGoal.RECOMPOSITION -> "Queima de gordura simultânea ao ganho de tônus"
+                                                    FitnessGoal.STRENGTH -> "Força bruta nos levantamentos básicos e potência"
+                                                },
+                                                style = MaterialTheme.typography.bodySmall,
                                                 color = palette.textSecondary
                                             )
                                         }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Icon(
+                                            imageVector = if (selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                            contentDescription = null,
+                                            tint = if (selected) palette.primary else palette.textMuted,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
 
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.bgHex)))
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.primaryHex)))
-                                            Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(preset.secondaryHex)))
-                                            if (isSelected) {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
-                                            }
+                            item {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Seu nível atual na musculação",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = palette.textPrimary
+                                )
+                            }
+
+                            items(ExperienceLevel.entries) { lvl ->
+                                val selected = selectedExp == lvl
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedExp = lvl },
+                                    shape = RoundedCornerShape(18.dp),
+                                    color = if (selected) palette.primary.copy(alpha = 0.14f) else palette.card,
+                                    border = BorderStroke(
+                                        width = if (selected) 1.5.dp else 1.dp,
+                                        color = if (selected) palette.primary else palette.hairline
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = when (lvl) {
+                                                ExperienceLevel.BEGINNER -> Icons.Default.DirectionsWalk
+                                                ExperienceLevel.INTERMEDIATE -> Icons.Default.FitnessCenter
+                                                ExperienceLevel.ADVANCED -> Icons.Default.Whatshot
+                                            },
+                                            contentDescription = null,
+                                            tint = if (selected) palette.primary else palette.textSecondary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(lvl.label, color = palette.textPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                            Text(lvl.subtitle, color = palette.textSecondary, fontSize = 12.sp)
+                                        }
+                                        if (selected) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
                                         }
                                     }
                                 }
@@ -397,7 +413,157 @@ fun OnboardingScreen(
                         }
                     }
 
+                    // =========================================================================
+                    // STEP 2: INTERACTIVE BIOMETRIC SLIDERS + BEFIT TRANSFORMATION PROOF
+                    // =========================================================================
                     2 -> {
+                        val ageInt = ageFloat.roundToInt()
+                        val weightClean = (weightFloat * 10).roundToInt() / 10.0
+                        val heightInt = heightFloat.roundToInt()
+                        val bfClean = (bfFloat * 10).roundToInt() / 10.0
+                        val bmi = weightClean / ((heightInt / 100.0) * (heightInt / 100.0))
+
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(bottom = 20.dp)
+                        ) {
+                            item {
+                                Column {
+                                    Text(
+                                        text = "Suas medidas biométricas",
+                                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                                        color = palette.textPrimary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Deslize para ajustar rapidamente sem precisar digitar.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = palette.textSecondary
+                                    )
+                                }
+                            }
+
+                            // Interactive Slider Cards (BeFit Tactile Picker Style)
+                            item {
+                                BiometricSliderCard(
+                                    icon = Icons.Default.Cake,
+                                    label = "IDADE",
+                                    valueDisplay = "$ageInt anos",
+                                    value = ageFloat,
+                                    valueRange = 16f..75f,
+                                    onValueChange = { ageFloat = it }
+                                )
+                            }
+
+                            item {
+                                BiometricSliderCard(
+                                    icon = Icons.Default.MonitorWeight,
+                                    label = "PESO CORPORAL",
+                                    valueDisplay = "${String.format("%.1f", weightClean)} kg",
+                                    value = weightFloat,
+                                    valueRange = 40f..160f,
+                                    onValueChange = { weightFloat = it }
+                                )
+                            }
+
+                            item {
+                                BiometricSliderCard(
+                                    icon = Icons.Default.Height,
+                                    label = "ALTURA",
+                                    valueDisplay = "$heightInt cm",
+                                    value = heightFloat,
+                                    valueRange = 140f..215f,
+                                    onValueChange = { heightFloat = it }
+                                )
+                            }
+
+                            item {
+                                BiometricSliderCard(
+                                    icon = Icons.Default.Speed,
+                                    label = "PERCENTUAL DE GORDURA ESTIMADO",
+                                    valueDisplay = "${String.format("%.1f", bfClean)}%",
+                                    value = bfFloat,
+                                    valueRange = 5f..42f,
+                                    onValueChange = { bfFloat = it }
+                                )
+                            }
+
+                            // Live Physiological Summary + BeFit Transformation Proof Card
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(22.dp),
+                                    color = palette.card,
+                                    border = BorderStroke(1.dp, palette.primary.copy(alpha = 0.35f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Image(
+                                                painter = painterResource(
+                                                    id = if (isMale) R.drawable.befit_male_before else R.drawable.befit_female_before
+                                                ),
+                                                contentDescription = "Antes",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .width(52.dp)
+                                                    .height(76.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                            )
+                                            Image(
+                                                painter = painterResource(
+                                                    id = if (isMale) R.drawable.befit_male_after else R.drawable.befit_female_after
+                                                ),
+                                                contentDescription = "Depois",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .width(52.dp)
+                                                    .height(76.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            HyperPillTag("IMC ${String.format("%.1f", bmi)}", palette.primaryGlow)
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = "Projeção de Evolução 12 Semanas",
+                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                color = palette.textPrimary
+                                            )
+                                            Text(
+                                                text = "Protocolo calibrado para ${selectedGoal.label.lowercase()} com sobrecarga progressiva.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = palette.textSecondary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // =========================================================================
+                    // STEP 3: WORKOUT SPLIT + THEME PRESET + BEFIT READY BANNER
+                    // =========================================================================
+                    3 -> {
+                        val finalWeight = ((weightFloat * 10).roundToInt() / 10.0).coerceIn(35.0, 220.0)
+                        val finalHeight = heightFloat.roundToInt().coerceIn(120, 230)
+                        val finalAge = ageFloat.roundToInt().coerceIn(14, 90)
+                        val bmr = if (isMale) {
+                            (10.0 * finalWeight) + (6.25 * finalHeight) - (5.0 * finalAge) + 5.0
+                        } else {
+                            (10.0 * finalWeight) + (6.25 * finalHeight) - (5.0 * finalAge) - 161.0
+                        }
+                        val tdee = bmr * 1.55
+                        val targetKcal = (tdee + selectedGoal.kcalOffset).roundToInt()
+                        val proteinG = (finalWeight * selectedGoal.proteinPerKg).roundToInt()
+                        val fatG = (finalWeight * 0.85).roundToInt()
+                        val carbG = ((targetKcal - proteinG * 4 - fatG * 9).coerceAtLeast(200) / 4.0).roundToInt()
+
                         val filteredExercises = remember(exerciseSearch, selectedMuscleFilter) {
                             ExerciseRepository.allExercises.filter { ex ->
                                 val qOk = exerciseSearch.isBlank() || ex.name.contains(exerciseSearch, ignoreCase = true)
@@ -407,38 +573,123 @@ fun OnboardingScreen(
                         }
 
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            contentPadding = PaddingValues(bottom = 20.dp)
                         ) {
+                            // BeFit Plan Ready Hero Card
                             item {
-                                EmbeddedStudioVideoCard(
-                                    rawResId = if (isMale) R.raw.studio_sp_male else R.raw.studio_sp_female,
-                                    badge = "DEMONSTRAÇÃO REAL",
-                                    title = "Resultados & Periodização Científica",
-                                    subtitle = "Escolha uma divisão pronta ou monte sua ficha",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    height = 148.dp,
-                                    initialPlaying = true
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = palette.card,
+                                    border = BorderStroke(1.5.dp, palette.primary.copy(alpha = 0.45f))
+                                ) {
+                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                        AnimatedGifView(
+                                            assetPath = "gifs/plan_review_confetti.gif",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(130.dp)
+                                                .align(Alignment.TopCenter)
+                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                HyperPillTag("PLANO PRONTO", HyperEmerald)
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text(
+                                                    text = "Tudo pronto, ${name.ifBlank { "Atleta" }}!",
+                                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                                    color = palette.textPrimary
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "$targetKcal kcal/dia • ${proteinG}g Prot • ${carbG}g Carb • ${fatG}g Gord",
+                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = palette.primaryGlow
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Image(
+                                                painter = painterResource(
+                                                    id = if (isMale) R.drawable.befit_checkpoint_male else R.drawable.befit_checkpoint_female
+                                                ),
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Fit,
+                                                modifier = Modifier.size(84.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
 
+                            // Quick Theme Selector Row (AMOLED / Light / Titanium)
                             item {
-                                HyperSquircleCard(accentGlow = true) {
-                                    Text("Escolha ou Monte seu Treino", style = MaterialTheme.typography.titleLarge, color = palette.textPrimary)
-                                    Text("Catálogo completo com ${ExerciseRepository.allExercises.size} exercícios disponíveis", style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
+                                Column {
+                                    Text(
+                                        text = "Visual do Aplicativo",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = palette.textPrimary
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        items(AppThemePreset.entries) { preset ->
+                                            val sel = currentTheme == preset
+                                            Surface(
+                                                modifier = Modifier.clickable { onPreviewTheme(preset) },
+                                                shape = CircleShape,
+                                                color = if (sel) palette.primary else palette.card,
+                                                border = BorderStroke(1.dp, if (sel) palette.primary else palette.hairline)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(12.dp)
+                                                            .clip(CircleShape)
+                                                            .background(Color(preset.bgHex))
+                                                            .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text(
+                                                        text = preset.title,
+                                                        color = if (sel) palette.onPrimaryAccent else palette.textPrimary,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 12.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Workout Split Mode Toggle
+                            item {
+                                Column {
+                                    Text(
+                                        text = "Escolha sua Divisão de Treino",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = palette.textPrimary
+                                    )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         FilterChip(
                                             selected = workoutMode == 0,
                                             onClick = { workoutMode = 0 },
                                             shape = CircleShape,
-                                            label = { Text("Divisão Científica Pronta") }
+                                            label = { Text("Divisão Pronta") }
                                         )
                                         FilterChip(
                                             selected = workoutMode == 1,
                                             onClick = { workoutMode = 1 },
                                             shape = CircleShape,
-                                            label = { Text("Montar Minha Ficha (${customExerciseIds.size})") }
+                                            label = { Text("Personalizar (${customExerciseIds.size})") }
                                         )
                                     }
                                 }
@@ -447,61 +698,76 @@ fun OnboardingScreen(
                             if (workoutMode == 0) {
                                 items(ExerciseRepository.defaultSplits) { split ->
                                     val isSel = selectedSplitId == split.id
-                                    HyperSquircleCard(
-                                        accentGlow = isSel,
-                                        containerColor = if (isSel) palette.tileElevated else palette.card,
-                                        onClick = { selectedSplitId = split.id }
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { selectedSplitId = split.id },
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = if (isSel) palette.tileElevated else palette.card,
+                                        border = BorderStroke(
+                                            width = if (isSel) 2.dp else 1.dp,
+                                            color = if (isSel) palette.primary else palette.hairline
+                                        )
                                     ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            modifier = Modifier.padding(14.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            HyperPillTag("${split.frequencyPerWeek}x / SEMANA", palette.primaryGlow)
-                                            if (isSel) {
-                                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = palette.primary)
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                HyperPillTag("${split.frequencyPerWeek}x / SEMANA", palette.primaryGlow)
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text(split.name, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
+                                                Text(split.subtitle, style = MaterialTheme.typography.bodySmall, color = palette.textSecondary)
                                             }
+                                            Icon(
+                                                imageVector = if (isSel) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                                contentDescription = null,
+                                                tint = if (isSel) palette.primary else palette.textMuted
+                                            )
                                         }
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        Text(split.name, style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                        Text(split.description, style = MaterialTheme.typography.bodyMedium, color = palette.textSecondary)
                                     }
                                 }
                             } else {
                                 item {
-                                    HyperSquircleCard {
-                                        OutlinedTextField(
-                                            value = customWorkoutName,
-                                            onValueChange = { customWorkoutName = it },
-                                            label = { Text("Nome da Sua Ficha") },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        OutlinedTextField(
-                                            value = exerciseSearch,
-                                            onValueChange = { exerciseSearch = it },
-                                            label = { Text("Buscar entre ${ExerciseRepository.allExercises.size} exercícios...") },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            item {
-                                                FilterChip(
-                                                    selected = selectedMuscleFilter == null,
-                                                    onClick = { selectedMuscleFilter = null },
-                                                    shape = CircleShape,
-                                                    label = { Text("Todos", fontSize = 11.sp) }
-                                                )
-                                            }
-                                            items(MuscleGroup.entries) { m ->
-                                                FilterChip(
-                                                    selected = selectedMuscleFilter == m,
-                                                    onClick = { selectedMuscleFilter = if (selectedMuscleFilter == m) null else m },
-                                                    shape = CircleShape,
-                                                    label = { Text(m.shortName, fontSize = 11.sp) }
-                                                )
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = palette.card,
+                                        border = BorderStroke(1.dp, palette.hairline)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            OutlinedTextField(
+                                                value = customWorkoutName,
+                                                onValueChange = { customWorkoutName = it },
+                                                label = { Text("Nome da Ficha") },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            OutlinedTextField(
+                                                value = exerciseSearch,
+                                                onValueChange = { exerciseSearch = it },
+                                                label = { Text("Buscar entre ${ExerciseRepository.allExercises.size} exercícios...") },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                item {
+                                                    FilterChip(
+                                                        selected = selectedMuscleFilter == null,
+                                                        onClick = { selectedMuscleFilter = null },
+                                                        shape = CircleShape,
+                                                        label = { Text("Todos", fontSize = 11.sp) }
+                                                    )
+                                                }
+                                                items(MuscleGroup.entries) { m ->
+                                                    FilterChip(
+                                                        selected = selectedMuscleFilter == m,
+                                                        onClick = { selectedMuscleFilter = if (selectedMuscleFilter == m) null else m },
+                                                        shape = CircleShape,
+                                                        label = { Text(m.shortName, fontSize = 11.sp) }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -537,147 +803,28 @@ fun OnboardingScreen(
                             }
                         }
                     }
-
-                    3 -> {
-                        val finalWeight = (weightInput.toDoubleOrNull() ?: 75.0).coerceIn(35.0, 220.0)
-                        val finalHeight = (heightInput.toDoubleOrNull() ?: 175.0).coerceIn(120.0, 230.0)
-                        val finalAge = (ageInput.toIntOrNull() ?: 25).coerceIn(14, 90)
-                        val bmr = if (isMale) {
-                            (10.0 * finalWeight) + (6.25 * finalHeight) - (5.0 * finalAge) + 5.0
-                        } else {
-                            (10.0 * finalWeight) + (6.25 * finalHeight) - (5.0 * finalAge) - 161.0
-                        }
-                        val tdee = bmr * 1.55
-                        val targetKcal = (tdee + selectedGoal.kcalOffset).roundToInt()
-                        val proteinG = (finalWeight * selectedGoal.proteinPerKg).roundToInt()
-                        val fatG = (finalWeight * 0.85).roundToInt()
-                        val carbG = ((targetKcal - proteinG * 4 - fatG * 9).coerceAtLeast(200) / 4.0).roundToInt()
-                        val chosenSplit = ExerciseRepository.defaultSplits.find { it.id == selectedSplitId }
-                            ?: ExerciseRepository.defaultSplits.first()
-
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                                item {
-                                    OrbitingGlowBanner {
-                                        Box(modifier = Modifier.fillMaxWidth()) {
-                                            AnimatedGifView(
-                                                assetPath = "gifs/plan_review_confetti.gif",
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(145.dp)
-                                                    .align(Alignment.TopCenter)
-                                            )
-                                            Column(modifier = Modifier.padding(16.dp)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        text = "Tudo Pronto, ${name.ifBlank { "Atleta" }}!",
-                                                        style = MaterialTheme.typography.headlineMedium,
-                                                        color = palette.textPrimary
-                                                    )
-                                                    Text(
-                                                        text = "Seu dashboard iniciará 100% limpo e seu calendário semanal já foi preenchido automaticamente.",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = palette.textSecondary
-                                                    )
-                                                }
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.visual_kettlebell_3d),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(64.dp)
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    HyperPillTag("${finalWeight} kg", palette.primaryGlow)
-                                                    HyperPillTag("${finalHeight.toInt()} cm", palette.secondary)
-                                                    HyperPillTag(selectedExp.label, HyperEmerald)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                item {
-                                    HyperSquircleCard {
-                                        Text("Metas Nutricionais Calculadas", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text("$targetKcal kcal / dia", style = MaterialTheme.typography.displayLarge, color = palette.primary)
-                                        Text("TMB: ${bmr.roundToInt()} kcal • GET: ${tdee.roundToInt()} kcal", style = MaterialTheme.typography.labelSmall, color = palette.textSecondary)
-                                        Spacer(modifier = Modifier.height(10.dp))
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            HyperPillTag("Proteína: ${proteinG}g", HyperEmerald)
-                                            HyperPillTag("Carbo: ${carbG}g", palette.primaryGlow)
-                                            HyperPillTag("Gordura: ${fatG}g", palette.secondary)
-                                        }
-                                    }
-                                }
-
-                                item {
-                                    HyperSquircleCard {
-                                        Text("Treino & Visual Aplicados", style = MaterialTheme.typography.titleMedium, color = palette.textPrimary)
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        Text(
-                                            text = if (workoutMode == 1) "Ficha Personalizada: $customWorkoutName (${customExerciseIds.size} exercícios)"
-                                                   else "Divisão Ativa: ${chosenSplit.name}",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = palette.primaryGlow
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Tema Ativo: ${currentTheme.title} (${currentTheme.style.label})",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = palette.secondary
-                                        )
-                                    }
-                                }
-                            }
-
-
-                    }
                 }
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        // BeFit Full-Width Pill Bottom CTA
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
-            if (step > 0) {
-                OutlinedButton(
-                    onClick = { step -= 1 },
-                    modifier = Modifier
-                        .weight(0.42f)
-                        .height(52.dp),
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Voltar", fontWeight = FontWeight.Bold)
-                }
-            }
-
             Button(
                 onClick = {
-                    if (step < 3) {
+                    if (step < totalSteps - 1) {
                         step += 1
                     } else {
                         val profile = UserProfile(
                             name = name.ifBlank { "Atleta" },
                             isMale = isMale,
-                            age = (ageInput.toIntOrNull() ?: 25).coerceIn(14, 90),
-                            weightKg = (weightInput.toDoubleOrNull() ?: 75.0).coerceIn(35.0, 220.0),
-                            heightCm = (heightInput.toDoubleOrNull() ?: 175.0).coerceIn(120.0, 230.0),
-                            bodyFatPct = (bfInput.toDoubleOrNull() ?: 14.0).coerceIn(3.0, 50.0),
+                            age = ageFloat.roundToInt().coerceIn(14, 90),
+                            weightKg = ((weightFloat * 10).roundToInt() / 10.0).coerceIn(35.0, 220.0),
+                            heightCm = heightFloat.roundToInt().coerceIn(120, 230),
+                            bodyFatPct = ((bfFloat * 10).roundToInt() / 10.0).coerceIn(3.0, 50.0),
                             experience = selectedExp,
                             goal = selectedGoal,
                             selectedSplitId = selectedSplitId
@@ -691,24 +838,149 @@ fun OnboardingScreen(
                     }
                 },
                 modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
+                    .fillMaxWidth()
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = palette.primary),
                 shape = CircleShape
             ) {
                 Text(
-                    text = if (step < 3) "CONTINUAR" else "ENTRAR NO IRONFORGE PRO",
+                    text = if (step < totalSteps - 1) "CONTINUAR" else "COMEÇAR MEU TREINO",
                     color = palette.onPrimaryAccent,
                     fontWeight = FontWeight.Black,
-                    fontSize = 14.sp
+                    fontSize = 15.sp,
+                    letterSpacing = 0.8.sp
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = if (step < 3) Icons.Default.ArrowForward else Icons.Default.Check,
+                    imageVector = if (step < totalSteps - 1) Icons.Default.ArrowForward else Icons.Default.Check,
                     contentDescription = null,
                     tint = palette.onPrimaryAccent
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun GenderVisualCard(
+    title: String,
+    subtitle: String,
+    imageRes: Int,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val palette = LocalIronPalette.current
+    Surface(
+        modifier = modifier
+            .height(176.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(22.dp),
+        color = palette.card,
+        border = BorderStroke(
+            width = if (selected) 2.5.dp else 1.dp,
+            color = if (selected) palette.primary else palette.hairline
+        )
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color(0x66060910),
+                                Color(0xE6060910)
+                            )
+                        )
+                    )
+            )
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = palette.primary,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .size(24.dp)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                    color = Color.White
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BiometricSliderCard(
+    icon: ImageVector,
+    label: String,
+    valueDisplay: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit
+) {
+    val palette = LocalIronPalette.current
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = palette.card,
+        border = BorderStroke(1.dp, palette.hairline)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, contentDescription = null, tint = palette.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = palette.textSecondary
+                    )
+                }
+                Text(
+                    text = valueDisplay,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                    color = palette.primaryGlow
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                colors = SliderDefaults.colors(
+                    thumbColor = palette.primary,
+                    activeTrackColor = palette.primary,
+                    inactiveTrackColor = palette.tileElevated
+                )
+            )
         }
     }
 }

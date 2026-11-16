@@ -1,22 +1,13 @@
 package com.ironforge.pro.ui.components
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color as AndroidColor
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import android.webkit.JavascriptInterface
-import android.webkit.WebResourceError
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.VideoView
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,20 +18,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -52,31 +44,8 @@ import com.ironforge.pro.ui.theme.LocalIronPalette
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-/**
- * Ponte JS -> Kotlin: o iframe do YouTube envia eventos via postMessage e a página os repassa aqui.
- * Os callbacks chegam em thread de background, então são reenviados para a main thread.
- */
-private class YouTubeEmbedBridge(
-    private val onError: (Int) -> Unit,
-    private val onAlive: () -> Unit
-) {
-    private val main = Handler(Looper.getMainLooper())
-
-    @JavascriptInterface
-    fun onPlayerError(code: Int) {
-        main.post { onError(code) }
-    }
-
-    @JavascriptInterface
-    fun onPlayerAlive() {
-        main.post { onAlive() }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun ExerciseMiniVideoPlayer(
     exercise: Exercise,
@@ -89,92 +58,56 @@ fun ExerciseMiniVideoPlayer(
     val context = LocalContext.current
     val videoDemo = remember(exercise.id) { ExerciseVideoCatalog.resolveForExercise(exercise) }
 
-    // Load real YouTube video frame thumbnail asynchronously so there's never a blank box or Error 153
+    var useCustomMp4 by remember(exercise.id, customVideoUri) { mutableStateOf(customVideoUri != null) }
+
+    // Fetch real YouTube HQ thumbnail with multi-resolution fallback (hqdefault -> mqdefault)
     var thumbBitmap by remember(videoDemo.youtubeVideoId) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(videoDemo.youtubeVideoId) {
         thumbBitmap = withContext(Dispatchers.IO) {
-            runCatching {
-                val conn = (URL(videoDemo.thumbnailUrl).openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 5000
-                    readTimeout = 5000
-                    setRequestProperty("User-Agent", "Mozilla/5.0")
-                }
-                conn.inputStream.use { BitmapFactory.decodeStream(it) }
-            }.getOrNull()
+            val urls = listOf(
+                "https://i.ytimg.com/vi/${videoDemo.youtubeVideoId}/hqdefault.jpg",
+                "https://i.ytimg.com/vi/${videoDemo.youtubeVideoId}/mqdefault.jpg"
+            )
+            for (u in urls) {
+                val bmp = runCatching {
+                    val conn = (URL(u).openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 6000
+                        readTimeout = 6000
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)")
+                    }
+                    conn.inputStream.use { BitmapFactory.decodeStream(it) }
+                }.getOrNull()
+                if (bmp != null && bmp.width > 120) return@withContext bmp
+            }
+            null
         }
     }
 
-    // Start on the real HD video thumbnail card; tapping Play activates the Referer-authenticated player
-    var inlinePlayerActive by remember(exercise.id) { mutableStateOf(false) }
-    var useCustomMp4 by remember(exercise.id, customVideoUri) { mutableStateOf(customVideoUri != null) }
+    // Subtle breathing glow on the Play button so the user immediately sees it's interactive
+    val pulseTransition = rememberInfiniteTransition(label = "ytPlayPulse")
+    val playScale by pulseTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "playScale"
+    )
 
-    // Estado do embed: 0 = sem erro, >0 = código de erro do YouTube, -1 = falha de rede/WebView
-    var embedError by remember(exercise.id) { mutableIntStateOf(0) }
-    var embedAlive by remember(exercise.id) { mutableStateOf(false) }
-    var showSlowHint by remember(exercise.id) { mutableStateOf(false) }
-    var reloadKey by remember(exercise.id) { mutableIntStateOf(0) }
-
-    // O YouTube exige que o embed identifique o app via Referer: https://<applicationId>.
-    // (O build debug usa o sufixo ".debug"; removemos para usar sempre o ID base do app.)
-    val appReferer = remember { "https://" + context.packageName.removeSuffix(".debug") }
-
-    // Se o player não der sinal de vida em alguns segundos, mostra um atalho (sem esconder o vídeo).
-    LaunchedEffect(inlinePlayerActive, reloadKey) {
-        if (inlinePlayerActive) {
-            delay(7000)
-            if (!embedAlive && embedError == 0) showSlowHint = true
+    fun launchYouTubeExecutionVideo() {
+        // Try native YouTube app deep link first for instant zero-buffering playback, fallback to HTTPS browser
+        val appIntent = Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:${videoDemo.youtubeVideoId}")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-    }
-
-    fun openExternalYouTube() {
+        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(videoDemo.watchUrl)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoDemo.watchUrl)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+            context.startActivity(appIntent)
+        }.onFailure {
+            runCatching { context.startActivity(webIntent) }
         }
-    }
-
-    val embedHtml = remember(videoDemo.youtubeVideoId, appReferer) {
-        """
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-          <style>
-            * { margin:0; padding:0; box-sizing:border-box; background:#070A10; }
-            html, body { width:100%; height:100%; overflow:hidden; }
-            iframe { width:100%; height:100%; border:0; }
-          </style>
-        </head>
-        <body>
-          <iframe id="yt"
-            src="https://www.youtube.com/embed/${videoDemo.youtubeVideoId}?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=$appReferer&widget_referrer=$appReferer"
-            referrerpolicy="strict-origin-when-cross-origin"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen>
-          </iframe>
-          <script>
-            var f = document.getElementById('yt');
-            function listen() {
-              try { f.contentWindow.postMessage(JSON.stringify({event:'listening', id:1, channel:'widget'}), '*'); } catch (e) {}
-            }
-            f.addEventListener('load', function () { listen(); setTimeout(listen, 600); setTimeout(listen, 1800); });
-            window.addEventListener('message', function (e) {
-              var d = e.data;
-              if (typeof d !== 'string') { try { d = JSON.stringify(d); } catch (x) { return; } }
-              if (d.indexOf('"onError"') > -1) {
-                var m = d.match(/"info"\s*:\s*(\d+)/);
-                IronBridge.onPlayerError(m ? parseInt(m[1]) : -1);
-              } else if (d.indexOf('onReady') > -1 || d.indexOf('onStateChange') > -1 ||
-                         d.indexOf('initialDelivery') > -1 || d.indexOf('infoDelivery') > -1) {
-                IronBridge.onPlayerAlive();
-              }
-            });
-          </script>
-        </body>
-        </html>
-        """.trimIndent()
     }
 
     Surface(
@@ -182,266 +115,175 @@ fun ExerciseMiniVideoPlayer(
             .fillMaxWidth()
             .height(height),
         shape = RoundedCornerShape(22.dp),
-        color = Color(0xFF070A10),
+        color = Color(0xFF0E1420),
         border = BorderStroke(1.2.dp, palette.primary.copy(alpha = 0.45f))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            when {
-                useCustomMp4 && customVideoUri != null -> {
-                    AndroidView(
-                        factory = { ctx ->
-                            VideoView(ctx).apply {
-                                setVideoURI(Uri.parse(customVideoUri))
-                                setOnPreparedListener { mp ->
-                                    mp.isLooping = true
-                                    mp.setVolume(0f, 0f)
-                                    start()
-                                }
+            if (useCustomMp4 && customVideoUri != null) {
+                AndroidView(
+                    factory = { ctx ->
+                        VideoView(ctx).apply {
+                            setVideoURI(Uri.parse(customVideoUri))
+                            setOnPreparedListener { mp ->
+                                mp.isLooping = true
+                                mp.setVolume(0f, 0f)
+                                start()
                             }
-                        },
-                        onRelease = { vv ->
-                            runCatching { vv.stopPlayback() }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                inlinePlayerActive -> {
-                    key(reloadKey) {
-                        AndroidView(
-                            factory = { ctx ->
-                                WebView(ctx).apply {
-                                    setBackgroundColor(AndroidColor.parseColor("#070A10"))
-                                    settings.apply {
-                                        javaScriptEnabled = true
-                                        domStorageEnabled = true
-                                        mediaPlaybackRequiresUserGesture = false
-                                        loadWithOverviewMode = true
-                                        useWideViewPort = true
-                                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                                    }
-                                    addJavascriptInterface(
-                                        YouTubeEmbedBridge(
-                                            onError = { code -> embedError = if (code == 0) -1 else code },
-                                            onAlive = { embedAlive = true; showSlowHint = false }
-                                        ),
-                                        "IronBridge"
-                                    )
-                                    webChromeClient = WebChromeClient()
-                                    webViewClient = object : WebViewClient() {
-                                        override fun shouldOverrideUrlLoading(
-                                            view: WebView?,
-                                            request: WebResourceRequest?
-                                        ): Boolean {
-                                            val urlStr = request?.url?.toString() ?: return false
-                                            if (urlStr.contains("watch?v=") || urlStr.contains("youtu.be/")) {
-                                                openExternalYouTube()
-                                                return true
-                                            }
-                                            return false
-                                        }
-
-                                        override fun onReceivedError(
-                                            view: WebView?,
-                                            request: WebResourceRequest?,
-                                            error: WebResourceError?
-                                        ) {
-                                            if (request?.isForMainFrame == true) embedError = -1
-                                        }
-                                    }
-                                    // baseUrl = https://<applicationId> faz o WebView enviar esse Referer ao YouTube.
-                                    loadDataWithBaseURL(
-                                        appReferer,
-                                        embedHtml,
-                                        "text/html",
-                                        "UTF-8",
-                                        null
-                                    )
-                                }
-                            },
-                            onRelease = { wv ->
-                                runCatching {
-                                    wv.stopLoading()
-                                    wv.removeJavascriptInterface("IronBridge")
-                                    wv.loadUrl("about:blank")
-                                    wv.destroy()
-                                }
-                            },
+                        }
+                    },
+                    onRelease = { vv ->
+                        runCatching { vv.stopPlayback() }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Always-visible Cinema Video Stage — NEVER renders a black box!
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { launchYouTubeExecutionVideo() }
+                ) {
+                    val bmp = thumbBitmap
+                    if (bmp != null) {
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = videoDemo.title,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
-                    }
-                }
-
-                else -> {
-                    // Real YouTube Thumbnail Preview Stage — zero Error 153!
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0A0F1A))
-                            .clickable { inlinePlayerActive = true }
-                    ) {
-                        val bmp = thumbBitmap
-                        if (bmp != null) {
-                            Image(
-                                bitmap = bmp.asImageBitmap(),
-                                contentDescription = videoDemo.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color(0x88060910),
-                                                Color(0x55060910),
-                                                Color(0xCC060910)
-                                            )
-                                        )
-                                    )
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                Color(0xFF0F172A),
-                                                Color(0xFF1E293B),
-                                                Color(0xFF0B0F17)
-                                            )
-                                        )
-                                    )
-                            )
-                        }
-
-                        // Center Play Trigger
-                        Column(
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(horizontal = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFFF0000)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Reproduzir Vídeo",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(32.dp)
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color(0x99080C14),
+                                            Color(0x44080C14),
+                                            Color(0xDD080C14)
+                                        )
+                                    )
                                 )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(Color(0xCC0A0E17))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "Executar Vídeo • ${videoDemo.durationLabel}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White,
-                                    fontSize = 11.sp
+                        )
+                    } else {
+                        // Rich Studio Backdrop with Biomechanical Grid & Glow (never pitch black!)
+                        val primaryColor = palette.primary
+                        val secondaryColor = palette.secondary
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            Color(0xFF10192B),
+                                            Color(0xFF19263D),
+                                            Color(0xFF0D1422)
+                                        )
+                                    )
+                                )
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val step = 28.dp.toPx()
+                                var x = 0f
+                                while (x < size.width) {
+                                    drawLine(
+                                        color = Color.White.copy(alpha = 0.04f),
+                                        start = Offset(x, 0f),
+                                        end = Offset(x, size.height),
+                                        strokeWidth = 1f
+                                    )
+                                    x += step
+                                }
+                                var y = 0f
+                                while (y < size.height) {
+                                    drawLine(
+                                        color = Color.White.copy(alpha = 0.04f),
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = 1f
+                                    )
+                                    y += step
+                                }
+                                drawCircle(
+                                    color = primaryColor.copy(alpha = 0.14f),
+                                    radius = size.minDimension * 0.42f,
+                                    center = center
+                                )
+                                drawCircle(
+                                    color = secondaryColor.copy(alpha = 0.25f),
+                                    radius = size.minDimension * 0.26f,
+                                    center = center,
+                                    style = Stroke(width = 2.dp.toPx())
                                 )
                             }
                         }
+                    }
 
-                        // Bottom Video Title Caption
+                    // Center Interactive Play Button
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .graphicsLayer {
+                                    scaleX = playScale
+                                    scaleY = playScale
+                                }
+                                .size(54.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFFF0000)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Assistir Execução no YouTube",
+                                tint = Color.White,
+                                modifier = Modifier.size(34.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color(0xD90A0E17))
+                                .padding(horizontal = 12.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                text = "Assistir Execução (${videoDemo.durationLabel})",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                color = Color.White,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    // Bottom Video Title & Muscle Cue
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = videoDemo.title,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = Color.White.copy(alpha = 0.92f),
+                            color = Color.White.copy(alpha = 0.95f),
                             fontSize = 11.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                            modifier = Modifier.weight(1f)
                         )
-                    }
-                }
-            }
-
-            // Falha do embed: nunca deixar um quadro preto, sempre oferecer o caminho alternativo
-            if (inlinePlayerActive && !useCustomMp4 && embedError != 0) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(listOf(Color(0xFF0B1220), Color(0xFF070A10)))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "HD • ${exercise.equipment.label}",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = palette.primaryGlow,
+                            fontSize = 10.sp
                         )
-                        .padding(horizontal = 18.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = when (embedError) {
-                            101, 150 -> "O dono do vídeo não permite reprodução dentro de apps."
-                            153 -> "O YouTube recusou a reprodução dentro do app (erro 153)."
-                            -1 -> "Sem conexão para carregar o vídeo."
-                            else -> "Não foi possível reproduzir aqui (erro $embedError)."
-                        },
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(Color(0xFFFF0000))
-                                .clickable { openExternalYouTube() }
-                                .padding(horizontal = 14.dp, vertical = 8.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Assistir no YouTube", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(Color(0xE6111622))
-                                .clickable {
-                                    embedError = 0
-                                    embedAlive = false
-                                    showSlowHint = false
-                                    reloadKey += 1
-                                }
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Refresh, contentDescription = null, tint = palette.primaryGlow, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Tentar de novo", color = palette.primaryGlow, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            } else if (inlinePlayerActive && !useCustomMp4 && showSlowHint && !embedAlive) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 10.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xE6111622))
-                        .clickable { openExternalYouTube() }
-                        .padding(horizontal = 12.dp, vertical = 7.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Não carregou? Abrir no YouTube", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -511,7 +353,7 @@ fun ExerciseMiniVideoPlayer(
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(Color(0xE6111622))
-                            .clickable { openExternalYouTube() }
+                            .clickable { launchYouTubeExecutionVideo() }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -523,7 +365,7 @@ fun ExerciseMiniVideoPlayer(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "App YT",
+                                text = "Abrir YT",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = palette.primaryGlow,
                                 fontSize = 10.sp

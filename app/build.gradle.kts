@@ -11,8 +11,8 @@ android {
         applicationId = "com.ironforge.pro"
         minSdk = 26
         targetSdk = 34
-        versionCode = 12
-        versionName = "12.0.0-ZeroError153-ExpandedCatalog"
+        versionCode = 13
+        versionName = "13.0.0-BeFitStudio-ZeroBlackPlayer"
 
         vectorDrawables {
             useSupportLibrary = true
