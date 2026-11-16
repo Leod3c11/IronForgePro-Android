@@ -1,5 +1,4 @@
-# 🏋️ IronForge Pro 11.0 — Real YouTube Execution & Clean Metrics Edition
+# 🏋️ IronForge Pro 12.0 — Zero-Error 153 YouTube Player & Expanded 74-Exercise Catalog
 
-Aplicativo nativo Android (**Kotlin + Jetpack Compose + YouTube HD Embed + Lottie + AGSL RuntimeShader**) com:
-1. **Vídeos Reais de Execução (YouTube HD + Local MP4):** Todos os 59 exercícios contam com demonstrações reais em vídeo de instrutores especializados (`ExerciseVideoCatalog` + player embutido e botão direto para o app do YouTube), substituindo completamente os bonecos/stickers anteriores.
-2. **Interface Limpa Sem Contagem de Tonelada:** Remoção completa da contagem e gráficos de tonelagem, mantendo métricas objetivas e acionáveis (séries válidas, prontidão muscular, consistência semanal e recordes pessoais 1RM).
+- **Correção Definitiva do Erro 153 no Player:** O `ExerciseMiniVideoPlayer` agora exibe a miniatura real em alta definição do vídeo (`i.ytimg.com`) antes do clique e autentica o player embutido com `baseUrl = "https://www.youtube.com"` e `referrerpolicy="strict-origin-when-cross-origin"`, eliminando o erro de configuração do player e evitando dezenas de WebViews simultâneos na lista.
+- **Catálogo Expandido para 74 Exercícios:** Adicionados 15 novos exercícios biomecânicos (Pullover com Halter, Supino Inclinado no Smith, Remada T-Bar/Cavalinho, Remada Baixa Pegada Aberta, Remada Meadows, Elevação Lateral por Trás na Polia, Remada Alta Aberta na Polia, Rosca Zottman, Rosca Spider, Tríceps Coice na Polia, JM Press, Agachamento Sissy, Agachamento Goblet, Stiff Unilateral e Dragon Flag Negativo).
