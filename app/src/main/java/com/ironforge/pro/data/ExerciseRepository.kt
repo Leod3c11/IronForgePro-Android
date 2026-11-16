@@ -2127,10 +2127,7 @@ object ExerciseRepository {
             commonMistakes = listOf(
                 "Deixar o tronco girar em direção à polia."
             )
-        )
-    )
-
-    fun getExerciseById(id: String,
+        ),
         // --- EXPANDED CATALOG (+15 EXERCÍCIOS) ---
         Exercise(
             id = "chest_pullover_dumbbell",
@@ -2446,7 +2443,9 @@ object ExerciseRepository {
             biomechanicsTips = listOf("Um dos exercícios mais intensos de força abdominal da calistenia e musculação."),
             commonMistakes = listOf("Deixar a lombar arquear na descida.")
         )
-    ): Exercise? = allExercises.find { it.id == id }
+    )
+
+    fun getExerciseById(id: String): Exercise? = allExercises.find { it.id == id }
 
     val defaultSplits: List<WorkoutSplit> = listOf(
         WorkoutSplit(
